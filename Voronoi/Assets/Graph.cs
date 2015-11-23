@@ -7,8 +7,6 @@ public class Graph : MonoBehaviour
     public float m_Radius = 5f;
     List<Vector2> vertices = new List<Vector2>();
     private GameObject m_GameObject;
-    List<Vector3> lines = new List<Vector3>();
-
 
     void Awake()
     {
@@ -34,12 +32,12 @@ public class Graph : MonoBehaviour
         // Set transformation matrix for drawing to
         // match our transform
         GL.MultMatrix(transform.localToWorldMatrix);
-
+        
         // Draw lines
         GL.Begin(GL.LINES);
         // Vertex colors change from red to green
         GL.Color(new Color(0, 0, 0));
-        
+
         Q = vertices.OrderBy(v => v.y).ToList();
         foreach (Vector2 e in Q)
         {
@@ -68,7 +66,22 @@ public class Graph : MonoBehaviour
             GameObject gob = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             gob.transform.position = newPos;
             gob.transform.localScale = new Vector3(m_Radius, m_Radius, m_Radius);
-            
+
+            DoTriangulation();
         }
+    }
+
+    private void DoTriangulation()
+    {
+        Q = vertices.OrderBy(v => v.y).ToList();
+        foreach (Vector2 e in Q)
+        {
+            foreach (Vector2 s in T)
+            {
+            }
+            T.Add(e);
+        }
+
+        T.Clear();
     }
 }
