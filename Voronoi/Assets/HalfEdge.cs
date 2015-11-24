@@ -10,7 +10,11 @@ public class HalfEdge
         Twin = null;
         Next = null;
         Prev = null;
+
+        color = Color.black;
     }
+
+    public Color color;
 
     public Vertex Origin;
     public HalfEdge Twin;

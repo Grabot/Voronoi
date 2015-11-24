@@ -21,8 +21,7 @@ public class Graph : MonoBehaviour
         HalfEdge h1 = new HalfEdge(v1);
         HalfEdge h2 = new HalfEdge(v2);
         HalfEdge h3 = new HalfEdge(v4);
-
-        triangles.Add( new Triangle(v1, v2, v4) );
+        triangles.Add(new Triangle(v1, v2, v4));
 
         h1.Next = h2;
         h2.Next = h3;
@@ -32,10 +31,9 @@ public class Graph : MonoBehaviour
         HalfEdge h4 = new HalfEdge(v4);
         HalfEdge h5 = new HalfEdge(v2);
         HalfEdge h6 = new HalfEdge(v3);
-
         triangles.Add(new Triangle(v4, v2, v3));
-
         h2.Twin = h4;
+        h4.Twin = h2;
 
         h4.Next = h5;
         h5.Next = h6;
@@ -53,6 +51,43 @@ public class Graph : MonoBehaviour
         vertices.Add(v3);
         vertices.Add(v4);
 
+        AddVertex(h5, new Vertex(2, 2));
+
+    }
+
+    private void AddVertex(HalfEdge h, Vertex v)
+    {
+        HalfEdge h1 = h;
+        HalfEdge h2 = h.Next;
+        HalfEdge h3 = h.Next.Next;
+
+        HalfEdge h4 = new HalfEdge(v);
+        HalfEdge h5 = new HalfEdge(h1.Origin);
+        HalfEdge h6 = new HalfEdge(h2.Origin);
+        HalfEdge h7 = new HalfEdge(v);
+        HalfEdge h8 = new HalfEdge(v);
+        HalfEdge h9 = new HalfEdge(h3.Origin);
+
+        // Set all twins
+        h4.Twin = h5;
+        h5.Twin = h4;
+        h6.Twin = h7;
+        h7.Twin = h6;
+        h8.Twin = h9;
+        h9.Twin = h8;
+
+        // Set all next
+        h1.Next = h6;
+        h6.Next = h4;
+        h4.Next = h1;
+
+        h2.Next = h8;
+        h8.Next = h7;
+        h7.Next = h2;
+
+        h3.Next = h5;
+        h5.Next = h9;
+        h9.Next = h3;
     }
 
     List<Vector2> Q = new List<Vector2>();
@@ -68,7 +103,7 @@ public class Graph : MonoBehaviour
         // Draw lines
         GL.Begin(GL.LINES);
         // Vertex colors change from red to green
-        GL.Color(new Color(0, 0, 0));
+        GL.Color(Color.red);
 
         foreach (HalfEdge halfEdge in halfEdges)
         {
@@ -87,16 +122,26 @@ public class Graph : MonoBehaviour
         if (hits.Length > 0)
         {
             Vector3 newPos = hits[0].point;
-            Vertex me = new Vertex(newPos);
-            vertices.Add(me);
+            Vertex newPoint = new Vertex(newPos);
+            vertices.Add(newPoint);
 
             GameObject gob = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             gob.transform.position = newPos;
             gob.transform.localScale = new Vector3(m_Radius, m_Radius, m_Radius);
 
-            foreach (Triangle t in triangles)
+            foreach(Triangle t in triangles )
             {
-                Debug.Log("inside Triangle: " + t.inside(me));
+                if( t.inside(newPoint))
+                {
+                    foreach( HalfEdge e in halfEdges )
+                    {
+                        Debug.Log("origin: " + t.getRandomVertex.x);
+                        if (t.getRandomVertex == e.Origin )
+                        {
+                            AddVertex(e, newPoint);
+                        }
+                    }
+                }
             }
         }
     }
