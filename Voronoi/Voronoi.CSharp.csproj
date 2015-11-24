@@ -80,6 +80,7 @@
     <Compile Include="Assets\Distance.cs" />
     <Compile Include="Assets\Euclidian.cs" />
     <Compile Include="Assets\Graph.cs" />
+    <Compile Include="Assets\HalfEdgeFactory.cs" />
     <Compile Include="Assets\Vertex.cs" />
   </ItemGroup>
   <ItemGroup>

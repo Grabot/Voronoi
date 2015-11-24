@@ -2,10 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 
-class HalfEdge
+public class HalfEdge
 {
-    public Vertex Origin;
+    public HalfEdge(Vertex v)
+    {
+        Origin = v;
+        Twin = null;
+        Next = null;
+        Prev = null;
+    }
 
+    public Vertex Origin;
     public HalfEdge Twin;
     public HalfEdge Next;
     public HalfEdge Prev;
