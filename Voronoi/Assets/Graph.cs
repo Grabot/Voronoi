@@ -4,6 +4,7 @@ using System.Linq;
 
 public class Graph : MonoBehaviour
 {
+    private Distance m_distance = new Euclidian();
     public float m_Radius = 5f;
     List<Vector2> vertices = new List<Vector2>();
     private GameObject m_GameObject;
@@ -70,7 +71,7 @@ public class Graph : MonoBehaviour
             DoTriangulation();
         }
     }
-
+    
     private void DoTriangulation()
     {
         Q = vertices.OrderBy(v => v.y).ToList();
@@ -78,6 +79,7 @@ public class Graph : MonoBehaviour
         {
             foreach (Vector2 s in T)
             {
+                Debug.Log(m_distance.calculate(e, s));
             }
             T.Add(e);
         }
