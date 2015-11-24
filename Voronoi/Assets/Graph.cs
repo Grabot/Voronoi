@@ -26,6 +26,7 @@ public class Graph : MonoBehaviour
 
     List<Vector2> Q = new List<Vector2>();
     List<Vector2> T = new List<Vector2>();
+    List<Vector2> S = new List<Vector2>();
     public void OnRenderObject()
     {
 
@@ -42,11 +43,27 @@ public class Graph : MonoBehaviour
         Q = vertices.OrderBy(v => v.y).ToList();
         foreach (Vector2 e in Q)
         {
+            S = Q.OrderBy(v => m_distance.calculate(v, e)).ToList();
+            if(S.Count > 2 )
+            {
+                GL.Vertex3(e.x, 0, e.y);
+                GL.Vertex3(S[1].x, 0, S[1].y);
+                
+                GL.Vertex3(e.x, 0, e.y);
+                GL.Vertex3(S[2].x, 0, S[2].y);
+
+                GL.Vertex3(S[1].x, 0, S[1].y);
+                GL.Vertex3(S[2].x, 0, S[2].y);
+
+                //Debug.Log("vertex: " + S[0].x);
+            }
+            /*
             foreach (Vector2 s in T)
             {
                 GL.Vertex3(e.x, 0, e.y);
                 GL.Vertex3(s.x, 0, s.y);
             }
+            */
             T.Add(e);
         }
 
@@ -79,7 +96,7 @@ public class Graph : MonoBehaviour
         {
             foreach (Vector2 s in T)
             {
-                Debug.Log(m_distance.calculate(e, s));
+                //Debug.Log(m_distance.calculate(e, s));
             }
             T.Add(e);
         }
