@@ -47,6 +47,43 @@ public class Graph : MonoBehaviour
         vertices.Add(v3);
         vertices.Add(v4);
 
+        AddVertex(h1, new Vertex(-2, -2));
+
+    }
+
+    private void AddVertex(HalfEdge h, Vertex v)
+    {
+        HalfEdge h1 = h;
+        HalfEdge h2 = h.Next;
+        HalfEdge h3 = h.Next.Next;
+
+        HalfEdge h4 = new HalfEdge(v);
+        HalfEdge h5 = new HalfEdge(h1.Origin);
+        HalfEdge h6 = new HalfEdge(v);
+        HalfEdge h7 = new HalfEdge(h2.Origin);
+        HalfEdge h8 = new HalfEdge(v);
+        HalfEdge h9 = new HalfEdge(h3.Origin);
+
+        // Set all twins
+        h4.Twin = h5;
+        h5.Twin = h4;
+        h6.Twin = h7;
+        h7.Twin = h6;
+        h8.Twin = h9;
+        h9.Twin = h8;
+
+        // Set all next
+        h1.Next = h6;
+        h6.Next = h5;
+        h5.Next = h1;
+
+        h2.Next = h8;
+        h8.Next = h7;
+        h7.Next = h2;
+
+        h3.Next = h4;
+        h4.Next = h9;
+        h9.Next = h3;
     }
 
     List<Vector2> Q = new List<Vector2>();
