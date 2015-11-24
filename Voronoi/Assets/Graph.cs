@@ -7,8 +7,9 @@ public class Graph : MonoBehaviour
     private Distance m_distance = new Euclidian();
     public float m_Radius = 5f;
     List<Vector2> vertices = new List<Vector2>();
+    List<Vector2> cornerVertices = new List<Vector2>();
     private GameObject m_GameObject;
-
+    
     void Awake()
     {
         createVertices();
@@ -16,12 +17,18 @@ public class Graph : MonoBehaviour
 
     private void createVertices()
     {
-        vertices.Add(new Vector2(3, 3));
-        GameObject gob = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        m_GameObject = this.gameObject;
-        gob.transform.position = vertices[0];
-        gob.transform.localScale = new Vector3(m_Radius, m_Radius, m_Radius);
-            
+        cornerVertices.Add(new Vector2(1, 1));
+        cornerVertices.Add(new Vector2(4, 1));
+        cornerVertices.Add(new Vector2(1, 4));
+        cornerVertices.Add(new Vector2(4, 4));
+
+        foreach (Vector2 vec2 in cornerVertices)
+        {
+            GameObject gob = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            m_GameObject = this.gameObject;
+            gob.transform.position = vec2;
+            gob.transform.localScale = new Vector3(m_Radius, m_Radius, m_Radius);
+        }
     }
 
     List<Vector2> Q = new List<Vector2>();
@@ -34,37 +41,35 @@ public class Graph : MonoBehaviour
         // Set transformation matrix for drawing to
         // match our transform
         GL.MultMatrix(transform.localToWorldMatrix);
-        
+
         // Draw lines
         GL.Begin(GL.LINES);
         // Vertex colors change from red to green
         GL.Color(new Color(0, 0, 0));
 
         Q = vertices.OrderBy(v => v.y).ToList();
-        foreach (Vector2 e in Q)
+        if (vertices.Count > 4)
         {
-            S = Q.OrderBy(v => m_distance.calculate(v, e)).ToList();
-            if(S.Count > 2 )
+            foreach (Vector2 e in Q)
             {
-                GL.Vertex3(e.x, 0, e.y);
-                GL.Vertex3(S[1].x, 0, S[1].y);
-                
-                GL.Vertex3(e.x, 0, e.y);
-                GL.Vertex3(S[2].x, 0, S[2].y);
+                S = Q.OrderBy(v => m_distance.calculate(v, e)).ToList();
+                if (S.Count > 2)
+                {
+                    GL.Vertex3(e.x, 0, e.y);
+                    GL.Vertex3(S[1].x, 0, S[1].y);
 
-                GL.Vertex3(S[1].x, 0, S[1].y);
-                GL.Vertex3(S[2].x, 0, S[2].y);
+                    GL.Vertex3(e.x, 0, e.y);
+                    GL.Vertex3(S[2].x, 0, S[2].y);
 
-                //Debug.Log("vertex: " + S[0].x);
+                    GL.Vertex3(S[1].x, 0, S[1].y);
+                    GL.Vertex3(S[2].x, 0, S[2].y);
+
+                    //Debug.Log("vertex: " + S[0].x);
+                }
+
+
+                T.Add(e);
             }
-            /*
-            foreach (Vector2 s in T)
-            {
-                GL.Vertex3(e.x, 0, e.y);
-                GL.Vertex3(s.x, 0, s.y);
-            }
-            */
-            T.Add(e);
         }
 
         T.Clear();
@@ -88,7 +93,7 @@ public class Graph : MonoBehaviour
             DoTriangulation();
         }
     }
-    
+
     private void DoTriangulation()
     {
         Q = vertices.OrderBy(v => v.y).ToList();
