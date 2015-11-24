@@ -74,7 +74,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Brute.cs" />
     <Compile Include="Assets\Distance.cs" />
+    <Compile Include="Assets\Edge.cs" />
     <Compile Include="Assets\Euclidian.cs" />
     <Compile Include="Assets\Graph.cs" />
     <Compile Include="Assets\HalfEdge.cs" />
