@@ -7,6 +7,7 @@ public class Graph : MonoBehaviour
     public float m_Radius = 0.5f;
     private List<Vertex> vertices = new List<Vertex>();
     private List<HalfEdge> halfEdges = new List<HalfEdge>();
+    private List<Triangle> triangles = new List<Triangle>();
     
     private void Start()
     {
@@ -21,6 +22,8 @@ public class Graph : MonoBehaviour
         HalfEdge h2 = new HalfEdge(v2);
         HalfEdge h3 = new HalfEdge(v4);
 
+        triangles.Add( new Triangle(v1, v2, v4) );
+
         h1.Next = h2;
         h2.Next = h3;
         h3.Next = h1;
@@ -29,6 +32,9 @@ public class Graph : MonoBehaviour
         HalfEdge h4 = new HalfEdge(v4);
         HalfEdge h5 = new HalfEdge(v2);
         HalfEdge h6 = new HalfEdge(v3);
+
+        triangles.Add(new Triangle(v4, v2, v3));
+
         h2.Twin = h4;
 
         h4.Next = h5;
@@ -81,11 +87,17 @@ public class Graph : MonoBehaviour
         if (hits.Length > 0)
         {
             Vector3 newPos = hits[0].point;
-            vertices.Add(new Vertex(newPos));
+            Vertex me = new Vertex(newPos);
+            vertices.Add(me);
 
             GameObject gob = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             gob.transform.position = newPos;
             gob.transform.localScale = new Vector3(m_Radius, m_Radius, m_Radius);
+
+            foreach (Triangle t in triangles)
+            {
+                Debug.Log("inside Triangle: " + t.inside(me));
+            }
         }
     }
 }

@@ -13,6 +13,16 @@ public class Vertex
     {
         Position = vec;
     }
+   
+    public float y
+    {
+        get { return Position.y; }
+    }
+
+    public float x
+    {
+        get { return Position.x; }
+    }
 
     public Vector2 Position;
 }
