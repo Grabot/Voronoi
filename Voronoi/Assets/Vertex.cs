@@ -1,28 +1,21 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 
 public class Vertex
 {
     public Vertex(float x, float y)
     {
-        Position = new Vector2(x, y);
+        this.x = x;
+        this.y = y;
     }
 
-    public Vertex(Vector2 vec)
+    public bool isNan()
     {
-        Position = vec;
-    }
-   
-    public float y
-    {
-        get { return Position.y; }
+        return float.IsNaN(x) || float.IsNaN(y);
     }
 
-    public float x
-    {
-        get { return Position.x; }
-    }
-
-    public Vector2 Position;
+    public float x;
+    public float y;
 }

@@ -4,15 +4,24 @@ using System.Linq;
 
 public class HalfEdge
 {
+    private Vertex origin;
+
     public HalfEdge(Vertex v)
     {
-        Origin = v;
-        Twin = null;
+        origin = new Vertex(v.x, v.y);
+
+        Twin = this;
         Next = null;
         Prev = null;
     }
 
-    public Vertex Origin;
+    public Vertex Origin
+    {
+        get { return origin; }
+        set { origin = new Vertex(value.x, value.y); }
+    }
+
+    public Triangle Face;
     public HalfEdge Twin;
     public HalfEdge Next;
     public HalfEdge Prev;
