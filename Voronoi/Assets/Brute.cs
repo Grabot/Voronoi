@@ -9,6 +9,31 @@ public class Brute : MonoBehaviour
     private List<Triangle> triangles = new List<Triangle>();
     private List<Edge> edges = new List<Edge>();
 
+    // When added to an object, draws colored rays from the
+    // transform position.
+    public int lineCount = 100;
+    public float radius = 3.0f;
+
+    static Material lineMaterial;
+    static void CreateLineMaterial()
+    {
+        if (!lineMaterial)
+        {
+            // Unity has a built-in shader that is useful for drawing
+            // simple colored things.
+            var shader = Shader.Find("Hidden/Internal-Colored");
+            lineMaterial = new Material(shader);
+            lineMaterial.hideFlags = HideFlags.HideAndDontSave;
+            // Turn on alpha blending
+            lineMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            lineMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            // Turn backface culling off
+            lineMaterial.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Off);
+            // Turn off depth writes
+            lineMaterial.SetInt("_ZWrite", 0);
+        }
+    }
+
     private void Start()
     {
         // Create corner vertex
@@ -39,6 +64,10 @@ public class Brute : MonoBehaviour
     List<Vector2> S = new List<Vector2>();
     public void OnRenderObject()
     {
+        CreateLineMaterial();
+        // Apply the line material
+        lineMaterial.SetPass(0);
+
         GL.PushMatrix();
         // Set transformation matrix for drawing to
         // match our transform
