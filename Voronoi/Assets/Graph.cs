@@ -7,6 +7,7 @@ public class Graph : MonoBehaviour
 {
     private SanderGraph sander;
     private Boolean circleOn = false;
+    private Boolean faceOn = false;
 
     private void Start()
     {
@@ -89,7 +90,11 @@ public class Graph : MonoBehaviour
         GL.MultMatrix(transform.localToWorldMatrix);
 
         drawEdges();
-        fillFaces();
+        if (faceOn)
+        {
+            fillFaces();
+        }
+
         if (circleOn)
         {
             drawCircles();
@@ -103,6 +108,11 @@ public class Graph : MonoBehaviour
         if (Input.GetKeyDown("c"))
         {
             circleOn = !circleOn;
+        }
+
+        if (Input.GetKeyDown("f"))
+        {
+            faceOn = !faceOn;
         }
     }
 
