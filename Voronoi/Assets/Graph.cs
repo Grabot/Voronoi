@@ -13,7 +13,45 @@ public class Graph : MonoBehaviour
         sander.createGraph();
     }
 
-    
+    private void drawEdges()
+    {
+        GL.Begin(GL.LINES);
+        // Vertex colors change from red to green
+        GL.Color(new Color(1, 0, 0));
+
+        foreach (HalfEdge halfEdge in sander.HalfEdges)
+        {
+            GL.Vertex3(halfEdge.Origin.x, 0, halfEdge.Origin.y);
+            GL.Vertex3(halfEdge.Next.Origin.x, 0, halfEdge.Next.Origin.y);
+        }
+        GL.End();
+    }
+
+    private void drawCircles()
+    {
+        float radius = 0;
+        GL.Begin(GL.LINES);
+
+        System.Random rand = new System.Random();
+
+        GL.Color(new Color(0, 1, 0));
+        //GL.Color(new Color((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+
+        foreach (Triangle face in sander.Faces )
+        {
+            radius = face.Diameter();
+            float heading = 0;
+            float extra = (360 / 100);
+            for (int a = 0; a < (360 + extra); a += 360 / 100)
+            {
+                GL.Vertex3((Mathf.Cos(heading) * radius) + face.Circumcenter().x, 0, (Mathf.Sin(heading) * radius) + face.Circumcenter().y);
+                heading = a * Mathf.PI / 180;
+                GL.Vertex3((Mathf.Cos(heading) * radius) + face.Circumcenter().x, 0, (Mathf.Sin(heading) * radius) + face.Circumcenter().y);
+            }
+        }
+        GL.End();
+    }
+
     public void OnRenderObject()
     {
         sander.CreateLineMaterial();
@@ -25,28 +63,9 @@ public class Graph : MonoBehaviour
         // match our transform
         GL.MultMatrix(transform.localToWorldMatrix);
 
-        // Draw lines
-        GL.Begin(GL.LINES);
-        // Vertex colors change from red to green
-        GL.Color(new Color(1, 0, 0));
-        
-        foreach (HalfEdge halfEdge in sander.HalfEdges)
-        {
-            GL.Vertex3(halfEdge.Origin.x, 0, halfEdge.Origin.y);
-            GL.Vertex3(halfEdge.Next.Origin.x, 0, halfEdge.Next.Origin.y);
-        }
-        
-        GL.Begin(GL.LINES);
-        float heading = 0;
-        float extra = (360 / 100);
-        for (int a = 0; a < (360+ extra); a += 360 / 100)
-        {
-            GL.Vertex3(Mathf.Cos(heading) * 6, 0, Mathf.Sin(heading) * 6);
-            heading = a * Mathf.PI / 180;
-            GL.Vertex3(Mathf.Cos(heading) * 6, 0, Mathf.Sin(heading) * 6);
-        }
-        
-        GL.End();
+        drawEdges();
+        drawCircles();
+
         GL.PopMatrix();
     }
 

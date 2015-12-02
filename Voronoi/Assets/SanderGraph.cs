@@ -103,7 +103,7 @@ public class SanderGraph : Graph {
 
         return null;
     }
-
+    
     public bool AddVertex(Vertex vertex)
     {
         Triangle face = FindFace(vertex);
