@@ -5,8 +5,9 @@ using System;
 
 public class Graph : MonoBehaviour
 {
-
     private SanderGraph sander;
+    private Boolean circleOn = false;
+
     private void Start()
     {
         sander = new SanderGraph();
@@ -27,26 +28,50 @@ public class Graph : MonoBehaviour
         GL.End();
     }
 
+    private void fillFaces()
+    {
+        GL.Begin(GL.TRIANGLES);
+
+        System.Random rand = new System.Random();
+
+        foreach( Triangle face in sander.Faces )
+        {
+            GL.Color(face.m_colour);
+            GL.Vertex3(face.HalfEdge.Origin.x, 0, face.HalfEdge.Origin.y);
+            GL.Vertex3(face.HalfEdge.Next.Origin.x, 0, face.HalfEdge.Next.Origin.y);
+            GL.Vertex3(face.HalfEdge.Prev.Origin.x, 0, face.HalfEdge.Prev.Origin.y);
+        }
+
+
+        GL.End();
+
+    }
+
     private void drawCircles()
     {
         float radius = 0;
         GL.Begin(GL.LINES);
 
-        System.Random rand = new System.Random();
+        //System.Random rand = new System.Random();
 
-        GL.Color(new Color(0, 1, 0));
         //GL.Color(new Color((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
 
         foreach (Triangle face in sander.Faces )
         {
+            GL.Color(face.m_colour);
             radius = face.Diameter();
             float heading = 0;
             float extra = (360 / 100);
             for (int a = 0; a < (360 + extra); a += 360 / 100)
             {
+                //the circle.
                 GL.Vertex3((Mathf.Cos(heading) * radius) + face.Circumcenter().x, 0, (Mathf.Sin(heading) * radius) + face.Circumcenter().y);
                 heading = a * Mathf.PI / 180;
                 GL.Vertex3((Mathf.Cos(heading) * radius) + face.Circumcenter().x, 0, (Mathf.Sin(heading) * radius) + face.Circumcenter().y);
+
+                //midpoint of the circle.
+                GL.Vertex3((Mathf.Cos(heading) * 0.1f) + face.Circumcenter().x, 0, (Mathf.Sin(heading) * 0.1f) + face.Circumcenter().y);
+                GL.Vertex3((Mathf.Cos(heading) * 0.2f) + face.Circumcenter().x, 0, (Mathf.Sin(heading) * 0.2f) + face.Circumcenter().y);
             }
         }
         GL.End();
@@ -64,9 +89,21 @@ public class Graph : MonoBehaviour
         GL.MultMatrix(transform.localToWorldMatrix);
 
         drawEdges();
-        drawCircles();
+        fillFaces();
+        if (circleOn)
+        {
+            drawCircles();
+        }
 
         GL.PopMatrix();
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown("c"))
+        {
+            circleOn = !circleOn;
+        }
     }
 
     void OnMouseDown()

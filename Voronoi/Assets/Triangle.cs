@@ -6,8 +6,11 @@ using System;
 
 public class Triangle
 {
-    public Triangle(HalfEdge halfEdge)
+
+    public Color m_colour;
+    public Triangle(HalfEdge halfEdge, Color a_colour )
     {
+        m_colour = a_colour;
         this.HalfEdge = halfEdge;
     }
 

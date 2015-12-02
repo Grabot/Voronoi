@@ -5,6 +5,8 @@ using System.Collections.Generic;
 
 public class SanderGraph : Graph {
 
+    private System.Random rand = new System.Random();
+
     public float m_Radius = 0.5f;
     public int m_sides = 50;  // The amount of segment to create the circle
     private List<Triangle> faces = new List<Triangle>();
@@ -53,7 +55,7 @@ public class SanderGraph : Graph {
         HalfEdge h3 = new HalfEdge(v3);
         halfEdges.AddRange(new List<HalfEdge>() { h1, h2, h3 });
 
-        Triangle face = new Triangle(h1);
+        Triangle face = new Triangle(h1, new Color((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
         h1.Face = face;
         h2.Face = face;
         h3.Face = face;
@@ -72,7 +74,7 @@ public class SanderGraph : Graph {
         HalfEdge h6 = new HalfEdge(v4);
         halfEdges.AddRange(new List<HalfEdge>() { h4, h5, h6 });
 
-        Triangle face1 = new Triangle(h4);
+        Triangle face1 = new Triangle(h4, new Color((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
         h4.Face = face1;
         h5.Face = face1;
         h6.Face = face1;
@@ -142,17 +144,17 @@ public class SanderGraph : Graph {
         h6.Twin = h9;
         h9.Twin = h6;
 
-        Triangle face1 = new Triangle(h1);
+        Triangle face1 = new Triangle(h1, new Color((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
         h1.Face = face1;
         h5.Face = face1;
         h7.Face = face1;
 
-        Triangle face2 = new Triangle(h2);
+        Triangle face2 = new Triangle(h2, new Color((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
         h2.Face = face2;
         h6.Face = face2;
         h8.Face = face2;
 
-        Triangle face3 = new Triangle(h3);
+        Triangle face3 = new Triangle(h3, new Color((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
         h3.Face = face3;
         h4.Face = face3;
         h9.Face = face3;
