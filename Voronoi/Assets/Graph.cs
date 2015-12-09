@@ -6,9 +6,9 @@ using System;
 public class Graph : MonoBehaviour
 {
     private SanderGraph sander;
-    private Boolean circleOn = false;
-    private Boolean faceOn = false;
-
+    private bool circleOn = false;
+    private bool faceOn = false;
+    private bool edgeson = false;
     private void Start()
     {
         sander = new SanderGraph();
@@ -19,7 +19,6 @@ public class Graph : MonoBehaviour
     {
         GL.Begin(GL.LINES);
         // Vertex colors change from red to green
-        GL.Color(new Color(1, 0, 0));
 
         foreach (HalfEdge halfEdge in sander.HalfEdges)
         {
@@ -32,8 +31,6 @@ public class Graph : MonoBehaviour
     private void fillFaces()
     {
         GL.Begin(GL.TRIANGLES);
-
-        System.Random rand = new System.Random();
 
         foreach( Triangle face in sander.Faces )
         {
@@ -78,6 +75,36 @@ public class Graph : MonoBehaviour
         GL.End();
     }
 
+
+    // Testing only
+    public void DrawVoronoi()
+    {
+        GL.Begin(GL.LINES);
+        Console.Out.WriteLine("Start");
+        foreach (HalfEdge halfEdge in sander.HalfEdges)
+        {
+            if (halfEdge.Twin == null)
+                continue;
+
+            Triangle f1 = halfEdge.Face;
+            Triangle f2 = halfEdge.Twin.Face;
+
+            if (f1 is Triangle && f2 is Triangle)
+            {
+                Triangle t1 = f1 as Triangle;
+                Triangle t2 = f2 as Triangle;
+
+                Vertex v1 = t1.Circumcenter();
+                Vertex v2 = t2.Circumcenter();
+
+                GL.Vertex3(v1.x, 0, v1.y);
+                GL.Vertex3(v2.x, 0, v2.y);
+            }
+        }
+        GL.End();
+    }
+
+
     public void OnRenderObject()
     {
         sander.CreateLineMaterial();
@@ -89,7 +116,11 @@ public class Graph : MonoBehaviour
         // match our transform
         GL.MultMatrix(transform.localToWorldMatrix);
 
-        drawEdges();
+        if (edgeson)
+        {
+            drawEdges();
+        }
+
         if (faceOn)
         {
             fillFaces();
@@ -99,6 +130,8 @@ public class Graph : MonoBehaviour
         {
             drawCircles();
         }
+
+        DrawVoronoi();
 
         GL.PopMatrix();
     }
@@ -113,6 +146,11 @@ public class Graph : MonoBehaviour
         if (Input.GetKeyDown("f"))
         {
             faceOn = !faceOn;
+        }
+
+        if( Input.GetKeyDown("e"))
+        {
+            edgeson = !edgeson;
         }
     }
 

@@ -44,10 +44,10 @@ public class SanderGraph : Graph {
 
     public void createGraph()
     {
-        Vertex v1 = new Vertex(-5, -5);
-        Vertex v2 = new Vertex(5, 5);
-        Vertex v3 = new Vertex(-5, 5);
-        Vertex v4 = new Vertex(5, -5);
+        Vertex v1 = new Vertex(-50000, -50000);
+        Vertex v2 = new Vertex(50000, 50000);
+        Vertex v3 = new Vertex(-50000, 50000);
+        Vertex v4 = new Vertex(50000, -50000);
         vertices.AddRange(new List<Vertex>() { v1, v2, v3, v4 });
 
         HalfEdge h1 = new HalfEdge(v1);
@@ -233,7 +233,9 @@ public class SanderGraph : Graph {
         h4.Face.HalfEdge = h4;
 
         if (h.Twin == h)
+        {
             return;
+        }
 
         h1.Next = h6;
         h6.Prev = h1;

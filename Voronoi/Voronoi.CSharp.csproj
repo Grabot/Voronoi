@@ -82,6 +82,7 @@
     <Compile Include="Assets\Triangle.cs" />
     <Compile Include="Assets\Utility.cs" />
     <Compile Include="Assets\Vertex.cs" />
+    <Compile Include="Assets\Voronoi.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Standard Assets\CrossPlatformInput\CrossPlatformInputGuidelines.txt" />
