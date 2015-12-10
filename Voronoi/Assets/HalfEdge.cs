@@ -1,29 +1,33 @@
-﻿using UnityEngine;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
-public class HalfEdge
+namespace Voronoi
 {
-    private Vertex origin;
-
-    public HalfEdge(Vertex v)
+    public class HalfEdge
     {
-        origin = new Vertex(v.x, v.y);
+        private Vertex origin;
 
-        Twin = this;
-        Next = null;
-        Prev = null;
+        public HalfEdge(Vertex v)
+        {
+            origin = new Vertex(v.X, v.Y);
+            
+            Twin = null;
+            Next = null;
+            Prev = null;
+        }
+
+        public Vertex Origin
+        {
+            get { return origin; }
+            set { origin = new Vertex(value.X, value.Y); }
+        }
+
+        public Face Face;
+        public HalfEdge Twin;
+        public HalfEdge Next;
+        public HalfEdge Prev;
     }
 
-    public Vertex Origin
-    {
-        get { return origin; }
-        set { origin = new Vertex(value.x, value.y); }
-    }
-
-    public Triangle Face;
-    public HalfEdge Twin;
-    public HalfEdge Next;
-    public HalfEdge Prev;
 }
-

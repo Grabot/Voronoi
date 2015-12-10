@@ -1,21 +1,77 @@
-﻿using UnityEngine;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System;
+using System.Text;
 
-public class Vertex
+namespace Voronoi
 {
-    public Vertex(float x, float y)
+    public class Vertex
     {
-        this.x = x;
-        this.y = y;
-    }
+        
+        public float X;
+        public float Y;
 
-    public bool isNan()
-    {
-        return float.IsNaN(x) || float.IsNaN(y);
-    }
+        public Vertex()
+        {
+            X = float.NaN;
+            Y = float.NaN;
+        }
 
-    public float x;
-    public float y;
+        public Vertex (float X, float Y)
+        {
+            this.X = X;
+            this.Y = Y;
+        }
+
+        public Vertex(Vertex v)
+        {
+            X = v.X;
+            Y = v.Y;
+        }
+
+        public bool isNan()
+        {
+            return float.IsNaN(X) || float.IsNaN(Y);
+        }
+
+        public float DeltaSquaredXY(Vertex t)
+        {
+            float dx = (X - t.X);
+            float dy = (Y - t.Y);
+            return (dx * dx) + (dy * dy);
+        }
+
+        #region Operators
+        public static Vertex operator -(Vertex v, Vertex w)
+        {
+            return new Vertex(v.X - w.X, v.Y - w.Y);
+        }
+
+        public static Vertex operator +(Vertex v, Vertex w)
+        {
+            return new Vertex(v.X + w.X, v.Y + w.Y);
+        }
+
+        public static float operator *(Vertex v, Vertex w)
+        {
+            return v.X * w.X + v.Y * w.Y;
+        }
+
+        public static Vertex operator *(Vertex v, float mult)
+        {
+            return new Vertex(v.X * mult, v.Y * mult);
+        }
+
+        public static Vertex operator *(float mult, Vertex v)
+        {
+            return new Vertex(v.X * mult, v.Y * mult);
+        }
+
+        public float Cross(Vertex v)
+        {
+            return X * v.Y - Y * v.X;
+        }
+        #endregion
+
+    }
 }

@@ -1,172 +1,121 @@
-﻿using UnityEngine;
+﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
-using System;
+using System.Text;
+using UnityEngine;
 
-public class Graph : MonoBehaviour
+namespace Voronoi
 {
-    private SanderGraph sander;
-    private bool circleOn = false;
-    private bool faceOn = false;
-    private bool edgeson = false;
-    private void Start()
+    public class Graph
     {
-        sander = new SanderGraph();
-        sander.createGraph();
-    }
+        protected List<Face> faces = new List<Face>();
+        protected List<Vertex> vertices = new List<Vertex>();
+        protected List<HalfEdge> halfEdges = new List<HalfEdge>();
 
-    private void drawEdges()
-    {
-        GL.Begin(GL.LINES);
-        // Vertex colors change from red to green
+        public List<Face> Faces { get { return faces; } }
+        public List<Vertex> Vertices { get { return vertices; } }
+        public List<HalfEdge> HalfEdges { get { return halfEdges; } }
 
-        foreach (HalfEdge halfEdge in sander.HalfEdges)
+        public Material lineMaterial;
+        public void CreateLineMaterial()
         {
-            GL.Vertex3(halfEdge.Origin.x, 0, halfEdge.Origin.y);
-            GL.Vertex3(halfEdge.Next.Origin.x, 0, halfEdge.Next.Origin.y);
-        }
-        GL.End();
-    }
-
-    private void fillFaces()
-    {
-        GL.Begin(GL.TRIANGLES);
-
-        foreach( Triangle face in sander.Faces )
-        {
-            GL.Color(face.m_colour);
-            GL.Vertex3(face.HalfEdge.Origin.x, 0, face.HalfEdge.Origin.y);
-            GL.Vertex3(face.HalfEdge.Next.Origin.x, 0, face.HalfEdge.Next.Origin.y);
-            GL.Vertex3(face.HalfEdge.Prev.Origin.x, 0, face.HalfEdge.Prev.Origin.y);
-        }
-
-
-        GL.End();
-
-    }
-
-    private void drawCircles()
-    {
-        float radius = 0;
-        GL.Begin(GL.LINES);
-
-        //System.Random rand = new System.Random();
-
-        //GL.Color(new Color((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
-
-        foreach (Triangle face in sander.Faces )
-        {
-            GL.Color(face.m_colour);
-            radius = face.Diameter();
-            float heading = 0;
-            float extra = (360 / 100);
-            for (int a = 0; a < (360 + extra); a += 360 / 100)
+            if (!lineMaterial)
             {
-                //the circle.
-                GL.Vertex3((Mathf.Cos(heading) * radius) + face.Circumcenter().x, 0, (Mathf.Sin(heading) * radius) + face.Circumcenter().y);
-                heading = a * Mathf.PI / 180;
-                GL.Vertex3((Mathf.Cos(heading) * radius) + face.Circumcenter().x, 0, (Mathf.Sin(heading) * radius) + face.Circumcenter().y);
-
-                //midpoint of the circle.
-                GL.Vertex3((Mathf.Cos(heading) * 0.1f) + face.Circumcenter().x, 0, (Mathf.Sin(heading) * 0.1f) + face.Circumcenter().y);
-                GL.Vertex3((Mathf.Cos(heading) * 0.2f) + face.Circumcenter().x, 0, (Mathf.Sin(heading) * 0.2f) + face.Circumcenter().y);
+                // Unity has a built-in shader that is useful for drawing
+                // simple colored things.
+                var shader = Shader.Find("Hidden/Internal-Colored");
+                lineMaterial = new Material(shader);
+                lineMaterial.hideFlags = HideFlags.HideAndDontSave;
+                // Turn on alpha blending
+                lineMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                lineMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                // Turn backface culling off
+                lineMaterial.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Off);
+                // Turn off depth writes
+                lineMaterial.SetInt("_ZWrite", 0);
             }
         }
-        GL.End();
-    }
 
 
-    // Testing only
-    public void DrawVoronoi()
-    {
-        GL.Begin(GL.LINES);
-        Console.Out.WriteLine("Start");
-        foreach (HalfEdge halfEdge in sander.HalfEdges)
+        public void Create()
         {
-            if (halfEdge.Twin == null)
-                continue;
+            Vertex v1 = new Vertex(-500000, -500000);
+            Vertex v2 = new Vertex(500000, 500000);
+            Vertex v3 = new Vertex(-500000, 500000);
+            Vertex v4 = new Vertex(500000, -500000);
+            vertices.AddRange(new List<Vertex>() { v1, v2, v3, v4 });
 
-            Triangle f1 = halfEdge.Face;
-            Triangle f2 = halfEdge.Twin.Face;
+            HalfEdge h1 = new HalfEdge(v1);
+            HalfEdge h2 = new HalfEdge(v2);
+            HalfEdge h3 = new HalfEdge(v3);
+            halfEdges.AddRange(new List<HalfEdge>() { h1, h2, h3 });
 
-            if (f1 is Triangle && f2 is Triangle)
+            h1.Next = h2;
+            h2.Next = h3;
+            h3.Next = h1;
+
+            h2.Prev = h1;
+            h3.Prev = h2;
+            h1.Prev = h3;
+
+            HalfEdge h4 = new HalfEdge(v2);
+            HalfEdge h5 = new HalfEdge(v1);
+            HalfEdge h6 = new HalfEdge(v4);
+            halfEdges.AddRange(new List<HalfEdge>() { h4, h5, h6 });
+
+            h4.Twin = h1;
+            h1.Twin = h4;
+
+            h4.Next = h5;
+            h5.Next = h6;
+            h6.Next = h4;
+
+            h5.Prev = h4;
+            h6.Prev = h5;
+            h4.Prev = h6;
+
+            HalfEdge h7 = new HalfEdge(v1);
+            HalfEdge h8 = new HalfEdge(v2);
+            HalfEdge h9 = new HalfEdge(v3);
+            HalfEdge h10 = new HalfEdge(v4);
+            halfEdges.AddRange(new List<HalfEdge>() { h7, h8, h9, h10 });
+
+            h10.Next = h7;
+            h7.Prev = h10;
+            h8.Next = h10;
+            h10.Prev = h8;
+            h9.Next = h8;
+            h8.Prev = h9;
+            h7.Next = h9;
+            h9.Prev = h7;
+
+            h3.Twin = h7;
+            h7.Twin = h3;
+            h8.Twin = h6;
+            h6.Twin = h8;
+            h2.Twin = h9;
+            h9.Twin = h2;
+
+            h10.Twin = h5;
+            h5.Twin = h10;
+
+            faces.Add(new Triangle(h1));
+            faces.Add(new Triangle(h4));
+        }
+
+        protected Face FindFace(Vertex vertex)
+        {
+            foreach (Face face in faces)
             {
-                Triangle t1 = f1 as Triangle;
-                Triangle t2 = f2 as Triangle;
-
-                Vertex v1 = t1.Circumcenter();
-                Vertex v2 = t2.Circumcenter();
-
-                GL.Vertex3(v1.x, 0, v1.y);
-                GL.Vertex3(v2.x, 0, v2.y);
+                if (face.inside(vertex))
+                {
+                    return face;
+                }
             }
-        }
-        GL.End();
-    }
 
-
-    public void OnRenderObject()
-    {
-        sander.CreateLineMaterial();
-        // Apply the line material
-        sander.lineMaterial.SetPass(0);
-
-        GL.PushMatrix();
-        // Set transformation matrix for drawing to
-        // match our transform
-        GL.MultMatrix(transform.localToWorldMatrix);
-
-        if (edgeson)
-        {
-            drawEdges();
+            return null;
         }
 
-        if (faceOn)
-        {
-            fillFaces();
-        }
-
-        if (circleOn)
-        {
-            drawCircles();
-        }
-
-        DrawVoronoi();
-
-        GL.PopMatrix();
-    }
-
-    void Update()
-    {
-        if (Input.GetKeyDown("c"))
-        {
-            circleOn = !circleOn;
-        }
-
-        if (Input.GetKeyDown("f"))
-        {
-            faceOn = !faceOn;
-        }
-
-        if( Input.GetKeyDown("e"))
-        {
-            edgeson = !edgeson;
-        }
-    }
-
-    void OnMouseDown()
-    {
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        RaycastHit[] hits = Physics.RaycastAll(ray);
-        if (hits.Length > 0)
-        {
-            Vector3 newPos = hits[0].point;
-            Vertex me = new Vertex(newPos.x, newPos.y);
-            sander.AddVertex(me);
-
-            GameObject gob = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            gob.transform.position = newPos;
-            gob.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-        }
     }
 }
