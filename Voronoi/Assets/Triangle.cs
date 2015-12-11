@@ -7,6 +7,8 @@ namespace Voronoi
 {
     public class Triangle : Face
     {
+        public bool m_drawn = false;
+
         public Triangle(HalfEdge halfEdge) : base(halfEdge)
         {
             Vertex v1 = HalfEdge.Origin;
@@ -75,6 +77,11 @@ namespace Voronoi
             );
 
             return circumcenter;
+        }
+
+        public void setDrawn(bool a_drawn)
+        {
+            m_drawn = a_drawn;
         }
 
         public bool InsideCircumcenter(Vertex vertex)

@@ -15,6 +15,7 @@ public class GraphManager : MonoBehaviour
     {
         sander = new Delaunay();
         sander.Create();
+
     }
 
     private void drawEdges()
@@ -30,16 +31,52 @@ public class GraphManager : MonoBehaviour
         GL.End();
     }
 
+
+    public Vector2[] newUV;
+
     private void fillFaces()
     {
         GL.Begin(GL.TRIANGLES);
 
         foreach (Triangle face in sander.Faces)
         {
-            GL.Color(face.Color);
-            GL.Vertex3(face.HalfEdge.Origin.X, 0, face.HalfEdge.Origin.Y);
-            GL.Vertex3(face.HalfEdge.Next.Origin.X, 0, face.HalfEdge.Next.Origin.Y);
-            GL.Vertex3(face.HalfEdge.Prev.Origin.X, 0, face.HalfEdge.Prev.Origin.Y);
+
+            if (!face.m_drawn)
+            {
+
+                Material noPlayer = Resources.Load("AreaNoPlayer", typeof(Material)) as Material;
+                Material player1 = Resources.Load("AreaPlayer1", typeof(Material)) as Material;
+                Material player2 = Resources.Load("AreaPlayer2", typeof(Material)) as Material;
+
+                var go = new GameObject();
+                var fil = go.AddComponent<MeshFilter>();
+                var rend = go.AddComponent<MeshRenderer>();
+                Mesh mesh = go.GetComponent<MeshFilter>().mesh;
+                mesh.Clear();
+                mesh.vertices = new Vector3[] {
+                    new Vector3(face.HalfEdge.Origin.X, face.HalfEdge.Origin.Y, -1),
+                    new Vector3(face.HalfEdge.Next.Origin.X, face.HalfEdge.Next.Origin.Y, -1),
+                    new Vector3(face.HalfEdge.Prev.Origin.X, face.HalfEdge.Prev.Origin.Y, -1)
+                };
+                mesh.uv = new Vector2[]
+                {
+                    new Vector2( 0, 1 ),
+                    new Vector2(1, 1),
+                    new Vector2(0, 0)
+                };
+
+                mesh.triangles = new int[] { 2, 1, 0 };
+                face.setDrawn(true);
+                
+                rend.material = player2;
+
+            }
+
+            //GL.Color(face.Color);
+            //GL.Vertex3(face.HalfEdge.Origin.X, 0, face.HalfEdge.Origin.Y);
+            //GL.Vertex3(face.HalfEdge.Next.Origin.X, 0, face.HalfEdge.Next.Origin.Y);
+            //GL.Vertex3(face.HalfEdge.Prev.Origin.X, 0, face.HalfEdge.Prev.Origin.Y);
+            
         }
 
 
