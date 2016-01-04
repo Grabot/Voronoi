@@ -1,18 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Voronoi
 {
     public class HalfEdge
     {
-        private Vertex origin;
+		private Vertex m_Origin;
+		public Face Face;
+		public HalfEdge Twin;
+		public HalfEdge Next;
+		public HalfEdge Prev;
 
-        public HalfEdge(Vertex v)
+        public HalfEdge(Vertex a_Vertex)
         {
-            origin = new Vertex(v.X, v.Y);
-            
+            m_Origin = new Vertex(a_Vertex.X, a_Vertex.Y);
+			Face = null;
             Twin = null;
             Next = null;
             Prev = null;
@@ -20,14 +22,9 @@ namespace Voronoi
 
         public Vertex Origin
         {
-            get { return origin; }
-            set { origin = new Vertex(value.X, value.Y); }
+            get { return m_Origin; }
+            set { m_Origin = new Vertex(value.X, value.Y); }
         }
-
-        public Face Face;
-        public HalfEdge Twin;
-        public HalfEdge Next;
-        public HalfEdge Prev;
     }
 
 }

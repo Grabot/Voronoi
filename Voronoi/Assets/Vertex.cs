@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Voronoi
 {
     public class Vertex
     {
-        
         public float X;
         public float Y;
 

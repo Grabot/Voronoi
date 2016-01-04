@@ -1,42 +1,37 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
 using UnityEngine;
 
 namespace Voronoi
 {
     public class Graph
     {
-        protected List<Face> faces = new List<Face>();
-        protected List<Vertex> vertices = new List<Vertex>();
-        protected List<HalfEdge> halfEdges = new List<HalfEdge>();
+        protected List<Face> m_Faces = new List<Face>();
+        protected List<Vertex> m_Vertices = new List<Vertex>();
+        protected List<HalfEdge> m_HalfEdges = new List<HalfEdge>();
+		public Material m_LineMaterial;
 
-        public List<Face> Faces { get { return faces; } }
-        public List<Vertex> Vertices { get { return vertices; } }
-        public List<HalfEdge> HalfEdges { get { return halfEdges; } }
+        public List<Face> Faces { get { return m_Faces; } }
+        public List<Vertex> Vertices { get { return m_Vertices; } }
+        public List<HalfEdge> HalfEdges { get { return m_HalfEdges; } }
 
-        public Material lineMaterial;
         public void CreateLineMaterial()
         {
-            if (!lineMaterial)
-            {
-                // Unity has a built-in shader that is useful for drawing
-                // simple colored things.
-                var shader = Shader.Find("Hidden/Internal-Colored");
-                lineMaterial = new Material(shader);
-                lineMaterial.hideFlags = HideFlags.HideAndDontSave;
-                // Turn on alpha blending
-                lineMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                lineMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                // Turn backface culling off
-                lineMaterial.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Off);
-                // Turn off depth writes
-                lineMaterial.SetInt("_ZWrite", 0);
-            }
+			if (!m_LineMaterial) {
+				// Unity has a built-in shader that is useful for drawing
+				// simple colored things.
+				Shader shader = Shader.Find ("Hidden/Internal-Colored");
+				m_LineMaterial = new Material (shader);
+				m_LineMaterial.hideFlags = HideFlags.HideAndDontSave;
+				// Turn on alpha blending
+				m_LineMaterial.SetInt ("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+				m_LineMaterial.SetInt ("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+				// Turn backface culling off
+				m_LineMaterial.SetInt ("_Cull", (int)UnityEngine.Rendering.CullMode.Off);
+				// Turn off depth writes
+				m_LineMaterial.SetInt ("_ZWrite", 0);
+			}
         }
-
 
         public void Create()
         {
@@ -44,12 +39,12 @@ namespace Voronoi
             Vertex v2 = new Vertex(500000, 500000);
             Vertex v3 = new Vertex(-500000, 500000);
             Vertex v4 = new Vertex(500000, -500000);
-            vertices.AddRange(new List<Vertex>() { v1, v2, v3, v4 });
+            m_Vertices.AddRange(new List<Vertex>() { v1, v2, v3, v4 });
 
             HalfEdge h1 = new HalfEdge(v1);
             HalfEdge h2 = new HalfEdge(v2);
             HalfEdge h3 = new HalfEdge(v3);
-            halfEdges.AddRange(new List<HalfEdge>() { h1, h2, h3 });
+            m_HalfEdges.AddRange(new List<HalfEdge>() { h1, h2, h3 });
 
             h1.Next = h2;
             h2.Next = h3;
@@ -62,7 +57,7 @@ namespace Voronoi
             HalfEdge h4 = new HalfEdge(v2);
             HalfEdge h5 = new HalfEdge(v1);
             HalfEdge h6 = new HalfEdge(v4);
-            halfEdges.AddRange(new List<HalfEdge>() { h4, h5, h6 });
+            m_HalfEdges.AddRange(new List<HalfEdge>() { h4, h5, h6 });
 
             h4.Twin = h1;
             h1.Twin = h4;
@@ -79,7 +74,7 @@ namespace Voronoi
             HalfEdge h8 = new HalfEdge(v2);
             HalfEdge h9 = new HalfEdge(v3);
             HalfEdge h10 = new HalfEdge(v4);
-            halfEdges.AddRange(new List<HalfEdge>() { h7, h8, h9, h10 });
+            m_HalfEdges.AddRange(new List<HalfEdge>() { h7, h8, h9, h10 });
 
             h10.Next = h7;
             h7.Prev = h10;
@@ -100,20 +95,19 @@ namespace Voronoi
             h10.Twin = h5;
             h5.Twin = h10;
 
-            faces.Add(new Triangle(h1));
-            faces.Add(new Triangle(h4));
+            m_Faces.Add(new Triangle(h1));
+            m_Faces.Add(new Triangle(h4));
         }
 
-        protected Face FindFace(Vertex vertex)
+        protected Face FindFace(Vertex a_Vertex)
         {
-            foreach (Face face in faces)
+            foreach (Face face in m_Faces)
             {
-                if (face.inside(vertex))
+                if (face.Inside(a_Vertex))
                 {
                     return face;
                 }
             }
-
             return null;
         }
 

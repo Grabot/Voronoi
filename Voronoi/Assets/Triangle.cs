@@ -1,66 +1,78 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using UnityEngine;
 
 namespace Voronoi
 {
     public class Triangle : Face
     {
-        public bool m_drawn = false;
+		private bool m_Drawn = false;
+		private Vertex m_Circumcenter;
+		private bool m_CalculatedCircumcenter = false;
+		private float circumcenterRangeSquared;
+		private bool calculatedCircumcenterRangeSquared = false;
+	
+		public bool Drawn
+		{
+			get { return m_Drawn; }
+			set { m_Drawn = value; }
+		}
 
-        public Triangle(HalfEdge halfEdge) : base(halfEdge)
+        public Triangle(HalfEdge m_HalfEdge) : base(m_HalfEdge)
         {
-            Vertex v1 = HalfEdge.Origin;
-            Vertex v2 = HalfEdge.Next.Origin;
-            Vertex v3 = HalfEdge.Next.Next.Origin;
-            Vertex v4 = HalfEdge.Next.Next.Next.Origin;
+            Vertex v1 = m_HalfEdge.Origin;
+            Vertex v2 = m_HalfEdge.Next.Origin;
+            Vertex v3 = m_HalfEdge.Next.Next.Origin;
+            Vertex v4 = m_HalfEdge.Next.Next.Next.Origin;
 
-            if (v1 == v2 || v2 == v3 || v1 == v3)
-                throw new IncorrectTriangleException("Triangle does not has a correct 3 vertex loop.");
+			if (v1 == v2 || v2 == v3 || v1 == v3)
+			{ Debug.LogError("Triangle does not have a correct 3 vertex loop."); }
 
-            if (v1 != v4)
-                throw new IncorrectTriangleException("Triangle does not has a correct 3 vertex loop.");
+			if (v1 != v4)
+			{ Debug.LogError("Triangle does not have a correct 3 vertex loop."); }
 
             // Fix halfedges to this face
-            halfEdge.Face = this;
-            halfEdge.Next.Face = this;
-            halfEdge.Next.Next.Face = this;
+            m_HalfEdge.Face = this;
+            m_HalfEdge.Next.Face = this;
+            m_HalfEdge.Next.Next.Face = this;
 
             // Add vertices to the array
-            vertices.Add(v1);
-            vertices.Add(v2);
-            vertices.Add(v3);
+            m_Vertices.Add(v1);
+            m_Vertices.Add(v2);
+            m_Vertices.Add(v3);
         }
         
-        private Vertex calculateCircumcenter()
+        private Vertex CalculateCircumcenter()
         {
-            Vertex v1 = Vertices[0];
-            Vertex v2 = Vertices[1];
-            Vertex v3 = Vertices[2];
+			Vertex v1 = m_Vertices[0];
+			Vertex v2 = m_Vertices[1];
+			Vertex v3 = m_Vertices[2];
 
             // Todo: Here we should add some x1-x2 > 0 logic to choose one of these, instead of trying
-            Vertex c = calculateCircumcenterT(v1, v2, v3);
-
-            if (c.isNan())
-                c = calculateCircumcenterT(v2, v3, v1);
-
-            if (c.isNan())
-                c = calculateCircumcenterT(v3, v1, v2);
-
+            Vertex c = CalculateCircumcenterT(v1, v2, v3);
+			if (c.isNan())
+			{
+				c = CalculateCircumcenterT (v2, v3, v1);
+				if (c.isNan())
+				{
+					c = CalculateCircumcenterT (v3, v1, v2);
+					if (c.isNan())
+					{ Debug.LogError("Circumcenter is NaN!"); }
+				}
+			}
             return c;
         }
 
-        private Vertex calculateCircumcenterT(Vertex a, Vertex b, Vertex c)
+		private Vertex CalculateCircumcenterT(Vertex a_VertexA, Vertex a_VertexB, Vertex a_VertexC)
         {
             // determine midpoints (average of x & y coordinates)
-            Vertex midAB = Utility.Midpoint(a, b);
-            Vertex midBC = Utility.Midpoint(b, c);
+            Vertex midAB = Utility.Midpoint(a_VertexA, a_VertexB);
+            Vertex midBC = Utility.Midpoint(a_VertexB, a_VertexC);
 
             // determine slope
             // we need the negative reciprocal of the slope to get the slope of the perpendicular bisector
-            float slopeAB = -1 / Utility.Slope(a, b);
-            float slopeBC = -1 / Utility.Slope(b, c);
+            float slopeAB = -1 / Utility.Slope(a_VertexA, a_VertexB);
+            float slopeBC = -1 / Utility.Slope(a_VertexB, a_VertexC);
 
             // y = mx + b
             // solve for b
@@ -71,50 +83,38 @@ namespace Voronoi
             // x = (b1 - b2) / (m2 - m1)
             float x = (bAB - bBC) / (slopeBC - slopeAB);
 
-            Vertex circumcenter = new Vertex(
-                x,
-                (slopeAB * x) + bAB
-            );
+            Vertex circumcenter = new Vertex(x, (slopeAB * x) + bAB);
 
             return circumcenter;
         }
 
-        public void setDrawn(bool a_drawn)
+        public bool InsideCircumcenter(Vertex a_Vertex)
         {
-            m_drawn = a_drawn;
+            return (Circumcenter.DeltaSquaredXY(a_Vertex) < CircumcenterRangeSquared);
         }
-
-        public bool InsideCircumcenter(Vertex vertex)
-        {
-            return (Circumcenter.DeltaSquaredXY(vertex) < CircumcenterRangeSquared);
-        }
-
-        private Vertex circumcenter;
-        private bool calculatedCircumcenter = false;
+			
         public Vertex Circumcenter
         {
             get
             {
-                if (calculatedCircumcenter)
-                    return circumcenter;
+				if (m_CalculatedCircumcenter)
+				{ return m_Circumcenter; }
 
-                circumcenter = calculateCircumcenter();
-                calculatedCircumcenter = true;
+                m_Circumcenter = CalculateCircumcenter();
+				m_CalculatedCircumcenter = true;
 
-                return circumcenter;
+                return m_Circumcenter;
             }
         }
-
-        private float circumcenterRangeSquared;
-        private bool calculatedCircumcenterRangeSquared = false;
+			
         public float CircumcenterRangeSquared
         {
             get
             {
-                if (calculatedCircumcenterRangeSquared)
-                    return circumcenterRangeSquared;
+				if (calculatedCircumcenterRangeSquared)
+				{ return circumcenterRangeSquared; }
 
-                circumcenterRangeSquared = vertices[0].DeltaSquaredXY(Circumcenter);
+                circumcenterRangeSquared = m_Vertices[0].DeltaSquaredXY(Circumcenter);
                 calculatedCircumcenterRangeSquared = true;
 
                 return circumcenterRangeSquared;

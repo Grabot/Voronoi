@@ -62,3 +62,17 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+*.csproj
+
+*.dll
+
+Voronoi/Assets/UnityVS/Editor/UnityVS.VersionSpecific.dll.meta
+
+*.sln
+
+*.userprefs
+
+*.sln
+
+Voronoi/Voronoi.sln

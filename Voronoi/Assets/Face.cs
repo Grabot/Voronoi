@@ -1,47 +1,49 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using UnityEngine;
 
 namespace Voronoi
 {
     public class Face
     {
-        protected List<Vertex> vertices = new List<Vertex>();
+		protected List<Vertex> m_Vertices;
+		protected Color m_Color;
+		protected HalfEdge m_HalfEdge;
 
-        public Face(HalfEdge halfEdge)
+		public List<Vertex> Vertices { get { return m_Vertices; } }
+		public HalfEdge HalfEdge { get { return m_HalfEdge; } }
+		public Color Color { get { return m_Color; }}
+
+        public Face(HalfEdge a_HalfEdge)
         {
-            this.HalfEdge = halfEdge;
-            this.Color = Color.red;
+			m_Vertices = new List<Vertex>();
+            m_HalfEdge = a_HalfEdge;
+            m_Color = Color.red;
         }
 
-        public List<Vertex> Vertices
+        public bool Contains(Vertex a_Vertex)
         {
-            get { return vertices; }
+            return m_Vertices.Contains(a_Vertex);
         }
 
-        public HalfEdge HalfEdge { get; private set; }
-
-        public Color Color;
-
-        public bool Contains(Vertex vertex)
+        public bool Inside (Vertex a_Vertex)
         {
-            return vertices.Contains(vertex);
-        }
-
-        public bool inside (Vertex p)
-        {
-            int i, j = vertices.Count - 1;
+            int i, j = m_Vertices.Count - 1;
             bool oddNodes = false;
 
-            for (i = 0; i < vertices.Count; i++)
+            for (i = 0; i < m_Vertices.Count; i++)
             {
-                if ((vertices[i].Y < p.Y && vertices[j].Y >= p.Y
-                || vertices[j].Y < p.Y && vertices[i].Y >= p.Y)
-                && (vertices[i].X <= p.X || vertices[j].X <= p.X))
+                if ((m_Vertices[i].Y < a_Vertex.Y &&
+					m_Vertices[j].Y >= a_Vertex.Y ||
+					m_Vertices[j].Y < a_Vertex.Y &&
+					m_Vertices[i].Y >= a_Vertex.Y)
+                && (m_Vertices[i].X <= a_Vertex.X || m_Vertices[j].X <= a_Vertex.X))
                 {
-                    oddNodes ^= (vertices[i].X + (p.Y - vertices[i].Y) / (vertices[j].Y - vertices[i].Y) * (vertices[j].X - vertices[i].X) < p.X);
+                    oddNodes ^= (m_Vertices[i].X +
+								 (a_Vertex.Y - m_Vertices[i].Y) /
+								 (m_Vertices[j].Y - m_Vertices[i].Y) *
+								 (m_Vertices[j].X - m_Vertices[i].X)
+								) < a_Vertex.X;
                 }
                 j = i;
             }

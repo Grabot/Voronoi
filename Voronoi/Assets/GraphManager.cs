@@ -1,29 +1,28 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
 using System;
 using Voronoi;
 
 public class GraphManager : MonoBehaviour
 {
-    private Delaunay sander;
-    private bool circleOn = false;
-    private bool faceOn = false;
-    private bool edgeson = false;
+	private Delaunay m_Delaunay;
+	private bool m_CircleOn = false;
+	private bool m_FaceOn = false;
+	private bool m_EdgesOn = false;
+	public Vector2[] newUV;
 
     private void Start()
     {
-        sander = new Delaunay();
-        sander.Create();
-
+        m_Delaunay = new Delaunay();
+        m_Delaunay.Create();
     }
 
-    private void drawEdges()
+    private void DrawEdges()
     {
         GL.Begin(GL.LINES);
         // Vertex colors change from red to green
 
-        foreach (HalfEdge halfEdge in sander.HalfEdges)
+        foreach (HalfEdge halfEdge in m_Delaunay.HalfEdges)
         {
             GL.Vertex3(halfEdge.Origin.X, 0, halfEdge.Origin.Y);
             GL.Vertex3(halfEdge.Next.Origin.X, 0, halfEdge.Next.Origin.Y);
@@ -31,60 +30,47 @@ public class GraphManager : MonoBehaviour
         GL.End();
     }
 
-
-    public Vector2[] newUV;
-
-    private void fillFaces()
+    private void FillFaces()
     {
-        GL.Begin(GL.TRIANGLES);
-
-        foreach (Triangle face in sander.Faces)
+        foreach (Triangle face in m_Delaunay.Faces)
         {
+			if (!face.Drawn)
+			{
+				Material player2 = Resources.Load ("AreaPlayer2", typeof(Material)) as Material;
+				if (player2 != null)
+				{
+					GameObject go = new GameObject ();
+					MeshRenderer rend = go.AddComponent<MeshRenderer>();
+					MeshFilter filt = go.AddComponent<MeshFilter>();
+					Mesh mesh = filt.mesh;
+					mesh.vertices = new Vector3[] {
+						new Vector3 (face.HalfEdge.Origin.X, face.HalfEdge.Origin.Y, -1),
+						new Vector3 (face.HalfEdge.Next.Origin.X, face.HalfEdge.Next.Origin.Y, -1),
+						new Vector3 (face.HalfEdge.Prev.Origin.X, face.HalfEdge.Prev.Origin.Y, -1)
+					};
+					mesh.uv = new Vector2[] {
+						new Vector2 (0, 1),
+						new Vector2 (1, 1),
+						new Vector2 (0, 0)
+					};
+					mesh.triangles = new int[] { 2, 1, 0 };
+					face.Drawn = true;
 
-            if (!face.m_drawn)
-            {
-
-                Material noPlayer = Resources.Load("AreaNoPlayer", typeof(Material)) as Material;
-                Material player1 = Resources.Load("AreaPlayer1", typeof(Material)) as Material;
-                Material player2 = Resources.Load("AreaPlayer2", typeof(Material)) as Material;
-
-                var go = new GameObject();
-                var fil = go.AddComponent<MeshFilter>();
-                var rend = go.AddComponent<MeshRenderer>();
-                Mesh mesh = go.GetComponent<MeshFilter>().mesh;
-                mesh.Clear();
-                mesh.vertices = new Vector3[] {
-                    new Vector3(face.HalfEdge.Origin.X, face.HalfEdge.Origin.Y, -1),
-                    new Vector3(face.HalfEdge.Next.Origin.X, face.HalfEdge.Next.Origin.Y, -1),
-                    new Vector3(face.HalfEdge.Prev.Origin.X, face.HalfEdge.Prev.Origin.Y, -1)
-                };
-                mesh.uv = new Vector2[]
-                {
-                    new Vector2( 0, 1 ),
-                    new Vector2(1, 1),
-                    new Vector2(0, 0)
-                };
-
-                mesh.triangles = new int[] { 2, 1, 0 };
-                face.setDrawn(true);
-                
-                rend.material = player2;
-
-            }
-
+					rend.material = player2;
+				}
+				else
+				{
+					Debug.LogError("The AreaPlayer2 material cannot be loaded!");
+				}
+			}
             //GL.Color(face.Color);
             //GL.Vertex3(face.HalfEdge.Origin.X, 0, face.HalfEdge.Origin.Y);
             //GL.Vertex3(face.HalfEdge.Next.Origin.X, 0, face.HalfEdge.Next.Origin.Y);
-            //GL.Vertex3(face.HalfEdge.Prev.Origin.X, 0, face.HalfEdge.Prev.Origin.Y);
-            
+            //GL.Vertex3(face.HalfEdge.Prev.Origin.X, 0, face.HalfEdge.Prev.Origin.Y); 
         }
-
-
-        GL.End();
-
     }
 
-    private void drawCircles()
+    private void DrawCircles()
     {
         float radius = 0;
         GL.Begin(GL.LINES);
@@ -93,7 +79,7 @@ public class GraphManager : MonoBehaviour
 
         //GL.Color(new Color((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
 
-        foreach (Triangle face in sander.Faces)
+        foreach (Triangle face in m_Delaunay.Faces)
         {
             GL.Color(face.Color);
             radius = Convert.ToSingle(Math.Sqrt(face.CircumcenterRangeSquared));
@@ -114,25 +100,20 @@ public class GraphManager : MonoBehaviour
         GL.End();
     }
 
-
     // Testing only
-    public void DrawVoronoi()
+    private void DrawVoronoi()
     {
         GL.Begin(GL.LINES);
-        Console.Out.WriteLine("Start");
-        foreach (HalfEdge halfEdge in sander.HalfEdges)
+        foreach (HalfEdge halfEdge in m_Delaunay.HalfEdges)
         {
             if (halfEdge.Twin == null)
-                continue;
+			{ continue; }
 
-            Triangle f1 = halfEdge.Face as Triangle;
-            Triangle f2 = halfEdge.Twin.Face as Triangle;
+            Triangle t1 = halfEdge.Face as Triangle;
+            Triangle t2 = halfEdge.Twin.Face as Triangle;
 
-            if (f1 is Triangle && f2 is Triangle)
+            if (t1 != null && t2 != null)
             {
-                Triangle t1 = f1 as Triangle;
-                Triangle t2 = f2 as Triangle;
-
                 Vertex v1 = t1.Circumcenter;
                 Vertex v2 = t2.Circumcenter;
 
@@ -143,57 +124,50 @@ public class GraphManager : MonoBehaviour
         GL.End();
     }
 
-
-    public void OnRenderObject()
+    private void OnRenderObject()
     {
-        sander.CreateLineMaterial();
+        m_Delaunay.CreateLineMaterial();
         // Apply the line material
-        sander.lineMaterial.SetPass(0);
+        m_Delaunay.m_LineMaterial.SetPass(0);
 
         GL.PushMatrix();
         // Set transformation matrix for drawing to
         // match our transform
         GL.MultMatrix(transform.localToWorldMatrix);
 
-        if (edgeson)
-        {
-            drawEdges();
-        }
+        if (m_EdgesOn)
+        { DrawEdges(); }
 
-        if (faceOn)
-        {
-            fillFaces();
-        }
+        if (m_FaceOn)
+        { FillFaces(); }
 
-        if (circleOn)
-        {
-            drawCircles();
-        }
+        if (m_CircleOn)
+        { DrawCircles(); }
 
         DrawVoronoi();
 
         GL.PopMatrix();
     }
 
-    void Update()
+    private void Update()
     {
         if (Input.GetKeyDown("c"))
         {
-            circleOn = !circleOn;
+            m_CircleOn = !m_CircleOn;
         }
 
         if (Input.GetKeyDown("f"))
         {
-            faceOn = !faceOn;
+            m_FaceOn = !m_FaceOn;
         }
 
         if (Input.GetKeyDown("e"))
         {
-            edgeson = !edgeson;
+            m_EdgesOn = !m_EdgesOn;
         }
     }
 
-    void OnMouseDown()
+    private void OnMouseDown()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit[] hits = Physics.RaycastAll(ray);
@@ -201,7 +175,7 @@ public class GraphManager : MonoBehaviour
         {
             Vector3 newPos = hits[0].point;
             Vertex me = new Vertex(newPos.x, newPos.y);
-            sander.AddVertex(me);
+            m_Delaunay.AddVertex(me);
 
             GameObject gob = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             gob.transform.position = newPos;

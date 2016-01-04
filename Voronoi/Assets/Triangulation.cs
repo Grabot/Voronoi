@@ -1,41 +1,39 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Voronoi
 {
     public class Triangulation : Graph
     {
-        public bool AddVertex(Vertex vertex)
+        public virtual bool AddVertex(Vertex a_Vertex)
         {
-            Face face = FindFace(vertex);
+            Face face = FindFace(a_Vertex);
 
-            if (face == null)
-                return false;
+			if (face == null)
+			{ return false; }
 
-            AddVertex(face, vertex);
+            AddVertex(face, a_Vertex);
             
             return true;
         }
 
-        protected void AddVertex(Face face, Vertex vertex)
+        protected void AddVertex(Face a_Face, Vertex a_Vertex)
         {
-            vertices.Add(vertex);
+            m_Vertices.Add(a_Vertex);
             
-            base.faces.Remove(face);
+            m_Faces.Remove(a_Face);
 
-            HalfEdge h1 = face.HalfEdge;
+            HalfEdge h1 = a_Face.HalfEdge;
             HalfEdge h2 = h1.Next;
             HalfEdge h3 = h2.Next;
 
             HalfEdge h4 = new HalfEdge(h1.Origin);
             HalfEdge h5 = new HalfEdge(h2.Origin);
             HalfEdge h6 = new HalfEdge(h3.Origin);
-            HalfEdge h7 = new HalfEdge(vertex);
-            HalfEdge h8 = new HalfEdge(vertex);
-            HalfEdge h9 = new HalfEdge(vertex);
-            halfEdges.AddRange(new List<HalfEdge>() { h4, h5, h6, h7, h8, h9 });
+            HalfEdge h7 = new HalfEdge(a_Vertex);
+            HalfEdge h8 = new HalfEdge(a_Vertex);
+            HalfEdge h9 = new HalfEdge(a_Vertex);
+            m_HalfEdges.AddRange(new List<HalfEdge>() { h4, h5, h6, h7, h8, h9 });
 
             h4.Twin = h7;
             h7.Twin = h4;
@@ -66,10 +64,9 @@ namespace Voronoi
             h9.Next = h3;
             h3.Prev = h9;
 
-            faces.Add(new Triangle(h1));
-            faces.Add(new Triangle(h2));
-            faces.Add(new Triangle(h3));
-            
+            m_Faces.Add(new Triangle(h1));
+            m_Faces.Add(new Triangle(h2));
+            m_Faces.Add(new Triangle(h3));
         }
     }
 }
