@@ -9,7 +9,6 @@ public class GraphManager : MonoBehaviour
 	private Delaunay m_Delaunay;
 	private bool m_CircleOn = false;
 	private bool m_EdgesOn = false;
-	private bool m_TriangulationOn = true;
 	private bool m_VoronoiOn = true;
 	private MeshFilter m_MeshFilter;
 	private bool player1Turn = true;
@@ -66,59 +65,17 @@ public class GraphManager : MonoBehaviour
 		for (int i = 0; i < newDescription.vertices.Length; ++i)
 		{
 			Vector3 vertex = newDescription.vertices[i];
-			newUVs[i] = new Vector2(vertex.x % bounds.extents.x, vertex.z % bounds.extents.z);
+			newUVs[i] = new Vector2(vertex.x, vertex.z);
 		}
 
 		mesh.uv = newUVs;
 		mesh.Optimize();
-		/**
-        foreach (Triangle face in m_Delaunay.Faces)
-        {
-			if (!face.Drawn)
-			{
-				Material player2 = Resources.Load ("AreaPlayer2", typeof(Material)) as Material;
-				if (player2 != null)
-				{
-					GameObject go = new GameObject ();
-					MeshRenderer rend = go.AddComponent<MeshRenderer>();
-					MeshFilter filt = go.AddComponent<MeshFilter>();
-					Mesh mesh = filt.mesh;
-					mesh.vertices = new Vector3[] {
-						new Vector3 (face.HalfEdge.Origin.X, face.HalfEdge.Origin.Y, -1),
-						new Vector3 (face.HalfEdge.Next.Origin.X, face.HalfEdge.Next.Origin.Y, -1),
-						new Vector3 (face.HalfEdge.Prev.Origin.X, face.HalfEdge.Prev.Origin.Y, -1)
-					};
-					mesh.uv = new Vector2[] {
-						new Vector2 (0, 1),
-						new Vector2 (1, 1),
-						new Vector2 (0, 0)
-					};
-					mesh.triangles = new int[] { 2, 1, 0 };
-					face.Drawn = true;
-
-					rend.material = player2;
-				}
-				else
-				{
-					Debug.LogError("The AreaPlayer2 material cannot be loaded!");
-				}
-			}
-            //GL.Color(face.Color);
-            //GL.Vertex3(face.HalfEdge.Origin.X, 0, face.HalfEdge.Origin.Y);
-            //GL.Vertex3(face.HalfEdge.Next.Origin.X, 0, face.HalfEdge.Next.Origin.Y);
-            //GL.Vertex3(face.HalfEdge.Prev.Origin.X, 0, face.HalfEdge.Prev.Origin.Y); 
-        }
-        **/
     }
 
     private void DrawCircles()
     {
         float radius = 0;
         GL.Begin(GL.LINES);
-
-        //System.Random rand = new System.Random();
-
-        //GL.Color(new Color((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
 
 		foreach (Triangle triangle in m_Delaunay.Triangles)
         {
@@ -141,7 +98,6 @@ public class GraphManager : MonoBehaviour
         GL.End();
     }
 
-    // Testing only
     private void DrawVoronoi()
     {
         GL.Begin(GL.LINES);
@@ -150,8 +106,8 @@ public class GraphManager : MonoBehaviour
             if (halfEdge.Twin == null)
 			{ continue; }
 
-            Triangle t1 = halfEdge.Triangle as Triangle;
-            Triangle t2 = halfEdge.Twin.Triangle as Triangle;
+            Triangle t1 = halfEdge.Triangle;
+            Triangle t2 = halfEdge.Twin.Triangle;
 
             if (t1 != null && t2 != null)
             {
@@ -326,11 +282,6 @@ public class GraphManager : MonoBehaviour
             m_EdgesOn = !m_EdgesOn;
         }
 
-		if (Input.GetKeyDown("t"))
-		{
-			m_TriangulationOn = !m_TriangulationOn;
-		}
-
 		if (Input.GetKeyDown("v"))
 		{
 			m_VoronoiOn = !m_VoronoiOn;
@@ -348,8 +299,7 @@ public class GraphManager : MonoBehaviour
 			player1Turn = !player1Turn;
 			m_Delaunay.AddVertex(me);
 
-			if (m_TriangulationOn)
-			{ UpdateVoronoiMesh(); }
+			UpdateVoronoiMesh();
 		}
     }
 }

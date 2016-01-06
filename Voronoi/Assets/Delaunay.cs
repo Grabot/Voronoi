@@ -1,4 +1,5 @@
 ﻿using System;
+using UnityEngine;
 
 namespace Voronoi
 {
@@ -30,6 +31,7 @@ namespace Voronoi
         {
 			if (a_Vertex == null || a_HalfEdge == null || a_Triangle == null)
 			{
+				Debug.LogError("Invalid call to LegalizeEdge");
 				return;
 			}
 
@@ -43,11 +45,13 @@ namespace Voronoi
 			}
 			catch (NullReferenceException)
 			{
+				Debug.LogError("Null pointers in call to LegalizeEdge");
 				return;
 			}
 
 			if (v1 == null || v2 == null || v3 == null)
 			{
+				Debug.LogError("Invalid halfedge in call to LegalizeEdge");
 				return;
 			}
             
