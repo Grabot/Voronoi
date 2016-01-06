@@ -6,32 +6,50 @@ namespace Voronoi
     {
         public override bool AddVertex(Vertex a_Vertex)
         {
-            Triangle face = FindFace(a_Vertex) as Triangle;
+			Triangle triangle = FindTriangle(a_Vertex);
 
-			if (face == null)
+			if (triangle == null)
 			{ return false; }
 
-            AddVertex(face, a_Vertex);
+            AddVertex(triangle, a_Vertex);
 
             // Find halfedges of triangle
-            HalfEdge h1 = face.HalfEdge;
-            HalfEdge h2 = face.HalfEdge.Next.Twin.Next;
-            HalfEdge h3 = face.HalfEdge.Next.Twin.Next.Next.Twin.Next;
+            HalfEdge h1 = triangle.HalfEdge;
+            HalfEdge h2 = triangle.HalfEdge.Next.Twin.Next;
+            HalfEdge h3 = triangle.HalfEdge.Next.Twin.Next.Next.Twin.Next;
 
             // Flip if needed
-			LegalizeEdge(a_Vertex, h1, (Triangle)h1.Face);
-			LegalizeEdge(a_Vertex, h2, (Triangle)h2.Face);
-			LegalizeEdge(a_Vertex, h3, (Triangle)h3.Face);
+			LegalizeEdge(a_Vertex, h1, h1.Triangle);
+			LegalizeEdge(a_Vertex, h2, h2.Triangle);
+			LegalizeEdge(a_Vertex, h3, h3.Triangle);
 
             return true;
         }
 
 		private void LegalizeEdge(Vertex a_Vertex, HalfEdge a_HalfEdge, Triangle a_Triangle)
         {
-            // Points to test
-            Vertex v1 = a_HalfEdge.Twin.Next.Next.Origin;
-            Vertex v2 = a_HalfEdge.Next.Twin.Next.Next.Origin;
-            Vertex v3 = a_HalfEdge.Next.Next.Twin.Next.Next.Origin;
+			if (a_Vertex == null || a_HalfEdge == null || a_Triangle == null)
+			{
+				return;
+			}
+
+			Vertex v1, v2, v3;
+			try
+			{
+	            // Points to test
+	            v1 = a_HalfEdge.Twin.Next.Next.Origin;
+	            v2 = a_HalfEdge.Next.Twin.Next.Next.Origin;
+	            v3 = a_HalfEdge.Next.Next.Twin.Next.Next.Origin;
+			}
+			catch (NullReferenceException)
+			{
+				return;
+			}
+
+			if (v1 == null || v2 == null || v3 == null)
+			{
+				return;
+			}
             
             if (a_Triangle.InsideCircumcenter(v1) || a_Triangle.InsideCircumcenter(v2) || a_Triangle.InsideCircumcenter(v3))
             {
@@ -40,8 +58,8 @@ namespace Voronoi
 
                 Flip(a_HalfEdge);
 
-				LegalizeEdge(a_Vertex, h1.Twin, (Triangle)h1.Twin.Face);
-				LegalizeEdge(a_Vertex, h2.Twin, (Triangle)h2.Twin.Face);
+				LegalizeEdge(a_Vertex, h1.Twin, (Triangle)h1.Twin.Triangle);
+				LegalizeEdge(a_Vertex, h2.Twin, (Triangle)h2.Twin.Triangle);
             }
         }
         
@@ -54,12 +72,12 @@ namespace Voronoi
             HalfEdge h5 = h4.Next;
             HalfEdge h6 = h5.Next;
 
-			if (h1.Face == null || h4.Face == null)
+			if (h1.Triangle == null || h4.Triangle == null)
 			{ return; }
             
-            // Remove old faces
-            m_Faces.Remove(a_HalfEdge.Face);
-            m_Faces.Remove(a_HalfEdge.Twin.Face);
+            // Remove old triangles
+            m_Triangles.Remove(a_HalfEdge.Triangle);
+            m_Triangles.Remove(a_HalfEdge.Twin.Triangle);
 
             h1.Next = h6;
             h6.Prev = h1;
@@ -77,8 +95,8 @@ namespace Voronoi
             h4.Prev = h5;
             h4.Origin = h6.Origin;
 
-            m_Faces.Add(new Triangle(h1));
-            m_Faces.Add(new Triangle(h1.Twin));
+            m_Triangles.Add(new Triangle(h1));
+            m_Triangles.Add(new Triangle(h1.Twin));
         }
     }
 }

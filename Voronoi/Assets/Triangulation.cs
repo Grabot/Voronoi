@@ -7,23 +7,23 @@ namespace Voronoi
     {
         public virtual bool AddVertex(Vertex a_Vertex)
         {
-            Face face = FindFace(a_Vertex);
+			Triangle triangle = FindTriangle(a_Vertex);
 
-			if (face == null)
+			if (triangle == null)
 			{ return false; }
 
-            AddVertex(face, a_Vertex);
+            AddVertex(triangle, a_Vertex);
             
             return true;
         }
 
-        protected void AddVertex(Face a_Face, Vertex a_Vertex)
+		protected void AddVertex(Triangle a_Triangle, Vertex a_Vertex)
         {
             m_Vertices.Add(a_Vertex);
             
-            m_Faces.Remove(a_Face);
+            m_Triangles.Remove(a_Triangle);
 
-            HalfEdge h1 = a_Face.HalfEdge;
+            HalfEdge h1 = a_Triangle.HalfEdge;
             HalfEdge h2 = h1.Next;
             HalfEdge h3 = h2.Next;
 
@@ -64,9 +64,9 @@ namespace Voronoi
             h9.Next = h3;
             h3.Prev = h9;
 
-            m_Faces.Add(new Triangle(h1));
-            m_Faces.Add(new Triangle(h2));
-            m_Faces.Add(new Triangle(h3));
+            m_Triangles.Add(new Triangle(h1));
+            m_Triangles.Add(new Triangle(h2));
+            m_Triangles.Add(new Triangle(h3));
         }
     }
 }

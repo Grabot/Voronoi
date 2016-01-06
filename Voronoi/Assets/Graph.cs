@@ -6,12 +6,12 @@ namespace Voronoi
 {
     public class Graph
     {
-        protected List<Face> m_Faces = new List<Face>();
+        protected List<Triangle> m_Triangles = new List<Triangle>();
         protected List<Vertex> m_Vertices = new List<Vertex>();
         protected List<HalfEdge> m_HalfEdges = new List<HalfEdge>();
 		public Material m_LineMaterial;
 
-        public List<Face> Faces { get { return m_Faces; } }
+		public List<Triangle> Triangles { get { return m_Triangles; } }
         public List<Vertex> Vertices { get { return m_Vertices; } }
         public List<HalfEdge> HalfEdges { get { return m_HalfEdges; } }
 
@@ -95,17 +95,17 @@ namespace Voronoi
             h10.Twin = h5;
             h5.Twin = h10;
 
-            m_Faces.Add(new Triangle(h1));
-            m_Faces.Add(new Triangle(h4));
+            m_Triangles.Add(new Triangle(h1));
+            m_Triangles.Add(new Triangle(h4));
         }
 
-        protected Face FindFace(Vertex a_Vertex)
+		protected Triangle FindTriangle(Vertex a_Vertex)
         {
-            foreach (Face face in m_Faces)
+			foreach (Triangle triangle in m_Triangles)
             {
-                if (face.Inside(a_Vertex))
+                if (triangle.Inside(a_Vertex))
                 {
-                    return face;
+                    return triangle;
                 }
             }
             return null;

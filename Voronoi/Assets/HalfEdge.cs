@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace Voronoi
 {
     public class HalfEdge
     {
 		private Vertex m_Origin;
-		public Face Face;
+		public Triangle Triangle;
 		public HalfEdge Twin;
 		public HalfEdge Next;
 		public HalfEdge Prev;
@@ -14,7 +13,7 @@ namespace Voronoi
         public HalfEdge(Vertex a_Vertex)
         {
             m_Origin = new Vertex(a_Vertex.X, a_Vertex.Y);
-			Face = null;
+			Triangle = null;
             Twin = null;
             Next = null;
             Prev = null;

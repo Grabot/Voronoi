@@ -9,7 +9,9 @@ public class GraphManager : MonoBehaviour
 	private bool m_CircleOn = false;
 	private bool m_FaceOn = false;
 	private bool m_EdgesOn = false;
-	public Vector2[] newUV;
+	private bool m_TriangulationOn = false;
+	private bool m_VoronoiOn = true;
+	private GameObject m_VoronoiRendererObject;
 
     private void Start()
     {
@@ -32,6 +34,43 @@ public class GraphManager : MonoBehaviour
 
     private void FillFaces()
     {
+		if (m_VoronoiRendererObject == null)
+		{
+			m_VoronoiRendererObject = new GameObject("VoronoiRenderer");
+			m_VoronoiRendererObject.AddComponent<MeshRenderer>();
+			MeshFilter filter = m_VoronoiRendererObject.AddComponent<MeshFilter>();
+			Mesh mesh = filter.mesh;
+			mesh.Clear();
+			mesh.MarkDynamic();
+			List<int> triangles = new List<int>();
+			List<Vector3> vertices = new List<Vector3>();
+			//List<Vector2> UVs = new List<Vector2>();
+			int counter = 0;
+			foreach (Triangle triangle in m_Delaunay.Triangles)
+			{
+				vertices.Add (new Vector3 (triangle.HalfEdge.Origin.X, triangle.HalfEdge.Origin.Y, -1));
+				vertices.Add (new Vector3 (triangle.HalfEdge.Next.Origin.X, triangle.HalfEdge.Next.Origin.Y, -1));
+				vertices.Add (new Vector3 (triangle.HalfEdge.Prev.Origin.X, triangle.HalfEdge.Prev.Origin.Y, -1));
+
+				//UVs.Add (new Vector2 (0, 1));
+				//UVs.Add (new Vector2 (1, 1));
+				//UVs.Add (new Vector2 (0, 0));
+
+				triangles.Add(counter + 2);
+				triangles.Add(counter + 1);
+				triangles.Add(counter);
+
+				counter += 3;
+				triangle.Drawn = true;
+			}
+			mesh.vertices = vertices.ToArray();
+			//mesh.uv = UVs.ToArray();
+			mesh.triangles = triangles.ToArray();
+			mesh.RecalculateBounds();
+			mesh.RecalculateNormals();
+			mesh.Optimize();
+		}
+		/**
         foreach (Triangle face in m_Delaunay.Faces)
         {
 			if (!face.Drawn)
@@ -68,6 +107,7 @@ public class GraphManager : MonoBehaviour
             //GL.Vertex3(face.HalfEdge.Next.Origin.X, 0, face.HalfEdge.Next.Origin.Y);
             //GL.Vertex3(face.HalfEdge.Prev.Origin.X, 0, face.HalfEdge.Prev.Origin.Y); 
         }
+        **/
     }
 
     private void DrawCircles()
@@ -79,22 +119,22 @@ public class GraphManager : MonoBehaviour
 
         //GL.Color(new Color((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
 
-        foreach (Triangle face in m_Delaunay.Faces)
+		foreach (Triangle triangle in m_Delaunay.Triangles)
         {
-            GL.Color(face.Color);
-            radius = Convert.ToSingle(Math.Sqrt(face.CircumcenterRangeSquared));
+            GL.Color(triangle.Color);
+            radius = Convert.ToSingle(Math.Sqrt(triangle.CircumcenterRangeSquared));
             float heading = 0;
             float extra = (360 / 100);
             for (int a = 0; a < (360 + extra); a += 360 / 100)
             {
                 //the circle.
-                GL.Vertex3((Mathf.Cos(heading) * radius) + face.Circumcenter.X, 0, (Mathf.Sin(heading) * radius) + face.Circumcenter.Y);
+                GL.Vertex3((Mathf.Cos(heading) * radius) + triangle.Circumcenter.X, 0, (Mathf.Sin(heading) * radius) + triangle.Circumcenter.Y);
                 heading = a * Mathf.PI / 180;
-                GL.Vertex3((Mathf.Cos(heading) * radius) + face.Circumcenter.X, 0, (Mathf.Sin(heading) * radius) + face.Circumcenter.Y);
+                GL.Vertex3((Mathf.Cos(heading) * radius) + triangle.Circumcenter.X, 0, (Mathf.Sin(heading) * radius) + triangle.Circumcenter.Y);
 
                 //midpoint of the circle.
-                GL.Vertex3((Mathf.Cos(heading) * 0.1f) + face.Circumcenter.X, 0, (Mathf.Sin(heading) * 0.1f) + face.Circumcenter.Y);
-                GL.Vertex3((Mathf.Cos(heading) * 0.2f) + face.Circumcenter.X, 0, (Mathf.Sin(heading) * 0.2f) + face.Circumcenter.Y);
+                GL.Vertex3((Mathf.Cos(heading) * 0.1f) + triangle.Circumcenter.X, 0, (Mathf.Sin(heading) * 0.1f) + triangle.Circumcenter.Y);
+                GL.Vertex3((Mathf.Cos(heading) * 0.2f) + triangle.Circumcenter.X, 0, (Mathf.Sin(heading) * 0.2f) + triangle.Circumcenter.Y);
             }
         }
         GL.End();
@@ -109,8 +149,8 @@ public class GraphManager : MonoBehaviour
             if (halfEdge.Twin == null)
 			{ continue; }
 
-            Triangle t1 = halfEdge.Face as Triangle;
-            Triangle t2 = halfEdge.Twin.Face as Triangle;
+            Triangle t1 = halfEdge.Triangle as Triangle;
+            Triangle t2 = halfEdge.Twin.Triangle as Triangle;
 
             if (t1 != null && t2 != null)
             {
@@ -123,6 +163,61 @@ public class GraphManager : MonoBehaviour
         }
         GL.End();
     }
+
+	private void TriangulateVoronoi()
+	{
+		Dictionary<Vertex, List<Vertex>> edges = new Dictionary<Vertex, List<Vertex>> ();
+		foreach (HalfEdge halfEdge in m_Delaunay.HalfEdges)
+		{
+			if (halfEdge.Twin == null)
+			{ continue; }
+
+			Triangle t1 = halfEdge.Triangle as Triangle;
+			Triangle t2 = halfEdge.Twin.Triangle as Triangle;
+
+			if (t1 != null && t2 != null)
+			{
+				Vertex voronoiVertex = t1.Circumcenter;
+				foreach (Vertex inputVertex in t1.Vertices)
+				{
+					List<Vertex> existingValue;
+					if (edges.TryGetValue(inputVertex, out existingValue))
+					{
+						existingValue.Add(voronoiVertex);
+					}
+					else
+					{
+						edges.Add(inputVertex, new List<Vertex>{voronoiVertex});
+					}
+				}
+				// Yes, yes, code duplication is bad.
+				voronoiVertex = t2.Circumcenter;
+				foreach (Vertex inputVertex in t2.Vertices)
+				{
+					List<Vertex> existingValue;
+					if (edges.TryGetValue(inputVertex, out existingValue))
+					{
+						existingValue.Add(voronoiVertex);
+					}
+					else
+					{
+						edges.Add(inputVertex, new List<Vertex>{voronoiVertex});
+					}
+				}
+			}
+		}
+		GL.Begin(GL.LINES);
+		foreach (Vertex key in edges.Keys)
+		{
+			List<Vertex> vertices = edges[key];
+			foreach (Vertex item in vertices)
+			{
+				GL.Vertex3(key.X, 0, key.Y);
+				GL.Vertex3(item.X, 0, item.Y);
+			}
+		}
+		GL.End();
+	}
 
     private void OnRenderObject()
     {
@@ -144,7 +239,11 @@ public class GraphManager : MonoBehaviour
         if (m_CircleOn)
         { DrawCircles(); }
 
-        DrawVoronoi();
+		if (m_VoronoiOn)
+		{ DrawVoronoi(); }
+
+		if (m_TriangulationOn)
+		{ TriangulateVoronoi(); }
 
         GL.PopMatrix();
     }
@@ -165,6 +264,16 @@ public class GraphManager : MonoBehaviour
         {
             m_EdgesOn = !m_EdgesOn;
         }
+
+		if (Input.GetKeyDown("t"))
+		{
+			m_TriangulationOn = !m_TriangulationOn;
+		}
+
+		if (Input.GetKeyDown("v"))
+		{
+			m_VoronoiOn = !m_VoronoiOn;
+		}
     }
 
     private void OnMouseDown()
