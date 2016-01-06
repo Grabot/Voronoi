@@ -58,8 +58,8 @@ namespace Voronoi
 
                 Flip(a_HalfEdge);
 
-				LegalizeEdge(a_Vertex, h1.Twin, (Triangle)h1.Twin.Triangle);
-				LegalizeEdge(a_Vertex, h2.Twin, (Triangle)h2.Twin.Triangle);
+				LegalizeEdge(a_Vertex, h1.Twin, h1.Twin.Triangle);
+				LegalizeEdge(a_Vertex, h2.Twin, h2.Twin.Triangle);
             }
         }
         

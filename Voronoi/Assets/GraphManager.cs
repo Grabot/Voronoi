@@ -38,17 +38,19 @@ public class GraphManager : MonoBehaviour
 		{
 			GameObject rendererObject = new GameObject("VoronoiRenderer");
 			rendererObject.transform.eulerAngles = new Vector3(270, 0, 0);
-			rendererObject.AddComponent<MeshRenderer>();
+			MeshRenderer meshRenderer = rendererObject.AddComponent<MeshRenderer>();
+			meshRenderer.materials = new Material[2];
 			m_MeshFilter = rendererObject.AddComponent<MeshFilter>();
 		}
 		Mesh mesh = m_MeshFilter.mesh;
 		if (mesh == null)
 		{ mesh = new Mesh(); }
+		mesh.subMeshCount = 2;
 		mesh.MarkDynamic();
 		mesh.vertices = newDescription.vertices;
-		mesh.triangles = newDescription.triangles;
+		mesh.SetTriangles(newDescription.triangles[0], 0);
+		mesh.SetTriangles(newDescription.triangles[1], 1);
 		mesh.Optimize();
-
 		/**
         foreach (Triangle face in m_Delaunay.Faces)
         {
@@ -152,14 +154,19 @@ public class GraphManager : MonoBehaviour
 			ProcessHalfEdge(halfEdge, voronoiEdges, internalEdges);
 		}
 		List<Vector3> vertices = new List<Vector3>();
-		List<int> triangles = new List<int>();
+		List<int>[] triangleLists = new List<int>[2];
+		triangleLists[0] = new List<int>();
+		triangleLists[1] = new List<int>();
 		foreach (Vertex inputNode in internalEdges.Keys)
 		{
+			bool unowned = inputNode.Ownership == Vertex.EOwnership.UNOWNED;
+			int playerIndex = inputNode.Ownership == Vertex.EOwnership.PLAYER1 ? 0 : -1;
+			playerIndex = inputNode.Ownership == Vertex.EOwnership.PLAYER2 ? 1 : playerIndex;
 			HashSet<Vertex> voronoiNodes = internalEdges[inputNode];
 			foreach (Vertex voronoiNode in voronoiNodes)
 			{
-				HashSet<Vertex> adjacentVoronoiNodes = voronoiEdges [voronoiNode];
-				HashSet<Vertex> intersection = new HashSet<Vertex> (adjacentVoronoiNodes, adjacentVoronoiNodes.Comparer);
+				HashSet<Vertex> adjacentVoronoiNodes = voronoiEdges[voronoiNode];
+				HashSet<Vertex> intersection = new HashSet<Vertex>(adjacentVoronoiNodes, adjacentVoronoiNodes.Comparer);
 				intersection.IntersectWith (voronoiNodes);
 				foreach (Vertex adjacent in intersection)
 				{
@@ -167,14 +174,28 @@ public class GraphManager : MonoBehaviour
 					vertices.Add(new Vector3(inputNode.X, 0, inputNode.Y));
 					vertices.Add(new Vector3(voronoiNode.X, 0, voronoiNode.Y));
 					vertices.Add(new Vector3(adjacent.X, 0, adjacent.Y));
-					triangles.Add(curCount);
-					triangles.Add(curCount + 1);
-					triangles.Add(curCount + 2);
+					if (unowned)
+					{
+						triangleLists [0].Add (curCount);
+						triangleLists [0].Add (curCount + 1);
+						triangleLists [0].Add (curCount + 2);
+						triangleLists [1].Add (curCount);
+						triangleLists [1].Add (curCount + 1);
+						triangleLists [1].Add (curCount + 2);
+					}
+					else
+					{
+						triangleLists [playerIndex].Add (curCount);
+						triangleLists [playerIndex].Add (curCount + 1);
+						triangleLists [playerIndex].Add (curCount + 2);
+					}
 				}
 			}
 		}
 		MeshDescription description = new MeshDescription();
-		description.triangles = triangles.ToArray();
+		description.triangles = new int[2][];
+		description.triangles[0] = triangleLists[0].ToArray();
+		description.triangles[1] = triangleLists[1].ToArray();
 		description.vertices = vertices.ToArray();
 		return description;
 
@@ -203,7 +224,7 @@ public class GraphManager : MonoBehaviour
 	private class MeshDescription
 	{
 		public Vector3[] vertices;
-		public int[] triangles;
+		public int[][] triangles;
 	}
 
 	private void ProcessHalfEdge(HalfEdge h1, Dictionary<Vertex, HashSet<Vertex>> voronoiEdges, Dictionary<Vertex, HashSet<Vertex>> internalEdges)
@@ -299,6 +320,7 @@ public class GraphManager : MonoBehaviour
 		}
     }
 
+	private bool player1Turn = true;
     private void OnMouseDown()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -306,8 +328,13 @@ public class GraphManager : MonoBehaviour
         if (hits.Length > 0)
         {
             Vector3 newPos = hits[0].point;
-            Vertex me = new Vertex(newPos.x, newPos.y);
-            m_Delaunay.AddVertex(me);
+			Vertex me;
+			if (player1Turn)
+			{ me = new Vertex(newPos.x, newPos.y, Vertex.EOwnership.PLAYER1); }
+			else
+			{ me = new Vertex(newPos.x, newPos.y, Vertex.EOwnership.PLAYER2); }
+			player1Turn = !player1Turn;
+			m_Delaunay.AddVertex(me);
 
             GameObject gob = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             gob.transform.position = newPos;

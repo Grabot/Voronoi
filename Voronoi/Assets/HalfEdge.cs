@@ -12,7 +12,8 @@ namespace Voronoi
 
         public HalfEdge(Vertex a_Vertex)
         {
-            m_Origin = new Vertex(a_Vertex.X, a_Vertex.Y);
+			// Using new here prevents reference equality. Is it really necessary to copy?
+			m_Origin = new Vertex(a_Vertex.X, a_Vertex.Y, a_Vertex.Ownership);
 			Triangle = null;
             Twin = null;
             Next = null;
@@ -22,7 +23,8 @@ namespace Voronoi
         public Vertex Origin
         {
             get { return m_Origin; }
-            set { m_Origin = new Vertex(value.X, value.Y); }
+			// Using new here prevents reference equality. Is it really necessary to copy?
+			set { m_Origin = new Vertex(value.X, value.Y, value.Ownership); }
         }
     }
 
