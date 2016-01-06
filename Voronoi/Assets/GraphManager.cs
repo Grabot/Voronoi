@@ -11,6 +11,7 @@ public class GraphManager : MonoBehaviour
 	private bool m_TriangulationOn = false;
 	private bool m_VoronoiOn = true;
 	private MeshFilter m_MeshFilter;
+	public Material[] m_Materials;
 
     private void Start()
     {
@@ -34,12 +35,16 @@ public class GraphManager : MonoBehaviour
     private void UpdateVoronoiMesh()
     {
 		MeshDescription newDescription = TriangulateVoronoi();
+
 		if (m_MeshFilter == null)
 		{
 			GameObject rendererObject = new GameObject("VoronoiRenderer");
 			rendererObject.transform.eulerAngles = new Vector3(270, 0, 0);
 			MeshRenderer meshRenderer = rendererObject.AddComponent<MeshRenderer>();
-			meshRenderer.materials = new Material[2];
+			Material[] newMaterials = new Material[2];
+			newMaterials[0] = m_Materials[0];
+			newMaterials[1] = m_Materials[1];
+			meshRenderer.materials = newMaterials;
 			m_MeshFilter = rendererObject.AddComponent<MeshFilter>();
 		}
 		Mesh mesh = m_MeshFilter.mesh;
@@ -50,6 +55,19 @@ public class GraphManager : MonoBehaviour
 		mesh.vertices = newDescription.vertices;
 		mesh.SetTriangles(newDescription.triangles[0], 0);
 		mesh.SetTriangles(newDescription.triangles[1], 1);
+		mesh.RecalculateBounds();
+
+		Bounds bounds = mesh.bounds;
+		float width = (bounds.max - bounds.min).x;
+		float height = (bounds.max - bounds.min).z;
+		Vector2[] newUVs = new Vector2[newDescription.vertices.Length];
+		for (int i = 0; i < newDescription.vertices.Length; ++i)
+		{
+			Vector3 vertex = newDescription.vertices[i];
+			newUVs[i] = new Vector2 ((vertex.x - bounds.min.x)/width, (vertex.z - bounds.min.z)/height);
+		}
+
+		mesh.uv = newUVs;
 		mesh.Optimize();
 		/**
         foreach (Triangle face in m_Delaunay.Faces)
