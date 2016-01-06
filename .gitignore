@@ -79,4 +79,6 @@ Voronoi/Voronoi.sln
 
 Voronoi.app
 
+Voronoi/VoronoiWebGL/
+
 *.swp
