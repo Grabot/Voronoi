@@ -76,3 +76,7 @@ Voronoi/Assets/UnityVS/Editor/UnityVS.VersionSpecific.dll.meta
 *.sln
 
 Voronoi/Voronoi.sln
+
+Voronoi.app
+
+*.swp

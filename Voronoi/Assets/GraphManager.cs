@@ -5,13 +5,14 @@ using Voronoi;
 
 public class GraphManager : MonoBehaviour
 {
+	public Material[] m_Materials;
 	private Delaunay m_Delaunay;
 	private bool m_CircleOn = false;
 	private bool m_EdgesOn = false;
-	private bool m_TriangulationOn = false;
+	private bool m_TriangulationOn = true;
 	private bool m_VoronoiOn = true;
 	private MeshFilter m_MeshFilter;
-	public Material[] m_Materials;
+	private bool player1Turn = true;
 
     private void Start()
     {
@@ -39,6 +40,7 @@ public class GraphManager : MonoBehaviour
 		if (m_MeshFilter == null)
 		{
 			GameObject rendererObject = new GameObject("VoronoiRenderer");
+			rendererObject.isStatic = true;
 			rendererObject.transform.eulerAngles = new Vector3(270, 0, 0);
 			MeshRenderer meshRenderer = rendererObject.AddComponent<MeshRenderer>();
 			Material[] newMaterials = new Material[2];
@@ -58,13 +60,13 @@ public class GraphManager : MonoBehaviour
 		mesh.RecalculateBounds();
 
 		Bounds bounds = mesh.bounds;
-		float width = (bounds.max - bounds.min).x;
-		float height = (bounds.max - bounds.min).z;
+		//float width = (bounds.max - bounds.min).x;
+		//float height = (bounds.max - bounds.min).z;
 		Vector2[] newUVs = new Vector2[newDescription.vertices.Length];
 		for (int i = 0; i < newDescription.vertices.Length; ++i)
 		{
 			Vector3 vertex = newDescription.vertices[i];
-			newUVs[i] = new Vector2 ((vertex.x - bounds.min.x)/width, (vertex.z - bounds.min.z)/height);
+			newUVs[i] = new Vector2(vertex.x % bounds.extents.x, vertex.z % bounds.extents.z);
 		}
 
 		mesh.uv = newUVs;
@@ -303,9 +305,6 @@ public class GraphManager : MonoBehaviour
         if (m_EdgesOn)
         { DrawEdges(); }
 
-		if (m_TriangulationOn)
-        { UpdateVoronoiMesh(); }
-
         if (m_CircleOn)
         { DrawCircles(); }
 
@@ -336,27 +335,21 @@ public class GraphManager : MonoBehaviour
 		{
 			m_VoronoiOn = !m_VoronoiOn;
 		}
-    }
 
-	private bool player1Turn = true;
-    private void OnMouseDown()
-    {
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        RaycastHit[] hits = Physics.RaycastAll(ray);
-        if (hits.Length > 0)
-        {
-            Vector3 newPos = hits[0].point;
+		if (Input.GetMouseButtonDown(0))
+		{
+			Vector3 pos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+			pos.z = 0;
 			Vertex me;
 			if (player1Turn)
-			{ me = new Vertex(newPos.x, newPos.y, Vertex.EOwnership.PLAYER1); }
+			{ me = new Vertex(pos.x, pos.y, Vertex.EOwnership.PLAYER1); }
 			else
-			{ me = new Vertex(newPos.x, newPos.y, Vertex.EOwnership.PLAYER2); }
+			{ me = new Vertex(pos.x, pos.y, Vertex.EOwnership.PLAYER2); }
 			player1Turn = !player1Turn;
 			m_Delaunay.AddVertex(me);
 
-            GameObject gob = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            gob.transform.position = newPos;
-            gob.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-        }
+			if (m_TriangulationOn)
+			{ UpdateVoronoiMesh(); }
+		}
     }
 }
