@@ -7,11 +7,10 @@ public class GraphManager : MonoBehaviour
 {
 	private Delaunay m_Delaunay;
 	private bool m_CircleOn = false;
-	private bool m_FaceOn = false;
 	private bool m_EdgesOn = false;
 	private bool m_TriangulationOn = false;
 	private bool m_VoronoiOn = true;
-	private GameObject m_VoronoiRendererObject;
+	private MeshFilter m_MeshFilter;
 
     private void Start()
     {
@@ -32,44 +31,24 @@ public class GraphManager : MonoBehaviour
         GL.End();
     }
 
-    private void FillFaces()
+    private void UpdateVoronoiMesh()
     {
-		if (m_VoronoiRendererObject == null)
+		MeshDescription newDescription = TriangulateVoronoi();
+		if (m_MeshFilter == null)
 		{
-			m_VoronoiRendererObject = new GameObject("VoronoiRenderer");
-			m_VoronoiRendererObject.AddComponent<MeshRenderer>();
-			MeshFilter filter = m_VoronoiRendererObject.AddComponent<MeshFilter>();
-			Mesh mesh = filter.mesh;
-			mesh.Clear();
-			mesh.MarkDynamic();
-			List<int> triangles = new List<int>();
-			List<Vector3> vertices = new List<Vector3>();
-			//List<Vector2> UVs = new List<Vector2>();
-			int counter = 0;
-			foreach (Triangle triangle in m_Delaunay.Triangles)
-			{
-				vertices.Add (new Vector3 (triangle.HalfEdge.Origin.X, triangle.HalfEdge.Origin.Y, -1));
-				vertices.Add (new Vector3 (triangle.HalfEdge.Next.Origin.X, triangle.HalfEdge.Next.Origin.Y, -1));
-				vertices.Add (new Vector3 (triangle.HalfEdge.Prev.Origin.X, triangle.HalfEdge.Prev.Origin.Y, -1));
-
-				//UVs.Add (new Vector2 (0, 1));
-				//UVs.Add (new Vector2 (1, 1));
-				//UVs.Add (new Vector2 (0, 0));
-
-				triangles.Add(counter + 2);
-				triangles.Add(counter + 1);
-				triangles.Add(counter);
-
-				counter += 3;
-				triangle.Drawn = true;
-			}
-			mesh.vertices = vertices.ToArray();
-			//mesh.uv = UVs.ToArray();
-			mesh.triangles = triangles.ToArray();
-			mesh.RecalculateBounds();
-			mesh.RecalculateNormals();
-			mesh.Optimize();
+			GameObject rendererObject = new GameObject("VoronoiRenderer");
+			rendererObject.transform.eulerAngles = new Vector3(270, 0, 0);
+			rendererObject.AddComponent<MeshRenderer>();
+			m_MeshFilter = rendererObject.AddComponent<MeshFilter>();
 		}
+		Mesh mesh = m_MeshFilter.mesh;
+		if (mesh == null)
+		{ mesh = new Mesh(); }
+		mesh.MarkDynamic();
+		mesh.vertices = newDescription.vertices;
+		mesh.triangles = newDescription.triangles;
+		mesh.Optimize();
+
 		/**
         foreach (Triangle face in m_Delaunay.Faces)
         {
@@ -164,59 +143,111 @@ public class GraphManager : MonoBehaviour
         GL.End();
     }
 
-	private void TriangulateVoronoi()
+	private MeshDescription TriangulateVoronoi()
 	{
-		Dictionary<Vertex, List<Vertex>> edges = new Dictionary<Vertex, List<Vertex>> ();
+		Dictionary<Vertex, HashSet<Vertex>> internalEdges = new Dictionary<Vertex, HashSet<Vertex>>();
+		Dictionary<Vertex, HashSet<Vertex>> voronoiEdges = new Dictionary<Vertex, HashSet<Vertex>>();
 		foreach (HalfEdge halfEdge in m_Delaunay.HalfEdges)
 		{
-			if (halfEdge.Twin == null)
-			{ continue; }
-
-			Triangle t1 = halfEdge.Triangle as Triangle;
-			Triangle t2 = halfEdge.Twin.Triangle as Triangle;
-
-			if (t1 != null && t2 != null)
+			ProcessHalfEdge(halfEdge, voronoiEdges, internalEdges);
+		}
+		List<Vector3> vertices = new List<Vector3>();
+		List<int> triangles = new List<int>();
+		foreach (Vertex inputNode in internalEdges.Keys)
+		{
+			HashSet<Vertex> voronoiNodes = internalEdges[inputNode];
+			foreach (Vertex voronoiNode in voronoiNodes)
 			{
-				Vertex voronoiVertex = t1.Circumcenter;
-				foreach (Vertex inputVertex in t1.Vertices)
+				HashSet<Vertex> adjacentVoronoiNodes = voronoiEdges [voronoiNode];
+				HashSet<Vertex> intersection = new HashSet<Vertex> (adjacentVoronoiNodes, adjacentVoronoiNodes.Comparer);
+				intersection.IntersectWith (voronoiNodes);
+				foreach (Vertex adjacent in intersection)
 				{
-					List<Vertex> existingValue;
-					if (edges.TryGetValue(inputVertex, out existingValue))
-					{
-						existingValue.Add(voronoiVertex);
-					}
-					else
-					{
-						edges.Add(inputVertex, new List<Vertex>{voronoiVertex});
-					}
-				}
-				// Yes, yes, code duplication is bad.
-				voronoiVertex = t2.Circumcenter;
-				foreach (Vertex inputVertex in t2.Vertices)
-				{
-					List<Vertex> existingValue;
-					if (edges.TryGetValue(inputVertex, out existingValue))
-					{
-						existingValue.Add(voronoiVertex);
-					}
-					else
-					{
-						edges.Add(inputVertex, new List<Vertex>{voronoiVertex});
-					}
+					int curCount = vertices.Count;
+					vertices.Add(new Vector3(inputNode.X, 0, inputNode.Y));
+					vertices.Add(new Vector3(voronoiNode.X, 0, voronoiNode.Y));
+					vertices.Add(new Vector3(adjacent.X, 0, adjacent.Y));
+					triangles.Add(curCount);
+					triangles.Add(curCount + 1);
+					triangles.Add(curCount + 2);
 				}
 			}
 		}
-		GL.Begin(GL.LINES);
-		foreach (Vertex key in edges.Keys)
+		MeshDescription description = new MeshDescription();
+		description.triangles = triangles.ToArray();
+		description.vertices = vertices.ToArray();
+		return description;
+
+		/**GL.Begin(GL.LINES);
+		foreach (Vertex key in internalEdges.Keys)
 		{
-			List<Vertex> vertices = edges[key];
+			HashSet<Vertex> vertices = internalEdges[key];
 			foreach (Vertex item in vertices)
 			{
 				GL.Vertex3(key.X, 0, key.Y);
 				GL.Vertex3(item.X, 0, item.Y);
 			}
 		}
-		GL.End();
+		foreach (Vertex key in voronoiEdges.Keys)
+		{
+			HashSet<Vertex> vertices = voronoiEdges[key];
+			foreach (Vertex item in vertices)
+			{
+				GL.Vertex3(key.X, 0, key.Y);
+				GL.Vertex3(item.X, 0, item.Y);
+			}
+		}
+		GL.End();**/
+	}
+
+	private class MeshDescription
+	{
+		public Vector3[] vertices;
+		public int[] triangles;
+	}
+
+	private void ProcessHalfEdge(HalfEdge h1, Dictionary<Vertex, HashSet<Vertex>> voronoiEdges, Dictionary<Vertex, HashSet<Vertex>> internalEdges)
+	{
+		if (h1.Twin == null)
+		{ return; }
+
+		Triangle t1 = h1.Triangle;
+		Triangle t2 = h1.Twin.Triangle;
+
+		if (t1 != null && t2 != null)
+		{
+			Vertex voronoiVertex = t1.Circumcenter;
+			Vertex voronoiVertex2 = t2.Circumcenter;
+			HashSet<Vertex> existingVoronoiEdges;
+
+			if (voronoiEdges.TryGetValue(voronoiVertex, out existingVoronoiEdges))
+			{ existingVoronoiEdges.Add(voronoiVertex2); }
+			else
+			{ voronoiEdges.Add(voronoiVertex, new HashSet<Vertex>{voronoiVertex2}); }
+
+			if (voronoiEdges.TryGetValue (voronoiVertex2, out existingVoronoiEdges))
+			{ existingVoronoiEdges.Add(voronoiVertex); }
+			else
+			{ voronoiEdges.Add(voronoiVertex2, new HashSet<Vertex>{voronoiVertex}); }
+
+			foreach (Vertex inputVertex in t1.Vertices)
+			{
+				HashSet<Vertex> existingValue;
+				if (internalEdges.TryGetValue(inputVertex, out existingValue))
+				{ existingValue.Add(voronoiVertex); }
+				else
+				{ internalEdges.Add(inputVertex, new HashSet<Vertex>{voronoiVertex}); }
+			}
+			// Yes, yes, code duplication is bad.
+			foreach (Vertex inputVertex in t2.Vertices)
+			{
+				HashSet<Vertex> existingValue;
+				if (internalEdges.TryGetValue(inputVertex, out existingValue))
+				{ existingValue.Add(voronoiVertex2); }
+				else
+				{ internalEdges.Add(inputVertex, new HashSet<Vertex>{voronoiVertex2}); }
+			}
+		}
 	}
 
     private void OnRenderObject()
@@ -233,17 +264,14 @@ public class GraphManager : MonoBehaviour
         if (m_EdgesOn)
         { DrawEdges(); }
 
-        if (m_FaceOn)
-        { FillFaces(); }
+		if (m_TriangulationOn)
+        { UpdateVoronoiMesh(); }
 
         if (m_CircleOn)
         { DrawCircles(); }
 
 		if (m_VoronoiOn)
 		{ DrawVoronoi(); }
-
-		if (m_TriangulationOn)
-		{ TriangulateVoronoi(); }
 
         GL.PopMatrix();
     }
@@ -253,11 +281,6 @@ public class GraphManager : MonoBehaviour
         if (Input.GetKeyDown("c"))
         {
             m_CircleOn = !m_CircleOn;
-        }
-
-        if (Input.GetKeyDown("f"))
-        {
-            m_FaceOn = !m_FaceOn;
         }
 
         if (Input.GetKeyDown("e"))

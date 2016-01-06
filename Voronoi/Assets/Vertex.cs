@@ -2,7 +2,7 @@
 
 namespace Voronoi
 {
-    public class Vertex
+	public sealed class Vertex
     {
 		public float X { get; private set; }
 		public float Y { get; private set; }
@@ -25,5 +25,19 @@ namespace Voronoi
             float dy = (Y - t.Y);
             return (dx * dx) + (dy * dy);
         }
+
+		public override int GetHashCode()
+		{
+			return X.GetHashCode() ^ Y.GetHashCode();
+		}
+
+		public override bool Equals(object obj)
+		{
+			Vertex vertex = obj as Vertex;
+			if (vertex != null)
+			{ return X == vertex.X && Y == vertex.Y; }
+			else
+			{ return false; }
+		}
     }
 }
