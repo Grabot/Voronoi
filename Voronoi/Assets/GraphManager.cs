@@ -6,6 +6,7 @@ using Voronoi;
 public class GraphManager : MonoBehaviour
 {
 	public Material[] m_Materials;
+	public GameObject m_OnClickObjectPrefab;
 	private Delaunay m_Delaunay;
 	private bool m_CircleOn = false;
 	private bool m_EdgesOn = false;
@@ -291,13 +292,13 @@ public class GraphManager : MonoBehaviour
 		{
 			Vector3 pos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 			pos.z = 0;
-			Vertex me;
-			if (player1Turn)
-			{ me = new Vertex(pos.x, pos.y, Vertex.EOwnership.PLAYER1); }
-			else
-			{ me = new Vertex(pos.x, pos.y, Vertex.EOwnership.PLAYER2); }
+			Vertex me = new Vertex(pos.x, pos.y, player1Turn ? Vertex.EOwnership.PLAYER1 : Vertex.EOwnership.PLAYER2);
 			player1Turn = !player1Turn;
 			m_Delaunay.AddVertex(me);
+
+			GameObject onClickObject = GameObject.Instantiate(m_OnClickObjectPrefab, pos, Quaternion.identity) as GameObject;
+			if (onClickObject == null)
+			{ Debug.LogError("Couldn't instantiate m_OnClickObjectPrefab!"); }
 
 			UpdateVoronoiMesh();
 		}
