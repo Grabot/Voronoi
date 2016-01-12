@@ -9,22 +9,30 @@ namespace Voronoi
 		public static Vertex NaN = new Vertex(float.NaN, float.NaN);
 		public enum EOwnership { UNOWNED, PLAYER1, PLAYER2 }
 		public EOwnership Ownership { get; private set; }
+		public float FeedingRange { get; private set; }
 
         public Vertex(float X, float Y)
         {
-            this.X = X;
-            this.Y = Y;
-			this.Ownership = EOwnership.UNOWNED;
+			Init(X, Y);
         }
 
 		public Vertex(float X, float Y, EOwnership a_Ownership)
 		{
-			this.X = X;
-			this.Y = Y;
-			this.Ownership = a_Ownership;
+			Init(X, Y, a_Ownership);
 		}
 
-	    public float FeedingRange { get; set; } = 1;
+		public Vertex(float X, float Y, EOwnership a_Ownership, float a_FeedingRange)
+		{
+			Init(X, Y, a_Ownership, a_FeedingRange);
+		}
+
+		private void Init(float a_X, float a_Y, EOwnership a_Ownership = EOwnership.UNOWNED, float a_FeedingRange = 1)
+		{
+			this.X = a_X;
+			this.Y = a_Y;
+			this.Ownership = a_Ownership;
+			this.FeedingRange = a_FeedingRange;
+		}
         	
         public bool IsInvalid()
         {
