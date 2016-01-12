@@ -6,7 +6,7 @@ Material:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: Water4Advanced
+  m_Name: Water4Advanced2
   m_Shader: {fileID: 4800000, guid: 475c4a4e617a8401b84ca7b32c7cc460, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 5
@@ -255,16 +255,16 @@ Material:
         second: {r: 1, g: 1, b: 0, a: 0}
       data:
         first:
+          name: _BumpMap_ST
+        second: {r: 1, g: 1, b: 0, a: 0}
+      data:
+        first:
           name: _Displacement
         second: {r: 6.6371665, g: 20.353983, b: -1, a: -0.681416}
       data:
         first:
           name: _ShoreTiling
         second: {r: 1, g: 1, b: 0.1, a: 0.1}
-      data:
-        first:
-          name: _BumpMap_ST
-        second: {r: 1, g: 1, b: 0, a: 0}
       data:
         first:
           name: _RefrColor
@@ -320,7 +320,7 @@ Material:
       data:
         first:
           name: _BaseColor
-        second: {r: 0.29850745, g: 0.15370905, b: 0.28852138, a: 0.82}
+        second: {r: 0.15370905, g: 0.26813015, b: 0.29850745, a: 0.82}
       data:
         first:
           name: _ReflectionColor

@@ -53,19 +53,15 @@ public class GraphManager : MonoBehaviour
 
 		if (m_MeshFilter == null)
 		{
-			GameObject rendererObject = new GameObject("VoronoiRenderer");
-			rendererObject.isStatic = true;
-			rendererObject.transform.eulerAngles = new Vector3(270, 0, 0);
-			MeshRenderer meshRenderer = rendererObject.AddComponent<MeshRenderer>();
-			Material[] newMaterials = new Material[2];
-			newMaterials[0] = m_Materials[0];
-			newMaterials[1] = m_Materials[1];
-			meshRenderer.materials = newMaterials;
-			m_MeshFilter = rendererObject.AddComponent<MeshFilter>();
+			GameObject rendererObject = GameObject.Find("VoronoiMesh");
+			m_MeshFilter = rendererObject.GetComponent<MeshFilter>();
 		}
 		Mesh mesh = m_MeshFilter.mesh;
 		if (mesh == null)
-		{ mesh = new Mesh(); }
+		{
+			mesh = new Mesh();
+			m_MeshFilter.mesh = mesh;
+		}
 		mesh.subMeshCount = 2;
 		mesh.MarkDynamic();
 		mesh.vertices = newDescription.vertices;
@@ -302,8 +298,8 @@ public class GraphManager : MonoBehaviour
 		if (Input.GetMouseButtonDown(0))
 		{
 			Vector3 pos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-			pos.z = 0;
-			Vertex me = new Vertex(pos.x, pos.y, player1Turn ? Vertex.EOwnership.PLAYER1 : Vertex.EOwnership.PLAYER2);
+			pos.y = 0;
+			Vertex me = new Vertex(pos.x, pos.z, player1Turn ? Vertex.EOwnership.PLAYER1 : Vertex.EOwnership.PLAYER2);
 			player1Turn = !player1Turn;
 			m_Delaunay.AddVertex(me);
 
