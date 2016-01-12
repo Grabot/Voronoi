@@ -9,7 +9,10 @@ namespace Voronoi
 		public static Vertex NaN = new Vertex(float.NaN, float.NaN);
 		public enum EOwnership { UNOWNED, PLAYER1, PLAYER2 }
 		public EOwnership Ownership { get; private set; }
-		public float FeedingRange { get; private set; }
+		public float FeedingRange {
+		    get { return 5; }
+		    private set { }
+		}
 
         public Vertex(float X, float Y)
         {

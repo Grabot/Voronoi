@@ -29,10 +29,18 @@ public class GraphManager : MonoBehaviour
     private void DrawEdges()
     {
         GL.Begin(GL.LINES);
-        // Vertex colors change from red to green
 
         foreach (HalfEdge halfEdge in m_Delaunay.HalfEdges)
         {
+            if (halfEdge.CanEat())
+            {
+                GL.Color(Color.red);
+            }
+            else
+            {
+                GL.Color(Color.green);
+            }
+
             GL.Vertex3(halfEdge.Origin.X, 0, halfEdge.Origin.Y);
             GL.Vertex3(halfEdge.Next.Origin.X, 0, halfEdge.Next.Origin.Y);
         }
