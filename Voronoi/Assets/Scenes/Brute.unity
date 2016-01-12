@@ -115,7 +115,7 @@ MonoBehaviour:
   m_Materials:
   - {fileID: 2100000, guid: 2dc1350700bee44ba9e2836e03d0000f, type: 2}
   - {fileID: 2100000, guid: 7f9c45b3db1d04c70885c0f82c2a1a48, type: 2}
-  m_OnClickObjectPrefab: {fileID: 140196, guid: 16cb17407e2d942748222b9072bc8388,
+  m_OnClickObjectPrefab: {fileID: 112728, guid: add1ab3167856422e815e835f137bf89,
     type: 2}
 --- !u!4 &979382722
 Transform:
