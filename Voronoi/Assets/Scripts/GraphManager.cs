@@ -13,6 +13,12 @@ public class GraphManager : MonoBehaviour
 	private bool m_VoronoiOn = true;
 	private MeshFilter m_MeshFilter;
 	private bool player1Turn = true;
+	private Transform m_MyTransform;
+
+	void Awake()
+	{
+		m_MyTransform = this.gameObject.transform;
+	}
 
     private void Start()
     {
@@ -59,9 +65,6 @@ public class GraphManager : MonoBehaviour
 		mesh.SetTriangles(newDescription.triangles[1], 1);
 		mesh.RecalculateBounds();
 
-		Bounds bounds = mesh.bounds;
-		//float width = (bounds.max - bounds.min).x;
-		//float height = (bounds.max - bounds.min).z;
 		Vector2[] newUVs = new Vector2[newDescription.vertices.Length];
 		for (int i = 0; i < newDescription.vertices.Length; ++i)
 		{
@@ -302,7 +305,7 @@ public class GraphManager : MonoBehaviour
 			else
 			{
 				onClickObject.name = "onClickObject_" + me.Ownership.ToString();
-				onClickObject.transform.parent = this.gameObject.transform;
+				onClickObject.transform.parent = m_MyTransform;
 			}
 
 			UpdateVoronoiMesh();
