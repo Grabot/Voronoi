@@ -75,14 +75,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Delaunay.cs" />
-    <Compile Include="Assets\Distance.cs" />
-    <Compile Include="Assets\Edge.cs" />
-    <Compile Include="Assets\Euclidian.cs" />
-    <Compile Include="Assets\Face.cs" />
     <Compile Include="Assets\Graph.cs" />
     <Compile Include="Assets\GraphManager.cs" />
     <Compile Include="Assets\HalfEdge.cs" />
-    <Compile Include="Assets\IncorrectTriangleException.cs" />
     <Compile Include="Assets\Triangle.cs" />
     <Compile Include="Assets\Triangulation.cs" />
     <Compile Include="Assets\Utility.cs" />

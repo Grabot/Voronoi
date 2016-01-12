@@ -23,7 +23,9 @@ namespace Voronoi
 			this.Y = Y;
 			this.Ownership = a_Ownership;
 		}
-			
+
+	    public float FeedingRange { get; set; } = 1;
+        	
         public bool IsInvalid()
         {
 			return float.IsNaN (X) || float.IsNaN (Y) || float.IsInfinity(X) || float.IsInfinity(Y);
