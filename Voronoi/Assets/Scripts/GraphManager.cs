@@ -298,7 +298,12 @@ public class GraphManager : MonoBehaviour
 
 			GameObject onClickObject = GameObject.Instantiate(m_OnClickObjectPrefab, pos, Quaternion.identity) as GameObject;
 			if (onClickObject == null)
-			{ Debug.LogError("Couldn't instantiate m_OnClickObjectPrefab!"); }
+			{ Debug.LogError ("Couldn't instantiate m_OnClickObjectPrefab!"); }
+			else
+			{
+				onClickObject.name = "onClickObject_" + me.Ownership.ToString();
+				onClickObject.transform.parent = this.gameObject.transform;
+			}
 
 			UpdateVoronoiMesh();
 		}
