@@ -91,7 +91,97 @@ ModelImporter:
     animationScaleError: 0.5
     animationWrapMode: 0
     extraExposedTransformPaths: []
-    clipAnimations: []
+    clipAnimations:
+    - serializedVersion: 16
+      name: cruscarp_skel|swim
+      takeName: cruscarp_skel|swim
+      firstFrame: 0
+      lastFrame: 46
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: cruscarp
+        weight: 1
+      - path: cruscarp_skel
+        weight: 1
+      - path: cruscarp_skel/Bone
+        weight: 1
+      - path: cruscarp_skel/Bone/Bone.001
+        weight: 1
+      - path: cruscarp_skel/Bone/Bone.001/Bone.003
+        weight: 1
+      - path: cruscarp_skel/Bone/Bone.001/Bone.003/Bone.003_end
+        weight: 1
+      - path: cruscarp_skel/Bone/Bone.002_L.001
+        weight: 1
+      - path: cruscarp_skel/Bone/Bone.002_L.001/Bone.002_L.001_end
+        weight: 1
+      - path: cruscarp_skel/Bone/Bone.002_R.001
+        weight: 1
+      - path: cruscarp_skel/Bone/Bone.002_R.001/Bone.002_R.001_end
+        weight: 1
+      - path: cruscarp_skel/Bone/Bone_L.001
+        weight: 1
+      - path: cruscarp_skel/Bone/Bone_L.001/Bone_L.001_end
+        weight: 1
+      - path: cruscarp_skel/Bone/Bone_R.001
+        weight: 1
+      - path: cruscarp_skel/Bone/Bone_R.001/Bone_R.001_end
+        weight: 1
+      - path: cruscarp_skel/Bone.004
+        weight: 1
+      - path: cruscarp_skel/Bone.004/Bone.004_L.001
+        weight: 1
+      - path: cruscarp_skel/Bone.004/Bone.004_L.001/Bone.004_L.001_end
+        weight: 1
+      - path: cruscarp_skel/Bone.004/Bone.004_R.001
+        weight: 1
+      - path: cruscarp_skel/Bone.004/Bone.004_R.001/Bone.004_R.001_end
+        weight: 1
+      - path: cruscarp_skel/Bone.004/Bone.005
+        weight: 1
+      - path: cruscarp_skel/Bone.004/Bone.005/Bone.006
+        weight: 1
+      - path: cruscarp_skel/Bone.004/Bone.005/Bone.006/Bone.006_end
+        weight: 1
+      - path: cruscarp_skel/Bone.004/bubble
+        weight: 1
+      - path: cruscarp_skel/Bone.004/bubble/bubble_end
+        weight: 1
+      - path: cruscarp_skel/Bone.008
+        weight: 1
+      - path: cruscarp_skel/Bone.008/Bone.008_end
+        weight: 1
+      - path: cruscarp_skel/Bone.010
+        weight: 1
+      - path: cruscarp_skel/Bone.010/Bone.010_end
+        weight: 1
+      - path: cruscarp_skel/Bone.012
+        weight: 1
+      - path: cruscarp_skel/Bone.012/Bone.012_end
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
     isReadable: 1
   meshes:
     lODScreenPercentages: []
@@ -113,7 +203,7 @@ ModelImporter:
   tangentSpace:
     normalSmoothAngle: 60
     normalImportMode: 0
-    tangentImportMode: 4
+    tangentImportMode: 3
   importAnimation: 1
   copyAvatar: 0
   humanDescription:
