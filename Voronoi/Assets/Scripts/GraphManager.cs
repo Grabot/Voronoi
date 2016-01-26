@@ -27,6 +27,18 @@ public class GraphManager : MonoBehaviour
 		public int[][] triangles;
 	}
 
+	private struct InvalidEdge
+	{
+		public Vertex m_InvalidVertex;
+		public Vector2 m_IntersectingPoint;
+
+		public InvalidEdge(Vertex a_InvalidVertex, Vector2 a_IntersectingPoint)
+		{
+			m_InvalidVertex = a_InvalidVertex;
+			m_IntersectingPoint = a_IntersectingPoint;
+		}
+	}
+
 	void Awake()
 	{
 		m_MyTransform = this.gameObject.transform;
@@ -230,8 +242,65 @@ public class GraphManager : MonoBehaviour
 		return intersected;
 	}
 
-	private void FindClippingVoronoiEdges(Dictionary<Vertex, HashSet<Vertex>> a_VoronoiEdges, List<Vector2> a_ClippingEdges)
+	private void ReplaceVoronoiVertex(Vertex a_InvalidVertex, Vertex a_ReplacingVertex, Dictionary<Vertex, HashSet<Vertex>> a_VoronoiEdges,
+																						Dictionary<Vertex, HashSet<Vertex>> a_VoronoiToInternal,
+																						Dictionary<Vertex, HashSet<Vertex>> a_InternalEdges)
 	{
+		HashSet<Vertex> adjacentVoronoiVertices;
+		if (a_VoronoiEdges.TryGetValue(a_InvalidVertex, out adjacentVoronoiVertices))
+		{
+			if (a_ReplacingVertex != null)
+			{ a_VoronoiEdges[a_ReplacingVertex] = adjacentVoronoiVertices; }
+			a_VoronoiEdges.Remove(a_InvalidVertex);
+			foreach (Vertex adjacentVertex in adjacentVoronoiVertices)
+			{
+				HashSet<Vertex> adjacentOfAdjacent;
+				if (a_VoronoiEdges.TryGetValue(adjacentVertex, out adjacentOfAdjacent))
+				{
+					adjacentOfAdjacent.Remove(a_InvalidVertex);
+					if (a_ReplacingVertex != null)
+					{ adjacentOfAdjacent.Add(a_ReplacingVertex); }
+				}
+			}
+		}
+		HashSet<Vertex> inputVertices;
+		if (a_VoronoiToInternal.TryGetValue(a_InvalidVertex, out inputVertices))
+		{
+			if (a_ReplacingVertex != null)
+			{ a_VoronoiToInternal[a_ReplacingVertex] = inputVertices; }
+			a_VoronoiToInternal.Remove(a_InvalidVertex);
+			foreach (Vertex inputVertex in inputVertices)
+			{
+				HashSet<Vertex> voronoiVertices;
+				if (a_InternalEdges.TryGetValue(inputVertex, out voronoiVertices))
+				{
+					voronoiVertices.Remove(a_InvalidVertex);
+					if (a_ReplacingVertex != null)
+					{ voronoiVertices.Add (a_ReplacingVertex); }
+				}
+			}
+		}
+	}
+
+	private void FixInvalidVoronoiEdges(List<InvalidEdge> a_InvalidEdges, List<Vertex> a_VerticesToRemove,
+																		  Dictionary<Vertex, HashSet<Vertex>> a_VoronoiEdges,
+																		  Dictionary<Vertex, HashSet<Vertex>> a_InternalEdges,
+																		  Dictionary<Vertex, HashSet<Vertex>> a_VoronoiToInternal)
+	{
+		foreach (InvalidEdge invalidEdge in a_InvalidEdges)
+		{
+			Vertex replacingVertex = new Vertex(invalidEdge.m_IntersectingPoint.x, invalidEdge.m_IntersectingPoint.y, invalidEdge.m_InvalidVertex.Ownership);
+			ReplaceVoronoiVertex(invalidEdge.m_InvalidVertex, replacingVertex, a_VoronoiEdges, a_VoronoiToInternal, a_InternalEdges);
+		}
+		foreach (Vertex invalidVertex in a_VerticesToRemove)
+		{
+			ReplaceVoronoiVertex(invalidVertex, null, a_VoronoiEdges, a_VoronoiToInternal, a_InternalEdges);
+		}
+	}
+
+	private List<InvalidEdge> FindClippingVoronoiEdges(Dictionary<Vertex, HashSet<Vertex>> a_VoronoiEdges, List<Vertex> a_VerticesToRemove, List<Vector2> a_ClippingEdges)
+	{
+		List<InvalidEdge> invalidEdges = new List<InvalidEdge>();
 		a_ClippingEdges.Clear();
 		foreach (Vertex voronoiVertex in a_VoronoiEdges.Keys)
 		{
@@ -257,6 +326,7 @@ public class GraphManager : MonoBehaviour
 							{
 								a_ClippingEdges.Add(voronoiPos);
 								a_ClippingEdges.Add(intersections[0]);
+								invalidEdges.Add(new InvalidEdge(voronoiVertex, intersections[0]));
 							}
 						}
 						else
@@ -316,23 +386,29 @@ public class GraphManager : MonoBehaviour
 								// Both vertices are outside of the rectangle and the edge does not intersect with the rectangle.
 								a_ClippingEdges.Add(voronoiPos);
 								a_ClippingEdges.Add(adjacentVoronoiPos);
+								//a_VerticesToRemove.Add(voronoiVertex);
+								//a_VerticesToRemove.Add(adjacentVertex);
 							}
 						}
 					}
 				}
 			}
 		}
+		return invalidEdges;
 	}
 
 	private MeshDescription TriangulateVoronoi()
 	{
 		Dictionary<Vertex, HashSet<Vertex>> internalEdges = new Dictionary<Vertex, HashSet<Vertex>>();
 		Dictionary<Vertex, HashSet<Vertex>> voronoiEdges = new Dictionary<Vertex, HashSet<Vertex>>();
+		Dictionary<Vertex, HashSet<Vertex>> voronoiToInternalEdges = new Dictionary<Vertex, HashSet<Vertex>>();
 		foreach (HalfEdge halfEdge in m_Delaunay.HalfEdges)
 		{
-			ProcessHalfEdge(halfEdge, voronoiEdges, internalEdges);
+			ProcessHalfEdge(halfEdge, voronoiEdges, internalEdges, voronoiToInternalEdges);
 		}
-		FindClippingVoronoiEdges(voronoiEdges, m_ClippingEdges);
+		List<Vertex> verticesToRemove = new List<Vertex>();
+		List<InvalidEdge> invalidEdges = FindClippingVoronoiEdges(voronoiEdges, verticesToRemove, m_ClippingEdges);
+		FixInvalidVoronoiEdges(invalidEdges, verticesToRemove, voronoiEdges, internalEdges, voronoiToInternalEdges);
 		List<Vector3> vertices = new List<Vector3>();
 		List<int>[] triangleLists = new List<int>[2];
 		triangleLists[0] = new List<int>();
@@ -347,7 +423,7 @@ public class GraphManager : MonoBehaviour
 			{
 				HashSet<Vertex> adjacentVoronoiNodes = voronoiEdges[voronoiNode];
 				HashSet<Vertex> intersection = new HashSet<Vertex>(adjacentVoronoiNodes, adjacentVoronoiNodes.Comparer);
-				intersection.IntersectWith (voronoiNodes);
+				intersection.IntersectWith(voronoiNodes);
 				foreach (Vertex adjacent in intersection)
 				{
 					int curCount = vertices.Count;
@@ -401,13 +477,15 @@ public class GraphManager : MonoBehaviour
 		GL.End();**/
 	}
 
-	private static void ProcessHalfEdge(HalfEdge h1, Dictionary<Vertex, HashSet<Vertex>> voronoiEdges, Dictionary<Vertex, HashSet<Vertex>> internalEdges)
+	private static void ProcessHalfEdge(HalfEdge a_H1, Dictionary<Vertex, HashSet<Vertex>> a_VoronoiEdges,
+										Dictionary<Vertex, HashSet<Vertex>> a_InternalEdges,
+										Dictionary<Vertex, HashSet<Vertex>> a_VoronoiToInternalEdges)
 	{
-		if (h1.Twin == null)
+		if (a_H1.Twin == null)
 		{ return; }
 
-		Triangle t1 = h1.Triangle;
-		Triangle t2 = h1.Twin.Triangle;
+		Triangle t1 = a_H1.Triangle;
+		Triangle t2 = a_H1.Twin.Triangle;
 
 		if (t1 != null && t2 != null)
 		{
@@ -415,33 +493,45 @@ public class GraphManager : MonoBehaviour
 			Vertex voronoiVertex2 = t2.Circumcenter;
 			HashSet<Vertex> existingVoronoiEdges;
 
-			if (voronoiEdges.TryGetValue(voronoiVertex, out existingVoronoiEdges))
+			if (a_VoronoiEdges.TryGetValue(voronoiVertex, out existingVoronoiEdges))
 			{ existingVoronoiEdges.Add(voronoiVertex2); }
 			else
-			{ voronoiEdges.Add(voronoiVertex, new HashSet<Vertex>{voronoiVertex2}); }
+			{ a_VoronoiEdges.Add(voronoiVertex, new HashSet<Vertex>{voronoiVertex2}); }
 
-			if (voronoiEdges.TryGetValue (voronoiVertex2, out existingVoronoiEdges))
+			if (a_VoronoiEdges.TryGetValue (voronoiVertex2, out existingVoronoiEdges))
 			{ existingVoronoiEdges.Add(voronoiVertex); }
 			else
-			{ voronoiEdges.Add(voronoiVertex2, new HashSet<Vertex>{voronoiVertex}); }
+			{ a_VoronoiEdges.Add(voronoiVertex2, new HashSet<Vertex>{voronoiVertex}); }
 
 			foreach (Vertex inputVertex in t1.Vertices)
 			{
 				HashSet<Vertex> existingValue;
-				if (internalEdges.TryGetValue(inputVertex, out existingValue))
+				if (a_InternalEdges.TryGetValue(inputVertex, out existingValue))
 				{ existingValue.Add(voronoiVertex); }
 				else
-				{ internalEdges.Add(inputVertex, new HashSet<Vertex>{voronoiVertex}); }
+				{ a_InternalEdges.Add(inputVertex, new HashSet<Vertex>{voronoiVertex}); }
 			}
+			HashSet<Vertex> inputVertices = new HashSet<Vertex>(t1.Vertices);
+			HashSet<Vertex> existingInputVertices;
+			if (a_VoronoiToInternalEdges.TryGetValue(voronoiVertex, out existingInputVertices))
+			{ existingInputVertices.UnionWith(inputVertices); }
+			else
+			{ a_VoronoiToInternalEdges.Add(voronoiVertex, inputVertices); }
 			// Yes, yes, code duplication is bad.
 			foreach (Vertex inputVertex in t2.Vertices)
 			{
 				HashSet<Vertex> existingValue;
-				if (internalEdges.TryGetValue(inputVertex, out existingValue))
+				if (a_InternalEdges.TryGetValue(inputVertex, out existingValue))
 				{ existingValue.Add(voronoiVertex2); }
 				else
-				{ internalEdges.Add(inputVertex, new HashSet<Vertex>{voronoiVertex2}); }
+				{ a_InternalEdges.Add(inputVertex, new HashSet<Vertex>{voronoiVertex2}); }
 			}
+			inputVertices = new HashSet<Vertex>(t2.Vertices);
+			existingInputVertices = null;
+			if (a_VoronoiToInternalEdges.TryGetValue(voronoiVertex2, out existingInputVertices))
+			{ existingInputVertices.UnionWith(inputVertices); }
+			else
+			{ a_VoronoiToInternalEdges.Add(voronoiVertex2, inputVertices); }
 		}
 	}
 
