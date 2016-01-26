@@ -19,7 +19,7 @@ public class GraphManager : MonoBehaviour
 	private List<Vector2> m_ClippingEdges = new List<Vector2>();
 
 	[Flags]
-	private enum RectSide { NONE = 0, LEFT = 1, TOP = 2, RIGHT = 4, BOTTOM = 8 };
+	private enum ERectangleSide { NONE = 0, LEFT = 1, TOP = 2, RIGHT = 4, BOTTOM = 8 };
 
 	private class MeshDescription
 	{
@@ -142,17 +142,17 @@ public class GraphManager : MonoBehaviour
         GL.End();
     }
 
-	private static bool IntersectLines(Vector2 fromA, Vector2 toA, Vector2 fromB, Vector2 toB, out Vector2 intersection)
+	private static bool IntersectLines(Vector2 a_FromA, Vector2 a_ToA, Vector2 a_FromB, Vector2 a_ToB, out Vector2 o_Intersection)
 	{
-		Vector2 x1 = fromA;
-		Vector2 v1 = toA - fromA;
-		Vector2 x2 = fromB;
-		Vector2 v2 = toB - fromB;
+		Vector2 x1 = a_FromA;
+		Vector2 v1 = a_ToA - a_FromA;
+		Vector2 x2 = a_FromB;
+		Vector2 v2 = a_ToB - a_FromB;
 
 		// Check if parallel.
 		if (Vector2.Dot(v1, v1) * Vector2.Dot(v2, v2) == Mathf.Pow(Vector2.Dot(v1, v2), 2))
 		{
-			intersection = Vector2.zero;
+			o_Intersection = Vector2.zero;
 			return false;
 		}
 		else
@@ -164,68 +164,69 @@ public class GraphManager : MonoBehaviour
 			// Check if intersection point is on the line segments.
 			if (0 <= a && a <= 1 && 0 <= b && b <= 1)
 			{
-				intersection = x1 + (a * v1);
+				o_Intersection = x1 + (a * v1);
 				return true;
 			}
 			else
 			{
-				intersection = Vector2.zero;
+				o_Intersection = Vector2.zero;
 				return false;
 			}
 		}
 	}
 
-	private static bool IntersectLineWithRectangle(Vector2 from, Vector2 to, Rect rectangle, int maxIntersections, out Vector2[] intersections, out RectSide sides)
+	private static bool IntersectLineWithRectangle(Vector2 a_From, Vector2 a_To, Rect a_Rectangle, int a_MaxIntersections, out Vector2[] o_Intersections,
+																														   out ERectangleSide o_Sides)
 	{
 		bool intersected = false;
-		sides = RectSide.NONE;
+		o_Sides = ERectangleSide.NONE;
 		Vector2 intersection;
-		List<Vector2> intersectionsList = new List<Vector2>(maxIntersections);
+		List<Vector2> intersectionsList = new List<Vector2>(a_MaxIntersections);
 
-		if (IntersectLines(from, to, new Vector2(rectangle.xMin, rectangle.yMin),
-									 new Vector2(rectangle.xMin, rectangle.yMax), out intersection))
+		if (IntersectLines(a_From, a_To, new Vector2(a_Rectangle.xMin, a_Rectangle.yMin),
+									 new Vector2(a_Rectangle.xMin, a_Rectangle.yMax), out intersection))
 		{
 			intersectionsList.Add(intersection);
-			sides = RectSide.LEFT;
+			o_Sides = ERectangleSide.LEFT;
 			intersected = true;
-			if (intersectionsList.Count == maxIntersections)
+			if (intersectionsList.Count == a_MaxIntersections)
 			{
-				intersections = intersectionsList.ToArray();
+				o_Intersections = intersectionsList.ToArray();
 				return true;
 			}
 		}
-		if (IntersectLines(from, to, new Vector2(rectangle.xMin, rectangle.yMax),
-									 new Vector2(rectangle.xMax, rectangle.yMax), out intersection))
+		if (IntersectLines(a_From, a_To, new Vector2(a_Rectangle.xMin, a_Rectangle.yMax),
+									 new Vector2(a_Rectangle.xMax, a_Rectangle.yMax), out intersection))
 		{
 			intersectionsList.Add(intersection);
-			sides = sides & RectSide.TOP;
+			o_Sides = o_Sides & ERectangleSide.TOP;
 			intersected = true;
-			if (intersectionsList.Count == maxIntersections)
+			if (intersectionsList.Count == a_MaxIntersections)
 			{
-				intersections = intersectionsList.ToArray();
+				o_Intersections = intersectionsList.ToArray();
 				return true;
 			}
 		}
-		if (IntersectLines(from, to, new Vector2(rectangle.xMax, rectangle.yMax),
-									 new Vector2(rectangle.xMax, rectangle.yMin), out intersection))
+		if (IntersectLines(a_From, a_To, new Vector2(a_Rectangle.xMax, a_Rectangle.yMax),
+									 new Vector2(a_Rectangle.xMax, a_Rectangle.yMin), out intersection))
 		{
 			intersectionsList.Add(intersection);
-			sides = sides & RectSide.RIGHT;
+			o_Sides = o_Sides & ERectangleSide.RIGHT;
 			intersected = true;
-			if (intersectionsList.Count == maxIntersections)
+			if (intersectionsList.Count == a_MaxIntersections)
 			{
-				intersections = intersectionsList.ToArray();
+				o_Intersections = intersectionsList.ToArray();
 				return true;
 			}
 		}
-		if (IntersectLines(from, to, new Vector2(rectangle.xMax, rectangle.yMin),
-									 new Vector2(rectangle.xMin, rectangle.yMin), out intersection))
+		if (IntersectLines(a_From, a_To, new Vector2(a_Rectangle.xMax, a_Rectangle.yMin),
+									 new Vector2(a_Rectangle.xMin, a_Rectangle.yMin), out intersection))
 		{
 			intersectionsList.Add(intersection);
-			sides = sides & RectSide.BOTTOM;
+			o_Sides = o_Sides & ERectangleSide.BOTTOM;
 			intersected = true;
 		}
-		intersections = intersectionsList.ToArray();
+		o_Intersections = intersectionsList.ToArray();
 		return intersected;
 	}
 
@@ -250,7 +251,7 @@ public class GraphManager : MonoBehaviour
 						if (m_MeshRect.Contains(adjacentVoronoiPos))
 						{
 							Vector2[] intersections;
-							RectSide intersectedSides;
+							ERectangleSide intersectedSides;
 							if (IntersectLineWithRectangle(voronoiPos, adjacentVoronoiPos, m_MeshRect, 1, out intersections,
 								out intersectedSides))
 							{
@@ -263,7 +264,7 @@ public class GraphManager : MonoBehaviour
 							// If the first vertex it outside and the second vertex too, it is possible we still intersect the
 							// rectangle in 2 places.
 							Vector2[] intersections;
-							RectSide intersectedSides;
+							ERectangleSide intersectedSides;
 							if (IntersectLineWithRectangle(voronoiPos, adjacentVoronoiPos, m_MeshRect, 2, out intersections,
 								out intersectedSides))
 							{
@@ -271,7 +272,7 @@ public class GraphManager : MonoBehaviour
 								// on "this side" of the rectangle, seen from the first vertex of the edge that we are processing.
 								// The line segment part of the edge on the other side of the rectangle will be found later in the iteration.
 								int index = 0;
-								if ((intersectedSides & RectSide.LEFT) != RectSide.NONE)
+								if ((intersectedSides & ERectangleSide.LEFT) != ERectangleSide.NONE)
 								{
 									if (voronoiPos.x < m_MeshRect.xMin)
 									{
@@ -281,7 +282,7 @@ public class GraphManager : MonoBehaviour
 									}
 									index++;
 								}
-								if ((intersectedSides & RectSide.TOP) != RectSide.NONE)
+								if ((intersectedSides & ERectangleSide.TOP) != ERectangleSide.NONE)
 								{
 									if (voronoiPos.y > m_MeshRect.yMax)
 									{
@@ -291,7 +292,7 @@ public class GraphManager : MonoBehaviour
 									}
 									index++;
 								}
-								if ((intersectedSides & RectSide.RIGHT) != RectSide.NONE)
+								if ((intersectedSides & ERectangleSide.RIGHT) != ERectangleSide.NONE)
 								{
 									if (voronoiPos.x > m_MeshRect.xMax) 
 									{
@@ -301,7 +302,7 @@ public class GraphManager : MonoBehaviour
 									}
 									index++;
 								}
-								if ((intersectedSides & RectSide.BOTTOM) != RectSide.NONE)
+								if ((intersectedSides & ERectangleSide.BOTTOM) != ERectangleSide.NONE)
 								{
 									if (voronoiPos.y < m_MeshRect.yMin)
 									{
