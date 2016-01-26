@@ -142,7 +142,7 @@ public class GraphManager : MonoBehaviour
         GL.End();
     }
 
-	private bool IntersectLines(Vector2 fromA, Vector2 toA, Vector2 fromB, Vector2 toB, out Vector2 intersection)
+	private static bool IntersectLines(Vector2 fromA, Vector2 toA, Vector2 fromB, Vector2 toB, out Vector2 intersection)
 	{
 		Vector2 x1 = fromA;
 		Vector2 v1 = toA - fromA;
@@ -175,7 +175,7 @@ public class GraphManager : MonoBehaviour
 		}
 	}
 
-	private bool IntersectLineWithRectangle(Vector2 from, Vector2 to, Rect rectangle, int maxIntersections, out Vector2[] intersections, out RectSide sides)
+	private static bool IntersectLineWithRectangle(Vector2 from, Vector2 to, Rect rectangle, int maxIntersections, out Vector2[] intersections, out RectSide sides)
 	{
 		bool intersected = false;
 		sides = RectSide.NONE;
@@ -390,7 +390,7 @@ public class GraphManager : MonoBehaviour
 		GL.End();**/
 	}
 
-	private void ProcessHalfEdge(HalfEdge h1, Dictionary<Vertex, HashSet<Vertex>> voronoiEdges, Dictionary<Vertex, HashSet<Vertex>> internalEdges)
+	private static void ProcessHalfEdge(HalfEdge h1, Dictionary<Vertex, HashSet<Vertex>> voronoiEdges, Dictionary<Vertex, HashSet<Vertex>> internalEdges)
 	{
 		if (h1.Twin == null)
 		{ return; }
