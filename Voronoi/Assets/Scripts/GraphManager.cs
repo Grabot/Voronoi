@@ -5,7 +5,6 @@ using Voronoi;
 
 public class GraphManager : MonoBehaviour
 {
-	public Material[] m_Materials;
 	public GameObject m_OnClickObjectPrefab;
 	private Delaunay m_Delaunay;
 	private bool m_CircleOn = false;
@@ -14,10 +13,30 @@ public class GraphManager : MonoBehaviour
 	private MeshFilter m_MeshFilter;
 	private bool player1Turn = true;
 	private Transform m_MyTransform;
+	public GUIManager m_GUIManager;
+	private FishManager m_FishManager;
+	private Rect m_MeshRect;
+	private List<Vector2> m_ClippingEdges = new List<Vector2>();
+
+	[Flags]
+	private enum RectSide { NONE = 0, LEFT = 1, TOP = 2, RIGHT = 4, BOTTOM = 8 };
+
+	private class MeshDescription
+	{
+		public Vector3[] vertices;
+		public int[][] triangles;
+	}
 
 	void Awake()
 	{
 		m_MyTransform = this.gameObject.transform;
+		m_FishManager = new FishManager();
+		GameObject rendererObject = GameObject.Find("VoronoiMesh");
+		m_MeshFilter = rendererObject.GetComponent<MeshFilter>();
+		float z = (m_MeshFilter.transform.position - Camera.main.transform.position).magnitude;
+		Vector3 bottomLeft = Camera.main.ViewportToWorldPoint (new Vector3 (0, 0, z));
+		Vector3 topRight = Camera.main.ViewportToWorldPoint (new Vector3 (1, 1, z));
+		m_MeshRect = new Rect (bottomLeft.x, bottomLeft.z, topRight.x - bottomLeft.x, topRight.z - bottomLeft.z);
 	}
 
     private void Start()
@@ -50,12 +69,6 @@ public class GraphManager : MonoBehaviour
     private void UpdateVoronoiMesh()
     {
 		MeshDescription newDescription = TriangulateVoronoi();
-
-		if (m_MeshFilter == null)
-		{
-			GameObject rendererObject = GameObject.Find("VoronoiMesh");
-			m_MeshFilter = rendererObject.GetComponent<MeshFilter>();
-		}
 		Mesh mesh = m_MeshFilter.mesh;
 		if (mesh == null)
 		{
@@ -129,6 +142,177 @@ public class GraphManager : MonoBehaviour
         GL.End();
     }
 
+	private bool IntersectLines(Vector2 fromA, Vector2 toA, Vector2 fromB, Vector2 toB, out Vector2 intersection)
+	{
+		Vector2 x1 = fromA;
+		Vector2 v1 = toA - fromA;
+		Vector2 x2 = fromB;
+		Vector2 v2 = toB - fromB;
+
+		// Check if parallel.
+		if (Vector2.Dot(v1, v1) * Vector2.Dot(v2, v2) == Mathf.Pow(Vector2.Dot(v1, v2), 2))
+		{
+			intersection = Vector2.zero;
+			return false;
+		}
+		else
+		{
+			float a = ((Vector2.Dot(v2, v2) * Vector2.Dot(v1, x2 - x1)) - (Vector2.Dot(v1, v2) * Vector2.Dot(v2, x2 - x1)))
+				/ ((Vector2.Dot(v1, v1) * Vector2.Dot(v2, v2)) - Mathf.Pow(Vector2.Dot(v1, v2), 2));
+			float b = ((Vector2.Dot(v1, v2) * Vector2.Dot(v1, x2 - x1)) - (Vector2.Dot(v1, v1) * Vector2.Dot(v2, x2 - x1)))
+				/ ((Vector2.Dot(v1, v1) * Vector2.Dot(v2, v2)) - Mathf.Pow(Vector2.Dot(v1, v2), 2));
+			// Check if intersection point is on the line segments.
+			if (0 <= a && a <= 1 && 0 <= b && b <= 1)
+			{
+				intersection = x1 + (a * v1);
+				return true;
+			}
+			else
+			{
+				intersection = Vector2.zero;
+				return false;
+			}
+		}
+	}
+
+	private bool IntersectLineWithRectangle(Vector2 from, Vector2 to, Rect rectangle, int maxIntersections, out Vector2[] intersections, out RectSide sides)
+	{
+		bool intersected = false;
+		sides = RectSide.NONE;
+		Vector2 intersection;
+		List<Vector2> intersectionsList = new List<Vector2>(maxIntersections);
+
+		if (IntersectLines(from, to, new Vector2(rectangle.xMin, rectangle.yMin),
+									 new Vector2(rectangle.xMin, rectangle.yMax), out intersection))
+		{
+			intersectionsList.Add(intersection);
+			sides = RectSide.LEFT;
+			intersected = true;
+			if (intersectionsList.Count == maxIntersections)
+			{
+				intersections = intersectionsList.ToArray();
+				return true;
+			}
+		}
+		if (IntersectLines(from, to, new Vector2(rectangle.xMin, rectangle.yMax),
+									 new Vector2(rectangle.xMax, rectangle.yMax), out intersection))
+		{
+			intersectionsList.Add(intersection);
+			sides = sides & RectSide.TOP;
+			intersected = true;
+			if (intersectionsList.Count == maxIntersections)
+			{
+				intersections = intersectionsList.ToArray();
+				return true;
+			}
+		}
+		if (IntersectLines(from, to, new Vector2(rectangle.xMax, rectangle.yMax),
+									 new Vector2(rectangle.xMax, rectangle.yMin), out intersection))
+		{
+			intersectionsList.Add(intersection);
+			sides = sides & RectSide.RIGHT;
+			intersected = true;
+			if (intersectionsList.Count == maxIntersections)
+			{
+				intersections = intersectionsList.ToArray();
+				return true;
+			}
+		}
+		if (IntersectLines(from, to, new Vector2(rectangle.xMax, rectangle.yMin),
+									 new Vector2(rectangle.xMin, rectangle.yMin), out intersection))
+		{
+			intersectionsList.Add(intersection);
+			sides = sides & RectSide.BOTTOM;
+			intersected = true;
+		}
+		intersections = intersectionsList.ToArray();
+		return intersected;
+	}
+
+	private void FindClippingVoronoiEdges(Dictionary<Vertex, HashSet<Vertex>> a_VoronoiEdges, List<Vector2> a_ClippingEdges)
+	{
+		a_ClippingEdges.Clear();
+		foreach (Vertex voronoiVertex in a_VoronoiEdges.Keys)
+		{
+			Vector2 voronoiPos = new Vector2(voronoiVertex.X, voronoiVertex.Y);
+			if (m_MeshRect.Contains(voronoiPos) == false)
+			{
+				HashSet<Vertex> adjacentVoronoiVertices = a_VoronoiEdges[voronoiVertex];
+				foreach (Vertex adjacentVertex in adjacentVoronoiVertices)
+				{
+					Vector2 adjacentVoronoiPos = new Vector2(adjacentVertex.X, adjacentVertex.Y);
+					if (m_MeshRect.Contains(voronoiPos) == false)
+					{
+						if (m_MeshRect.Contains(adjacentVoronoiPos))
+						{
+							Vector2[] intersections;
+							RectSide intersectedSides;
+							if (IntersectLineWithRectangle(voronoiPos, adjacentVoronoiPos, m_MeshRect, 1, out intersections,
+								out intersectedSides))
+							{
+								a_ClippingEdges.Add(voronoiPos);
+								a_ClippingEdges.Add(intersections[0]);
+							}
+						}
+						else
+						{
+							Vector2[] intersections;
+							RectSide intersectedSides;
+							if (IntersectLineWithRectangle(voronoiPos, adjacentVoronoiPos, m_MeshRect, 2, out intersections,
+								out intersectedSides))
+							{
+								int index = 0;
+								if ((intersectedSides & RectSide.LEFT) != RectSide.NONE)
+								{
+									if (voronoiPos.x < m_MeshRect.xMin)
+									{
+										a_ClippingEdges.Add(voronoiPos);
+										a_ClippingEdges.Add(intersections[0]);
+										continue;
+									}
+									index++;
+								}
+								if ((intersectedSides & RectSide.TOP) != RectSide.NONE)
+								{
+									if (voronoiPos.y > m_MeshRect.yMax)
+									{
+										a_ClippingEdges.Add(voronoiPos);
+										a_ClippingEdges.Add(intersections[index]);
+										continue;
+									}
+									index++;
+								}
+								if ((intersectedSides & RectSide.RIGHT) != RectSide.NONE)
+								{
+									if (voronoiPos.x > m_MeshRect.xMax) 
+									{
+										a_ClippingEdges.Add(voronoiPos);
+										a_ClippingEdges.Add(intersections[index]);
+										continue;
+									}
+									index++;
+								}
+								if ((intersectedSides & RectSide.BOTTOM) != RectSide.NONE)
+								{
+									if (voronoiPos.y < m_MeshRect.yMin)
+									{
+										a_ClippingEdges.Add(voronoiPos);
+										a_ClippingEdges.Add(intersections[index]);
+									}
+								}
+							}
+							else
+							{
+								a_ClippingEdges.Add(voronoiPos);
+								a_ClippingEdges.Add(adjacentVoronoiPos);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
 	private MeshDescription TriangulateVoronoi()
 	{
 		Dictionary<Vertex, HashSet<Vertex>> internalEdges = new Dictionary<Vertex, HashSet<Vertex>>();
@@ -137,6 +321,7 @@ public class GraphManager : MonoBehaviour
 		{
 			ProcessHalfEdge(halfEdge, voronoiEdges, internalEdges);
 		}
+		FindClippingVoronoiEdges(voronoiEdges, m_ClippingEdges);
 		List<Vector3> vertices = new List<Vector3>();
 		List<int>[] triangleLists = new List<int>[2];
 		triangleLists[0] = new List<int>();
@@ -205,12 +390,6 @@ public class GraphManager : MonoBehaviour
 		GL.End();**/
 	}
 
-	private class MeshDescription
-	{
-		public Vector3[] vertices;
-		public int[][] triangles;
-	}
-
 	private void ProcessHalfEdge(HalfEdge h1, Dictionary<Vertex, HashSet<Vertex>> voronoiEdges, Dictionary<Vertex, HashSet<Vertex>> internalEdges)
 	{
 		if (h1.Twin == null)
@@ -275,8 +454,42 @@ public class GraphManager : MonoBehaviour
 		if (m_VoronoiOn)
 		{ DrawVoronoi(); }
 
+		DrawMeshRect();
+		DrawInvalidVoronoiEdges();
+
         GL.PopMatrix();
     }
+
+	private void DrawInvalidVoronoiEdges()
+	{
+		GL.Begin(GL.LINES);
+		GL.Color(Color.red);
+		for (int i = 0; i < m_ClippingEdges.Count; i += 2)
+		{
+			GL.Vertex3(m_ClippingEdges[i].x, 0, m_ClippingEdges[i].y);
+			GL.Vertex3(m_ClippingEdges[i + 1].x, 0, m_ClippingEdges[i + 1].y);
+		}
+		GL.End();
+	}
+
+	private void DrawMeshRect()
+	{
+		GL.Begin(GL.LINES);
+
+		GL.Vertex3(m_MeshRect.xMin, 0, m_MeshRect.yMin);
+		GL.Vertex3(m_MeshRect.xMin, 0, m_MeshRect.yMax);
+
+		GL.Vertex3(m_MeshRect.xMin, 0, m_MeshRect.yMax);
+		GL.Vertex3(m_MeshRect.xMax, 0, m_MeshRect.yMax);
+
+		GL.Vertex3(m_MeshRect.xMax, 0, m_MeshRect.yMax);
+		GL.Vertex3(m_MeshRect.xMax, 0, m_MeshRect.yMin);
+
+		GL.Vertex3(m_MeshRect.xMax, 0, m_MeshRect.yMin);
+		GL.Vertex3(m_MeshRect.xMin, 0, m_MeshRect.yMin);
+
+		GL.End();
+	}
 
     private void Update()
     {
@@ -300,7 +513,6 @@ public class GraphManager : MonoBehaviour
 			Vector3 pos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 			pos.y = 0;
 			Vertex me = new Vertex(pos.x, pos.z, player1Turn ? Vertex.EOwnership.PLAYER1 : Vertex.EOwnership.PLAYER2);
-			player1Turn = !player1Turn;
 			m_Delaunay.AddVertex(me);
 
 			GameObject onClickObject = GameObject.Instantiate(m_OnClickObjectPrefab, pos, Quaternion.identity) as GameObject;
@@ -310,9 +522,16 @@ public class GraphManager : MonoBehaviour
 			{
 				onClickObject.name = "onClickObject_" + me.Ownership.ToString();
 				onClickObject.transform.parent = m_MyTransform;
+				m_FishManager.AddFish (onClickObject.transform, player1Turn ? 1 : 2);
 			}
 
 			UpdateVoronoiMesh();
+
+			player1Turn = !player1Turn;
+			if (player1Turn)
+			{ m_GUIManager.OnBlueTurnStart(); }
+			else
+			{ m_GUIManager.OnRedTurnStart(); }
 		}
     }
 }
