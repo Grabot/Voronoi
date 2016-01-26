@@ -241,8 +241,12 @@ public class GraphManager : MonoBehaviour
 				foreach (Vertex adjacentVertex in adjacentVoronoiVertices)
 				{
 					Vector2 adjacentVoronoiPos = new Vector2(adjacentVertex.X, adjacentVertex.Y);
+					// For an edge to be invalid, it either has 1 vertex outside the rectangle (clipping it)
+					// or both vertices are completely outside of the rectangle and not clipping it
+					// or both vertices are completely outside of the rectangle and the edge intersects the rectangle twice.
 					if (m_MeshRect.Contains(voronoiPos) == false)
 					{
+						// If the first vertex is outside and the second vertex is inside, we intersect the rectangle in 1 location.
 						if (m_MeshRect.Contains(adjacentVoronoiPos))
 						{
 							Vector2[] intersections;
@@ -256,11 +260,16 @@ public class GraphManager : MonoBehaviour
 						}
 						else
 						{
+							// If the first vertex it outside and the second vertex too, it is possible we still intersect the
+							// rectangle in 2 places.
 							Vector2[] intersections;
 							RectSide intersectedSides;
 							if (IntersectLineWithRectangle(voronoiPos, adjacentVoronoiPos, m_MeshRect, 2, out intersections,
 								out intersectedSides))
 							{
+								// The edge intersects the rectangle in 2 places, find the intersection on the rectangle that is
+								// on "this side" of the rectangle, seen from the first vertex of the edge that we are processing.
+								// The line segment part of the edge on the other side of the rectangle will be found later in the iteration.
 								int index = 0;
 								if ((intersectedSides & RectSide.LEFT) != RectSide.NONE)
 								{
@@ -303,6 +312,7 @@ public class GraphManager : MonoBehaviour
 							}
 							else
 							{
+								// Both vertices are outside of the rectangle and the edge does not intersect with the rectangle.
 								a_ClippingEdges.Add(voronoiPos);
 								a_ClippingEdges.Add(adjacentVoronoiPos);
 							}
