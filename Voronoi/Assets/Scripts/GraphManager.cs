@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System;
 using Voronoi;
+using MNMatrix = MathNet.Numerics.LinearAlgebra.Matrix<float>;
 
 public class GraphManager : MonoBehaviour
 {
@@ -11,7 +12,8 @@ public class GraphManager : MonoBehaviour
 	private Delaunay m_Delaunay;
 	private bool m_CircleOn = false;
 	private bool m_EdgesOn = false;
-	private bool m_VoronoiOn = true;
+	private bool m_VoronoiOn = false;
+	private bool m_InvalidEdgesOn = false;
 	private MeshFilter m_MeshFilter;
 	private bool player1Turn = true;
 	private Transform m_MyTransform;
@@ -148,37 +150,54 @@ public class GraphManager : MonoBehaviour
         GL.End();
     }
 
-	private static bool IntersectLines(Vector2 a_FromA, Vector2 a_ToA, Vector2 a_FromB, Vector2 a_ToB, out Vector2 o_Intersection)
+	private static bool IntersectLines(Vector2 a, Vector2 b, Vector2 c, Vector2 d, out Vector2 o_Intersection)
 	{
-		Vector2 x1 = a_FromA;
-		Vector2 v1 = a_ToA - a_FromA;
-		Vector2 x2 = a_FromB;
-		Vector2 v2 = a_ToB - a_FromB;
+		float numerator = Orient2D(c, d, a);
+		if ((numerator * Orient2D(c, d, b) <= 0) && (Orient2D(a, b, c) * Orient2D(a, b, d) <= 0))
+		{
+			float[,] denominatorArray = new float[,]
+			{
+				{ b.x - a.x, b.y - a.y },
+				{ d.x - c.x, d.y - c.y }
+			};
+			
+			MNMatrix denominatorMatrix = MNMatrix.Build.DenseOfArray(denominatorArray);
+			float denominator = denominatorMatrix.Determinant();
 
-		// Check if parallel.
-		if (Vector2.Dot(v1, v1) * Vector2.Dot(v2, v2) == Mathf.Pow(Vector2.Dot(v1, v2), 2))
+			if (denominator == 0)
+			{ // ab and cd are parallel or equal
+				o_Intersection = Vector2.zero;
+				return false;
+			}
+			else
+			{ // can optionally check if p is very close to b, c, or d and then flip so that a is nearest p.
+				float alpha = numerator / denominator;
+				Vector2 direction = b - a;
+				direction.Scale(new Vector2(alpha, alpha));
+				o_Intersection = a + direction;
+				return true;
+			}
+		}
+		else
 		{
 			o_Intersection = Vector2.zero;
 			return false;
 		}
-		else
+	}
+
+	// returns a positive value if the points a, b, and c are arranged in
+	// counterclockwise order, a negative value if the points are in clockwise order,
+	// and zero if the points are collinear.
+	private static float Orient2D(Vector2 a, Vector2 b, Vector2 c)
+	{
+		float[,] orientArray = new float[,]
 		{
-			float a = ((Vector2.Dot(v2, v2) * Vector2.Dot(v1, x2 - x1)) - (Vector2.Dot(v1, v2) * Vector2.Dot(v2, x2 - x1)))
-				/ ((Vector2.Dot(v1, v1) * Vector2.Dot(v2, v2)) - Mathf.Pow(Vector2.Dot(v1, v2), 2));
-			float b = ((Vector2.Dot(v1, v2) * Vector2.Dot(v1, x2 - x1)) - (Vector2.Dot(v1, v1) * Vector2.Dot(v2, x2 - x1)))
-				/ ((Vector2.Dot(v1, v1) * Vector2.Dot(v2, v2)) - Mathf.Pow(Vector2.Dot(v1, v2), 2));
-			// Check if intersection point is on the line segments.
-			if (0 <= a && a <= 1 && 0 <= b && b <= 1)
-			{
-				o_Intersection = x1 + (a * v1);
-				return true;
-			}
-			else
-			{
-				o_Intersection = Vector2.zero;
-				return false;
-			}
-		}
+			{ a.x - c.x, a.y - c.y },
+			{ b.x - c.x, b.y - c.y }
+		};
+
+		MNMatrix orientMatrix = MNMatrix.Build.DenseOfArray(orientArray);
+		return orientMatrix.Determinant();
 	}
 
 	private static bool IntersectLineWithRectangle(Vector2 a_From, Vector2 a_To, Rect a_Rectangle, int a_MaxIntersections, out Vector2[] o_Intersections,
@@ -401,8 +420,9 @@ public class GraphManager : MonoBehaviour
 			ProcessHalfEdge(halfEdge, voronoiEdges, internalEdges, voronoiToInternalEdges);
 		}
 		List<Vertex> verticesToRemove = new List<Vertex>();
-		List<InvalidEdge> invalidEdges = FindClippingVoronoiEdges(voronoiEdges, verticesToRemove, m_ClippingEdges);
-		FixInvalidVoronoiEdges(invalidEdges, verticesToRemove, voronoiEdges, internalEdges, voronoiToInternalEdges);
+		//List<InvalidEdge> invalidEdges = FindClippingVoronoiEdges...
+		FindClippingVoronoiEdges(voronoiEdges, verticesToRemove, m_ClippingEdges);
+		//FixInvalidVoronoiEdges(invalidEdges, verticesToRemove, voronoiEdges, internalEdges, voronoiToInternalEdges);
 		List<Vector3> vertices = new List<Vector3>();
 		List<int>[] triangleLists = new List<int>[2];
 		triangleLists[0] = new List<int>();
@@ -426,18 +446,18 @@ public class GraphManager : MonoBehaviour
 					vertices.Add(new Vector3(adjacent.X, 0, adjacent.Y));
 					if (unowned)
 					{
-						triangleLists [0].Add (curCount);
-						triangleLists [0].Add (curCount + 1);
-						triangleLists [0].Add (curCount + 2);
-						triangleLists [1].Add (curCount);
-						triangleLists [1].Add (curCount + 1);
-						triangleLists [1].Add (curCount + 2);
+						triangleLists[0].Add (curCount);
+						triangleLists[0].Add (curCount + 1);
+						triangleLists[0].Add (curCount + 2);
+						triangleLists[1].Add (curCount);
+						triangleLists[1].Add (curCount + 1);
+						triangleLists[1].Add (curCount + 2);
 					}
 					else
 					{
-						triangleLists [playerIndex].Add (curCount);
-						triangleLists [playerIndex].Add (curCount + 1);
-						triangleLists [playerIndex].Add (curCount + 2);
+						triangleLists[playerIndex].Add(curCount);
+						triangleLists[playerIndex].Add(curCount + 1);
+						triangleLists[playerIndex].Add(curCount + 2);
 					}
 				}
 			}
@@ -528,7 +548,7 @@ public class GraphManager : MonoBehaviour
 			{ a_VoronoiToInternalEdges.Add(voronoiVertex2, inputVertices); }
 		}
 	}
-
+		
     private void OnRenderObject()
     {
         // Apply the line material
@@ -549,7 +569,9 @@ public class GraphManager : MonoBehaviour
 		{ DrawVoronoi(); }
 
 		DrawMeshRect();
-		DrawInvalidVoronoiEdges();
+
+		if (m_InvalidEdgesOn)
+		{ DrawInvalidVoronoiEdges(); }
 
         GL.PopMatrix();
     }
@@ -600,6 +622,11 @@ public class GraphManager : MonoBehaviour
 		if (Input.GetKeyDown("v"))
 		{
 			m_VoronoiOn = !m_VoronoiOn;
+		}
+
+		if (Input.GetKeyDown("i"))
+		{
+			m_InvalidEdgesOn = !m_InvalidEdgesOn;
 		}
 
 		if (Input.GetMouseButtonDown(0))
