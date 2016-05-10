@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using MNMatrix = MathNet.Numerics.LinearAlgebra.Matrix<double>;
+using MNVector = MathNet.Numerics.LinearAlgebra.Vector<double>;
 
 namespace Voronoi
 {
@@ -36,11 +38,18 @@ namespace Voronoi
 			Vertex v3 = m_HalfEdge.Next.Next.Origin;
 			Vertex v4 = m_HalfEdge.Next.Next.Next.Origin;
 
-			if (v1 == v2 || v2 == v3 || v1 == v3)
-			{ Debug.LogError("Triangle does not have a correct 3 vertex loop."); }
+			if (v1 == v2 || v2 == v3 || v1 == v3 || v1 != v4)
+			{ throw new Exception("Triangle does not have a correct 3 vertex loop."); }
 
-			if (v1 != v4)
-			{ Debug.LogError("Triangle does not have a correct 3 vertex loop."); }
+			if (v1.IsInvalid() || v2.IsInvalid() || v3.IsInvalid())
+			{ throw new Exception("Invalid triangle vertex coordinates!"); }
+
+			HalfEdge h1 = m_HalfEdge;
+			HalfEdge h2 = m_HalfEdge.Next.Twin.Next;
+			HalfEdge h3 = m_HalfEdge.Next.Twin.Next.Next.Twin.Next;
+
+			if (h1 == null || h2 == null || h3 == null)
+			{ throw new Exception("Associated halfedges of triangle are invalid!"); }
 
 			// Fix halfedges to this triangle
 			m_HalfEdge.Triangle = this;
@@ -53,109 +62,103 @@ namespace Voronoi
 			m_Vertices[2] = v3;
 		}
 
-		public bool Inside (Vertex a_Vertex)
+		private Vertex CalculateCircumcenter()
 		{
-			int i, j = m_Vertices.Length - 1;
-			bool oddNodes = false;
+			Vertex a = m_Vertices[0];
+			Vertex b = m_Vertices[1];
+			Vertex c = m_Vertices[2];
 
-			for (i = 0; i < m_Vertices.Length; i++)
+			double[,] numerator = new double[,] {
+				{ Mathf.Pow (a.X - c.X, 2) + Mathf.Pow (a.Y - c.Y, 2), a.Y - c.Y },
+				{ Mathf.Pow (b.X - c.X, 2) + Mathf.Pow (b.Y - c.Y, 2), b.Y - c.Y }
+			};
+			double[,] denomenator = new double[,] {
+				{ a.X - c.X, a.Y - c.Y },
+				{ b.X - c.X, b.Y - c.Y }
+			};
+
+			MNMatrix numeratorMatrix = MNMatrix.Build.DenseOfArray (numerator);
+			MNMatrix denomenatorMatrix = MNMatrix.Build.DenseOfArray (denomenator);
+			double numeratorDeterminant = numeratorMatrix.Determinant ();
+			double denomenatorDeterminant = denomenatorMatrix.Determinant ();
+			double Ox = c.X + numeratorDeterminant / (2 * denomenatorDeterminant);
+
+			numerator = new double[,] {
+				{ a.X - c.X, Mathf.Pow (a.X - c.X, 2) + Mathf.Pow (a.Y - c.Y, 2) },
+				{ b.X - c.X, Mathf.Pow (b.X - c.X, 2) + Mathf.Pow (b.Y - c.Y, 2) }
+			};
+
+			numeratorMatrix = MNMatrix.Build.DenseOfArray (numerator);
+			numeratorDeterminant = numeratorMatrix.Determinant ();
+
+			double Oy = c.Y + numeratorDeterminant / (2 * denomenatorDeterminant);
+
+			Vertex circumCenter = new Vertex ((float)Ox, (float)Oy);
+			if (!circumCenter.IsInvalid())
 			{
-				if ((m_Vertices[i].Y < a_Vertex.Y &&
-					m_Vertices[j].Y >= a_Vertex.Y ||
-					m_Vertices[j].Y < a_Vertex.Y &&
-					m_Vertices[i].Y >= a_Vertex.Y)
-					&& (m_Vertices[i].X <= a_Vertex.X || m_Vertices[j].X <= a_Vertex.X))
-				{
-					oddNodes ^= (m_Vertices[i].X +
-						(a_Vertex.Y - m_Vertices[i].Y) /
-						(m_Vertices[j].Y - m_Vertices[i].Y) *
-						(m_Vertices[j].X - m_Vertices[i].X)
-					) < a_Vertex.X;
-				}
-				j = i;
+				return circumCenter;
 			}
-
-			return oddNodes;
+			else
+			{
+				throw new Exception("Result of CalculateCircumcenterStable was invalid!");
+			}
 		}
 
-        private Vertex CalculateCircumcenter()
-        {
-			if (m_Vertices [0].IsInvalid () || m_Vertices [1].IsInvalid () || m_Vertices [2].IsInvalid ())
-			{
-				//Debug.LogError("Couldn't compute circumcircle due to invalid vertices!");
-				return Vertex.NaN;
-			}
-
-			Vertex c = CalculateCircumcenterT(m_Vertices[0], m_Vertices[1], m_Vertices[2]);
-			if (c.IsInvalid())
-			{
-				c = CalculateCircumcenterT(m_Vertices[1], m_Vertices[2], m_Vertices[0]);
-				if (c.IsInvalid())
-				{
-					c = CalculateCircumcenterT(m_Vertices[2], m_Vertices[0], m_Vertices[1]);
-					if (c.IsInvalid())
-					{
-						// We probably have colinear points, so solve in a non-mathematically-correct way:
-						//Debug.LogWarning("Encountered colinear points while computing circumcenter!");
-						float distAB = Utility.SquaredDistance (m_Vertices [0], m_Vertices [1]);
-						float distBC = Utility.SquaredDistance (m_Vertices [1], m_Vertices [2]);
-						float distCA = Utility.SquaredDistance (m_Vertices [2], m_Vertices [0]);
-
-						if (distAB > distBC)
-						{
-							if (distAB > distCA)
-							{
-								c = Utility.Midpoint (m_Vertices [0], m_Vertices [1]);
-							}
-						}
-						else
-						{
-							if (distBC > distCA)
-							{
-								c = Utility.Midpoint (m_Vertices [1], m_Vertices [2]);
-							}
-						}
-						if (c.IsInvalid())
-						{
-							c = Utility.Midpoint (m_Vertices [2], m_Vertices [0]);
-						}
-					}
-				}
-			}
-			if (c.IsInvalid())
-			{
-				//Debug.LogError("Couldn't compute circumcircle!");
-				return Vertex.NaN;
-			}
-			return c;
+		public bool InsideTriangle(Vertex a_Vertex)
+		{
+			int firstSide = Math.Sign(Orient2D(m_HalfEdge.Origin, m_HalfEdge.Next.Origin, a_Vertex));
+			int secondSide = Math.Sign(Orient2D(m_HalfEdge.Next.Origin, m_HalfEdge.Next.Next.Origin, a_Vertex));
+			int thirdSide = Math.Sign(Orient2D(m_HalfEdge.Next.Next.Origin, m_HalfEdge.Origin, a_Vertex));
+			return (firstSide != 0 && firstSide == secondSide && secondSide == thirdSide);
 		}
 
-		private Vertex CalculateCircumcenterT(Vertex a_VertexA, Vertex a_VertexB, Vertex a_VertexC)
-        {
-            // determine midpoints (average of x & y coordinates)
-            Vertex midAB = Utility.Midpoint(a_VertexA, a_VertexB);
-            Vertex midBC = Utility.Midpoint(a_VertexB, a_VertexC);
+		private bool InCircle(Vertex a, Vertex b, Vertex c, Vertex d)
+		{
+			int orientation = Math.Sign(Orient2D(a, b, c));
+			if (orientation == 0)
+			{
+				Debug.LogWarning("Tried to compute InCircle on degenerate circle");
+				return false;
+			}
 
-            // determine slope
-            // we need the negative reciprocal of the slope to get the slope of the perpendicular bisector
-            float slopeAB = -1 / Utility.Slope(a_VertexA, a_VertexB);
-            float slopeBC = -1 / Utility.Slope(a_VertexB, a_VertexC);
+			double[,] inCircleArray = new double[,]
+			{
+				{ a.X - d.X, a.Y - d.Y, Mathf.Pow(a.X - d.X, 2) + Mathf.Pow(a.Y - d.Y, 2) },
+				{ b.X - d.X, b.Y - d.Y, Mathf.Pow(b.X - d.X, 2) + Mathf.Pow(b.Y - d.Y, 2) },
+				{ c.X - d.X, c.Y - d.Y, Mathf.Pow(c.X - d.X, 2) + Mathf.Pow(c.Y - d.Y, 2) },
+			};
 
-			// y = mx + b
-			// solve for b
-			float bAB = midAB.Y - slopeAB * midAB.X;
-			float bBC = midBC.Y - slopeBC * midBC.X;
+			MNMatrix inCircleMatrix = MNMatrix.Build.DenseOfArray(inCircleArray);
+			int inside = Math.Sign(inCircleMatrix.Determinant());
 
-			// solve for x & y
-			// x = (b1 - b2) / (m2 - m1)
-			float x = (bAB - bBC) / (slopeBC - slopeAB);
+			if (inside == 0)
+			{
+				return false;
+			}
+			else
+			{
+				return orientation == inside;
+			}
+		}
 
-			return new Vertex (x, (slopeAB * x) + bAB);
-        }
+		// returns a positive value if the points a, b, and c are arranged in
+		// counterclockwise order, a negative value if the points are in clockwise order,
+		// and zero if the points are collinear.
+		private double Orient2D(Vertex a, Vertex b, Vertex c)
+		{
+			double[,] orientArray = new double[,]
+			{
+				{ a.X - c.X, a.Y - c.Y },
+				{ b.X - c.X, b.Y - c.Y }
+			};
+
+			MNMatrix orientMatrix = MNMatrix.Build.DenseOfArray(orientArray);
+			return orientMatrix.Determinant();
+		}
 
         public bool InsideCircumcenter(Vertex a_Vertex)
         {
-			return (Circumcenter.DeltaSquaredXY (a_Vertex) < CircumcenterRangeSquared);
+			return InCircle(m_Vertices[0], m_Vertices[1], m_Vertices[2], a_Vertex);
         }
 			
         public Vertex Circumcenter

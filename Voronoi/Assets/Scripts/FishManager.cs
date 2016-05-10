@@ -12,7 +12,7 @@ public sealed class FishManager {
 		m_FishesTeam2 = new List<Transform>();
 	}
 
-	public void AddFish(Transform a_FishTransform, int a_TeamID)
+	public void AddFish(Transform a_FishTransform, int a_TeamID, bool a_WithOrientationUpdate)
 	{
 		if (a_TeamID == 1)
 		{
@@ -22,7 +22,10 @@ public sealed class FishManager {
 		{
 			m_FishesTeam2.Add(a_FishTransform);
 		}
-		RecomputeOrientation();
+		if (a_WithOrientationUpdate)
+		{
+			RecomputeOrientation();
+		}
 	}
 
 	private void RecomputeOrientation()

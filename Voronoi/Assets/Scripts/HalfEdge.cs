@@ -26,18 +26,6 @@ namespace Voronoi
             // Using new here prevents reference equality. Is it really necessary to copy?
             set { m_Origin = new Vertex(value.X, value.Y, value.Ownership); }
         }
-
-        // Indicates if the fish at the origin of this edge can eat over this edge
-        public bool CanEat()
-        {
-            if (m_Origin.Ownership != this.Next.Origin.Ownership)
-            {
-                if (m_Origin.DeltaSquaredXY(this.Next.Origin) < (m_Origin.FeedingRange * m_Origin.FeedingRange))
-                    return true;
-            }
-
-            return false;
-        }
     }
 
 }

@@ -5,7 +5,9 @@ using Voronoi;
 
 public class GraphManager : MonoBehaviour
 {
-	public GameObject m_OnClickObjectPrefab;
+	public GameObject m_Player1Prefab;
+	public GameObject m_Player2Prefab;
+	public bool m_WithLookAtOnPlacement = true;
 	private Delaunay m_Delaunay;
 	private bool m_CircleOn = false;
 	private bool m_EdgesOn = false;
@@ -59,19 +61,11 @@ public class GraphManager : MonoBehaviour
 
     private void DrawEdges()
     {
+		GL.Color(Color.green);
         GL.Begin(GL.LINES);
 
         foreach (HalfEdge halfEdge in m_Delaunay.HalfEdges)
         {
-            if (halfEdge.CanEat())
-            {
-                GL.Color(Color.red);
-            }
-            else
-            {
-                GL.Color(Color.green);
-            }
-
             GL.Vertex3(halfEdge.Origin.X, 0, halfEdge.Origin.Y);
             GL.Vertex3(halfEdge.Next.Origin.X, 0, halfEdge.Next.Origin.Y);
         }
@@ -537,9 +531,8 @@ public class GraphManager : MonoBehaviour
 
     private void OnRenderObject()
     {
-        m_Delaunay.CreateLineMaterial();
         // Apply the line material
-        m_Delaunay.m_LineMaterial.SetPass(0);
+		m_Delaunay.LineMaterial.SetPass(0);
 
         GL.PushMatrix();
         // Set transformation matrix for drawing to
@@ -614,25 +607,42 @@ public class GraphManager : MonoBehaviour
 			Vector3 pos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 			pos.y = 0;
 			Vertex me = new Vertex(pos.x, pos.z, player1Turn ? Vertex.EOwnership.PLAYER1 : Vertex.EOwnership.PLAYER2);
-			m_Delaunay.AddVertex(me);
-
-			GameObject onClickObject = GameObject.Instantiate(m_OnClickObjectPrefab, pos, Quaternion.identity) as GameObject;
-			if (onClickObject == null)
-			{ Debug.LogError ("Couldn't instantiate m_OnClickObjectPrefab!"); }
-			else
+			if (m_Delaunay.AddVertex(me))
 			{
-				onClickObject.name = "onClickObject_" + me.Ownership.ToString();
-				onClickObject.transform.parent = m_MyTransform;
-				m_FishManager.AddFish (onClickObject.transform, player1Turn ? 1 : 2);
+				GameObject onClickObject = null;
+				if (player1Turn)
+				{
+					onClickObject = GameObject.Instantiate(m_Player1Prefab, pos, Quaternion.identity) as GameObject;
+				}
+				else
+				{
+					onClickObject = GameObject.Instantiate(m_Player2Prefab, pos, Quaternion.identity) as GameObject;
+				}
+
+				if (onClickObject == null)
+				{
+					Debug.LogError ("Couldn't instantiate m_PlayerPrefab!");
+				}
+				else
+				{
+					onClickObject.name = "onClickObject_" + me.Ownership.ToString ();
+					onClickObject.transform.parent = m_MyTransform;
+					m_FishManager.AddFish(onClickObject.transform, player1Turn ? 1 : 2, m_WithLookAtOnPlacement);
+				}
+
+				UpdateVoronoiMesh();
+
+				player1Turn = !player1Turn;
+				if (player1Turn)
+				{
+					m_GUIManager.OnBlueTurnStart();
+				}
+				else
+				{
+					m_GUIManager.OnRedTurnStart();
+				}
 			}
-
-			UpdateVoronoiMesh();
-
-			player1Turn = !player1Turn;
-			if (player1Turn)
-			{ m_GUIManager.OnBlueTurnStart(); }
-			else
-			{ m_GUIManager.OnRedTurnStart(); }
 		}
     }
+
 }
