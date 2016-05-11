@@ -29,6 +29,7 @@ public class GraphManager : MonoBehaviour
 	{
 		public Vector3[] vertices;
 		public int[][] triangles;
+		public float[] playerArea;
 	}
 
 	private struct InvalidEdge
@@ -77,6 +78,7 @@ public class GraphManager : MonoBehaviour
     private void UpdateVoronoiMesh()
     {
 		MeshDescription newDescription = TriangulateVoronoi();
+		m_GUIManager.SetPlayerAreaOwned(newDescription.playerArea[0], newDescription.playerArea[1]);
 		Mesh mesh = m_MeshFilter.mesh;
 		if (mesh == null)
 		{
@@ -194,6 +196,18 @@ public class GraphManager : MonoBehaviour
 		{
 			{ a.x - c.x, a.y - c.y },
 			{ b.x - c.x, b.y - c.y }
+		};
+
+		MNMatrix orientMatrix = MNMatrix.Build.DenseOfArray(orientArray);
+		return orientMatrix.Determinant();
+	}
+
+	private float Orient2D(Vertex a, Vertex b, Vertex c)
+	{
+		float[,] orientArray = new float[,]
+		{
+			{ a.X - c.X, a.Y - c.Y },
+			{ b.X - c.X, b.Y - c.Y }
 		};
 
 		MNMatrix orientMatrix = MNMatrix.Build.DenseOfArray(orientArray);
@@ -412,6 +426,7 @@ public class GraphManager : MonoBehaviour
 
 	private MeshDescription TriangulateVoronoi()
 	{
+		float[] playerArea = new float[2] { 0, 0 };
 		Dictionary<Vertex, HashSet<Vertex>> internalEdges = new Dictionary<Vertex, HashSet<Vertex>>();
 		Dictionary<Vertex, HashSet<Vertex>> voronoiEdges = new Dictionary<Vertex, HashSet<Vertex>>();
 		Dictionary<Vertex, HashSet<Vertex>> voronoiToInternalEdges = new Dictionary<Vertex, HashSet<Vertex>>();
@@ -446,18 +461,19 @@ public class GraphManager : MonoBehaviour
 					vertices.Add(new Vector3(adjacent.X, 0, adjacent.Y));
 					if (unowned)
 					{
-						triangleLists[0].Add (curCount);
-						triangleLists[0].Add (curCount + 1);
-						triangleLists[0].Add (curCount + 2);
-						triangleLists[1].Add (curCount);
-						triangleLists[1].Add (curCount + 1);
-						triangleLists[1].Add (curCount + 2);
+						triangleLists[0].Add(curCount);
+						triangleLists[0].Add(curCount + 1);
+						triangleLists[0].Add(curCount + 2);
+						triangleLists[1].Add(curCount);
+						triangleLists[1].Add(curCount + 1);
+						triangleLists[1].Add(curCount + 2);
 					}
 					else
 					{
 						triangleLists[playerIndex].Add(curCount);
 						triangleLists[playerIndex].Add(curCount + 1);
 						triangleLists[playerIndex].Add(curCount + 2);
+						playerArea[playerIndex] += Mathf.Abs((Orient2D(inputNode, voronoiNode, adjacent) / 2));
 					}
 				}
 			}
@@ -467,6 +483,7 @@ public class GraphManager : MonoBehaviour
 		description.triangles[0] = triangleLists[0].ToArray();
 		description.triangles[1] = triangleLists[1].ToArray();
 		description.vertices = vertices.ToArray();
+		description.playerArea = playerArea;
 		return description;
 
 		/**GL.Begin(GL.LINES);
