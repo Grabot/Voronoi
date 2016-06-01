@@ -21,6 +21,7 @@ public class GraphManager : MonoBehaviour
 	private FishManager m_FishManager;
 	private Rect m_MeshRect;
 	private List<Vector2> m_ClippingEdges = new List<Vector2>();
+	private VoronoiDCEL.DCEL m_DCEL;
 
 	[Flags]
 	private enum ERectangleSide { NONE = 0, LEFT = 1, TOP = 2, RIGHT = 4, BOTTOM = 8 };
@@ -77,6 +78,7 @@ public class GraphManager : MonoBehaviour
 
     private void UpdateVoronoiMesh()
     {
+		m_DCEL = CreateVoronoiDiagram();
 		MeshDescription newDescription = TriangulateVoronoi();
 		m_GUIManager.SetPlayerAreaOwned(newDescription.playerArea[0], newDescription.playerArea[1]);
 		Mesh mesh = m_MeshFilter.mesh;
@@ -423,6 +425,26 @@ public class GraphManager : MonoBehaviour
 		}
 		return invalidEdges;
 	}
+		
+	private VoronoiDCEL.DCEL CreateVoronoiDiagram()
+	{
+		VoronoiDCEL.DCEL dcel = new VoronoiDCEL.DCEL();
+		foreach (HalfEdge halfEdge in m_Delaunay.HalfEdges)
+		{
+			Triangle t1 = halfEdge.Triangle;
+			Triangle t2 = halfEdge.Twin.Triangle;
+			if (t1 != null && t2 != null)
+			{
+				// First add the DCEL halfedges and vertices.
+				Vertex v1 = t1.Circumcenter;
+				Vertex v2 = t2.Circumcenter;
+				dcel.AddEdge(v1.X, v1.Y, v2.X, v2.Y);
+			}
+		}
+		dcel.ConnectHalfEdges();
+		dcel.CreateFaces();
+		return dcel;
+	}
 
 	private MeshDescription TriangulateVoronoi()
 	{
@@ -583,7 +605,13 @@ public class GraphManager : MonoBehaviour
         { DrawCircles(); }
 
 		if (m_VoronoiOn)
-		{ DrawVoronoi(); }
+		{
+			//DrawVoronoi();
+			if (m_DCEL != null)
+			{
+				m_DCEL.Draw();
+			}
+		}
 
 		DrawMeshRect();
 

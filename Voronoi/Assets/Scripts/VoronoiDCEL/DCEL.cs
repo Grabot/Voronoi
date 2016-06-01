@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace VoronoiDCEL
 {
@@ -16,13 +17,130 @@ namespace VoronoiDCEL
 			m_Faces = new List<Face>();
 		}
 
+		public void AddEdge(double a_x, double a_y, double b_x, double b_y)
+		{
+			HalfEdge h1 = new HalfEdge();
+			HalfEdge h2 = new HalfEdge();
+			h1.Twin = h2;
+			h2.Twin = h1;
+			Vertex v1 = null;
+			Vertex v2 = null;
+			foreach (Vertex v in m_Vertices)
+			{
+				if (Math.Abs(v.X - a_x) <= float.Epsilon && Math.Abs(v.Y - a_y) <= float.Epsilon)
+				{
+					v1 = v;
+				}
+				else if (Math.Abs(v.X - b_x) <= float.Epsilon && Math.Abs(v.Y - b_y) <= float.Epsilon)
+				{
+					v2 = v;
+				}
+				if (v1 != null && v2 != null)
+				{
+					foreach (HalfEdge h in v1.IncidentEdges)
+					{
+						if (h.Twin.Origin == v2)
+						{
+							return;
+						}
+					}
+					break;
+				}
+			}
+			if (v1 == null)
+			{
+				v1 = new Vertex (a_x, a_y);
+				m_Vertices.Add(v1);
+			}
+			if (v2 == null)
+			{
+				v2 = new Vertex(b_x, b_y);
+				m_Vertices.Add(v2);
+			}
+			h1.Origin = v1;
+			h2.Origin = v2;
+			v1.IncidentEdges.Add(h1);
+			v2.IncidentEdges.Add(h2);
+			m_HalfEdges.Add(h1);
+			m_HalfEdges.Add(h2);
+		}
+
+		public void ConnectHalfEdges()
+		{
+			foreach (HalfEdge h in m_HalfEdges)
+			{
+				Vector3 edgeDirection = new Vector3((float)(h.Twin.Origin.X - h.Origin.X), (float)(h.Twin.Origin.Y - h.Origin.Y), 0);
+				edgeDirection.Normalize();
+				float turnSize = 0;
+				HalfEdge mostLeftTurn = null;
+				foreach (HalfEdge h2 in h.Twin.Origin.IncidentEdges)
+				{
+					if (h2 != h.Twin)
+					{
+						Vector3 nextEdgeDirection = new Vector3((float)(h2.Twin.Origin.X - h2.Origin.X), (float)(h2.Twin.Origin.Y - h2.Origin.Y), 0);
+						nextEdgeDirection.Normalize();
+						float turn = Vector3.Cross(edgeDirection, nextEdgeDirection).z;
+						if (turn <= 0)
+						{
+							float size = Mathf.Abs(Vector3.Dot (edgeDirection, nextEdgeDirection) - 1);
+							if (size >= turnSize)
+							{
+								mostLeftTurn = h2;
+							}
+						}
+					}
+				}
+				if (mostLeftTurn != null)
+				{
+					h.Next = mostLeftTurn;
+					mostLeftTurn.Previous = h;
+				}
+			}
+		}
+
+		public void CreateFaces()
+		{
+			List<HalfEdge> faceEdges = new List<HalfEdge>();
+			foreach (HalfEdge h in m_HalfEdges)
+			{
+				if (h.IncidentFace == null)
+				{
+					faceEdges.Add(h);
+					HalfEdge curEdge = h.Next;
+					while (curEdge != h)
+					{
+						if (curEdge == null)
+						{
+							break;
+						}
+						else
+						{
+							faceEdges.Add(curEdge);
+						}
+						curEdge = curEdge.Next;
+					}
+					if (curEdge == h)
+					{
+						Face f = new Face();
+						f.StartingEdge = h;
+						foreach (HalfEdge newFaceEdge in faceEdges)
+						{
+							newFaceEdge.IncidentFace = f;
+						}
+						m_Faces.Add(f);
+					}
+					faceEdges.Clear();
+				}
+			}
+		}
+
 		public void AddVertexOnEdge(double a_x, double a_y, HalfEdge a_Edge)
 		{
 			Vertex x = new Vertex(a_x, a_y);
 			HalfEdge e1 = new HalfEdge();
 			HalfEdge e2 = new HalfEdge();
 
-			x.IncidentEdge = e1;
+			x.IncidentEdges.Add(e1);
 			e1.Origin = x;
 
 			e1.Next = a_Edge.Next;
@@ -84,7 +202,7 @@ namespace VoronoiDCEL
 			HalfEdge h1 = new HalfEdge();
 			HalfEdge h2 = new HalfEdge();
 
-			v.IncidentEdge = h2;
+			v.IncidentEdges.Add(h2);
 			h1.Twin = h2;
 			h2.Twin = h1;
 			h2.Origin = v;
@@ -162,6 +280,18 @@ namespace VoronoiDCEL
 			}
 
 			m_Faces.Remove(f);
+		}
+
+		public void Draw()
+		{
+			GL.Begin(GL.LINES);
+			GL.Color(Color.red);
+			foreach (HalfEdge h in m_HalfEdges)
+			{
+				GL.Vertex3((float)(h.Origin.X), 0, (float)(h.Origin.Y));
+				GL.Vertex3((float)(h.Twin.Origin.X), 0, (float)(h.Twin.Origin.Y));
+			}
+			GL.End();
 		}
 	}
 }
