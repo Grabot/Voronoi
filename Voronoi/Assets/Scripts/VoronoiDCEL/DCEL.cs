@@ -282,6 +282,12 @@ namespace VoronoiDCEL
 			m_Faces.Remove(f);
 		}
 
+		public void FindIntersections()
+		{
+			AATree eventQueue = new AATree();
+			// Implement this.
+		}
+
 		public void Draw()
 		{
 			GL.Begin(GL.LINES);

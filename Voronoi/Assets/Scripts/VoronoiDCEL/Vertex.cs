@@ -26,6 +26,39 @@ namespace VoronoiDCEL
 
 		public double Y
 		{ get { return m_y; } }
+
+		public static bool operator <(Vertex a, Vertex b)
+		{
+			return a.Y < b.Y || (a.Y == b.Y && a.X < b.X);
+		}
+
+		public static bool operator >(Vertex a, Vertex b)
+		{
+			return a.Y > b.Y || (a.Y == b.Y && a.X > b.X);
+		}
+
+		public override bool Equals(object obj)
+		{
+			if (obj != null && obj is Vertex)
+			{
+				return m_y == ((Vertex)obj).Y && m_x == ((Vertex)obj).X;
+			}
+			else
+			{
+				return false;
+			}
+		}
+
+		public override int GetHashCode()
+		{
+			unchecked // Overflow is fine, just wrap
+			{
+				int hash = 17;
+				hash = hash * 23 + m_x.GetHashCode();
+				hash = hash * 23 + m_y.GetHashCode();
+				return hash;
+			}
+		}
 	}
 }
 
