@@ -2,10 +2,16 @@
 {
 	public class AATree
 	{
-		Node m_Bottom; // Sentinel.
-		Node m_Deleted;
-		Node m_Last;
-		Node m_Tree;
+		private Node m_Bottom; // Sentinel.
+		private Node m_Deleted;
+		private Node m_Last;
+		private Node m_Tree;
+		private int m_Size = 0;
+
+		public int Size
+		{
+			get { return m_Size; }
+		}
 
 		internal class Node
 		{
@@ -27,17 +33,34 @@
 
 		public bool Insert(Vertex data)
 		{
-			return Insert(data, m_Tree);
+			bool result = Insert(data, m_Tree);
+			if (result)
+			{
+				++m_Size;
+				return true;
+			}
+			return false;
 		}
 
 		public bool Delete(Vertex data)
 		{
-			return Delete(data, m_Tree);
+			bool result = Delete(data, m_Tree);
+			if (result)
+			{
+				--m_Size;
+				return true;
+			}
+			return false;
 		}
 
 		public bool Contains(Vertex data)
 		{
 			return Contains(data, m_Tree);
+		}
+
+		public int ComputeSize()
+		{
+			return ComputeSize(m_Tree);
 		}
 
 		public Vertex FindMin()
@@ -208,6 +231,21 @@
 			else
 			{
 				return Contains(data, t.right);
+			}
+		}
+
+		private int ComputeSize(Node t)
+		{
+			if (t == m_Bottom)
+			{
+				return 0;
+			}
+			else
+			{
+				int result = 1;
+				result += Size(t.left);
+				result += Size(t.right);
+				return result;
 			}
 		}
 	}

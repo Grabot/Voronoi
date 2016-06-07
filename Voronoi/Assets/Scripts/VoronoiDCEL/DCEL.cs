@@ -7,12 +7,14 @@ namespace VoronoiDCEL
 	public class DCEL
 	{
 		private List<Vertex> m_Vertices;
+		private List<Edge> m_Edges;
 		private List<HalfEdge> m_HalfEdges;
 		private List<Face> m_Faces;
 
 		public DCEL()
 		{
 			m_Vertices = new List<Vertex>();
+			m_Edges = new List<Edge>();
 			m_HalfEdges = new List<HalfEdge>();
 			m_Faces = new List<Face>();
 		}
@@ -21,6 +23,10 @@ namespace VoronoiDCEL
 		{
 			HalfEdge h1 = new HalfEdge();
 			HalfEdge h2 = new HalfEdge();
+			Edge e = new Edge();
+			e.Half1 = h1;
+			e.Half2 = h2;
+
 			h1.Twin = h2;
 			h2.Twin = h1;
 			Vertex v1 = null;
@@ -63,6 +69,7 @@ namespace VoronoiDCEL
 			v2.IncidentEdges.Add(h2);
 			m_HalfEdges.Add(h1);
 			m_HalfEdges.Add(h2);
+			m_Edges.Add(e);
 		}
 
 		public void ConnectHalfEdges()
@@ -134,34 +141,37 @@ namespace VoronoiDCEL
 			}
 		}
 
-		public void AddVertexOnEdge(double a_x, double a_y, HalfEdge a_Edge)
+		public void AddVertexOnEdge(double a_x, double a_y, Edge a_Edge)
 		{
 			Vertex x = new Vertex(a_x, a_y);
 			HalfEdge e1 = new HalfEdge();
 			HalfEdge e2 = new HalfEdge();
+			Edge e = new Edge();
+			e.Half1 = e1;
+			e.Half2 = e2;
 
 			x.IncidentEdges.Add(e1);
 			e1.Origin = x;
 
-			e1.Next = a_Edge.Next;
+			e1.Next = a_Edge.Half1.Next;
 			e1.Previous = e2;
 
 			e1.IncidentFace = e1.IncidentFace;
 
-			e2.Origin = a_Edge.Origin;
+			e2.Origin = a_Edge.UpperEndpoint;
 			e2.Next = e1;
-			e2.Previous = a_Edge.Previous;
-			e2.IncidentFace = a_Edge.IncidentFace;
+			e2.Previous = a_Edge.Half1.Previous;
+			e2.IncidentFace = a_Edge.Half1.IncidentFace;
 
-			a_Edge.Previous.Next = e2;
-			a_Edge.Next.Previous = e1;
+			a_Edge.Half1.Previous.Next = e2;
+			a_Edge.Half1.Next.Previous = e1;
 
-			m_HalfEdges.Remove(a_Edge);
+			m_HalfEdges.Remove(a_Edge.Half1);
 
 			// Now the second halfedge.
 			HalfEdge e3 = new HalfEdge();
 			HalfEdge e4 = new HalfEdge();
-			HalfEdge twinEdge = a_Edge.Twin;
+			HalfEdge twinEdge = a_Edge.Half2;
 
 			e3.Origin = twinEdge.Origin;
 			e3.Next = e4;
@@ -182,15 +192,22 @@ namespace VoronoiDCEL
 			e4.Twin = e2;
 
 			m_HalfEdges.Remove(twinEdge);
+			m_Edges.Remove(a_Edge);
 
-			if (a_Edge.IncidentFace.StartingEdge == a_Edge)
+			if (a_Edge.Half1.IncidentFace.StartingEdge == a_Edge.Half1)
 			{
-				a_Edge.IncidentFace.StartingEdge = e1;
+				a_Edge.Half1.IncidentFace.StartingEdge = e1;
 			}
 			if (twinEdge.IncidentFace.StartingEdge == twinEdge)
 			{
 				twinEdge.IncidentFace.StartingEdge = e3;
 			}
+
+			m_HalfEdges.Add(e1);
+			m_HalfEdges.Add(e2);
+			m_HalfEdges.Add(e3);
+			m_HalfEdges.Add(e4);
+			m_Edges.Add(e);
 		}
 
 		public void AddVertexInsideFace(double a_x, double a_y, HalfEdge a_h)
@@ -201,6 +218,9 @@ namespace VoronoiDCEL
 			Vertex v = new Vertex(a_x, a_y);
 			HalfEdge h1 = new HalfEdge();
 			HalfEdge h2 = new HalfEdge();
+			Edge e = new Edge();
+			e.Half1 = h1;
+			e.Half2 = h2;
 
 			v.IncidentEdges.Add(h2);
 			h1.Twin = h2;
@@ -223,6 +243,7 @@ namespace VoronoiDCEL
 			m_Vertices.Add(v);
 			m_HalfEdges.Add(h1);
 			m_HalfEdges.Add(h2);
+			m_Edges.Add(e);
 		}
 
 		public void SplitFace(HalfEdge a_h, Vertex a_v)
@@ -233,10 +254,13 @@ namespace VoronoiDCEL
 
 			Vertex u = a_h.Twin.Origin;
 			Face f = a_h.IncidentFace;
-			Face f1 = new Face ();
-			Face f2 = new Face ();
-			HalfEdge h1 = new HalfEdge ();
-			HalfEdge h2 = new HalfEdge ();
+			Face f1 = new Face();
+			Face f2 = new Face();
+			HalfEdge h1 = new HalfEdge();
+			HalfEdge h2 = new HalfEdge();
+			Edge e = new Edge();
+			e.Half1 = h1;
+			e.Half2 = h2;
 
 			f1.StartingEdge = h1;
 			f2.StartingEdge = h2;
@@ -280,11 +304,33 @@ namespace VoronoiDCEL
 			}
 
 			m_Faces.Remove(f);
+			m_Faces.Add(f1);
+			m_Faces.Add(f2);
+
+			m_HalfEdges.Add(h1);
+			m_HalfEdges.Add(h2);
+			m_Edges.Add(e);
 		}
 
 		public void FindIntersections()
 		{
 			AATree eventQueue = new AATree();
+			foreach (Edge e in m_Edges)
+			{
+				eventQueue.Insert(e.UpperEndpoint);
+				eventQueue.Insert(e.LowerEndpoint);
+			}
+			AATree status = new AATree();
+			while (eventQueue.Size != 0)
+			{
+				Vertex p = eventQueue.FindMax();
+				eventQueue.Delete(p);
+				HandleEventPoint(p);
+			}
+		}
+
+		private void HandleEventPoint(Vertex p)
+		{
 			// Implement this.
 		}
 
@@ -301,4 +347,3 @@ namespace VoronoiDCEL
 		}
 	}
 }
-
