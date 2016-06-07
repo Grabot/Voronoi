@@ -243,8 +243,8 @@
 			else
 			{
 				int result = 1;
-				result += Size(t.left);
-				result += Size(t.right);
+				result += ComputeSize(t.left);
+				result += ComputeSize(t.right);
 				return result;
 			}
 		}

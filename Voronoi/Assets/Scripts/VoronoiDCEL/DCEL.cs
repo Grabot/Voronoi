@@ -26,6 +26,8 @@ namespace VoronoiDCEL
 			Edge e = new Edge();
 			e.Half1 = h1;
 			e.Half2 = h2;
+			h1.ParentEdge = e;
+			h2.ParentEdge = e;
 
 			h1.Twin = h2;
 			h2.Twin = h1;
@@ -144,70 +146,78 @@ namespace VoronoiDCEL
 		public void AddVertexOnEdge(double a_x, double a_y, Edge a_Edge)
 		{
 			Vertex x = new Vertex(a_x, a_y);
-			HalfEdge e1 = new HalfEdge();
-			HalfEdge e2 = new HalfEdge();
-			Edge e = new Edge();
-			e.Half1 = e1;
-			e.Half2 = e2;
+			HalfEdge h1 = new HalfEdge();
+			HalfEdge h2 = new HalfEdge();
+			Edge e1 = new Edge();
+			e1.Half1 = h1;
+			e1.Half2 = h2;
+			h1.ParentEdge = e1;
+			h2.ParentEdge = e1;
 
-			x.IncidentEdges.Add(e1);
-			e1.Origin = x;
+			x.IncidentEdges.Add(h1);
+			h1.Origin = x;
 
-			e1.Next = a_Edge.Half1.Next;
-			e1.Previous = e2;
+			h1.Next = a_Edge.Half1.Next;
+			h1.Previous = h2;
 
-			e1.IncidentFace = e1.IncidentFace;
+			h1.IncidentFace = h1.IncidentFace;
 
-			e2.Origin = a_Edge.UpperEndpoint;
-			e2.Next = e1;
-			e2.Previous = a_Edge.Half1.Previous;
-			e2.IncidentFace = a_Edge.Half1.IncidentFace;
+			h2.Origin = a_Edge.UpperEndpoint;
+			h2.Next = h1;
+			h2.Previous = a_Edge.Half1.Previous;
+			h2.IncidentFace = a_Edge.Half1.IncidentFace;
 
-			a_Edge.Half1.Previous.Next = e2;
-			a_Edge.Half1.Next.Previous = e1;
+			a_Edge.Half1.Previous.Next = h2;
+			a_Edge.Half1.Next.Previous = h1;
 
 			m_HalfEdges.Remove(a_Edge.Half1);
 
 			// Now the second halfedge.
-			HalfEdge e3 = new HalfEdge();
-			HalfEdge e4 = new HalfEdge();
+			HalfEdge h3 = new HalfEdge();
+			HalfEdge h4 = new HalfEdge();
+			Edge e2 = new Edge();
+			e2.Half1 = h3;
+			e2.Half2 = h4;
+			h3.ParentEdge = e2;
+			h4.ParentEdge = e2;
 			HalfEdge twinEdge = a_Edge.Half2;
 
-			e3.Origin = twinEdge.Origin;
-			e3.Next = e4;
-			e3.Previous = twinEdge.Previous;
-			e3.IncidentFace = twinEdge.IncidentFace;
+			h3.Origin = twinEdge.Origin;
+			h3.Next = h4;
+			h3.Previous = twinEdge.Previous;
+			h3.IncidentFace = twinEdge.IncidentFace;
 
-			e4.Origin = x;
-			e4.Next = twinEdge.Next;
-			e4.Previous = e3;
-			e4.IncidentFace = twinEdge.IncidentFace;
+			h4.Origin = x;
+			h4.Next = twinEdge.Next;
+			h4.Previous = h3;
+			h4.IncidentFace = twinEdge.IncidentFace;
 
-			twinEdge.Previous.Next = e3;
-			twinEdge.Next.Previous = e4;
+			twinEdge.Previous.Next = h3;
+			twinEdge.Next.Previous = h4;
 
-			e1.Twin = e3;
-			e3.Twin = e1;
-			e2.Twin = e4;
-			e4.Twin = e2;
+			h1.Twin = h3;
+			h3.Twin = h1;
+			h2.Twin = h4;
+			h4.Twin = h2;
 
 			m_HalfEdges.Remove(twinEdge);
 			m_Edges.Remove(a_Edge);
 
 			if (a_Edge.Half1.IncidentFace.StartingEdge == a_Edge.Half1)
 			{
-				a_Edge.Half1.IncidentFace.StartingEdge = e1;
+				a_Edge.Half1.IncidentFace.StartingEdge = h1;
 			}
 			if (twinEdge.IncidentFace.StartingEdge == twinEdge)
 			{
-				twinEdge.IncidentFace.StartingEdge = e3;
+				twinEdge.IncidentFace.StartingEdge = h3;
 			}
 
-			m_HalfEdges.Add(e1);
-			m_HalfEdges.Add(e2);
-			m_HalfEdges.Add(e3);
-			m_HalfEdges.Add(e4);
-			m_Edges.Add(e);
+			m_HalfEdges.Add(h1);
+			m_HalfEdges.Add(h2);
+			m_HalfEdges.Add(h3);
+			m_HalfEdges.Add(h4);
+			m_Edges.Add(e1);
+			m_Edges.Add(e2);
 		}
 
 		public void AddVertexInsideFace(double a_x, double a_y, HalfEdge a_h)
@@ -221,6 +231,8 @@ namespace VoronoiDCEL
 			Edge e = new Edge();
 			e.Half1 = h1;
 			e.Half2 = h2;
+			h1.ParentEdge = e;
+			h2.ParentEdge = e;
 
 			v.IncidentEdges.Add(h2);
 			h1.Twin = h2;
@@ -261,6 +273,8 @@ namespace VoronoiDCEL
 			Edge e = new Edge();
 			e.Half1 = h1;
 			e.Half2 = h2;
+			h1.ParentEdge = e;
+			h2.ParentEdge = e;
 
 			f1.StartingEdge = h1;
 			f2.StartingEdge = h2;
@@ -325,13 +339,18 @@ namespace VoronoiDCEL
 			{
 				Vertex p = eventQueue.FindMax();
 				eventQueue.Delete(p);
-				HandleEventPoint(p);
+				HandleEventPoint(p, status);
 			}
 		}
 
-		private void HandleEventPoint(Vertex p)
+		private void HandleEventPoint(Vertex a_Point, AATree a_Status)
 		{
-			// Implement this.
+			HashSet<Edge> upperEndpointEdges = new HashSet<Edge>();
+			foreach (HalfEdge h in a_Point.IncidentEdges)
+			{
+				upperEndpointEdges.Add(h.ParentEdge);
+			}
+			// Continue implementing this.
 		}
 
 		public void Draw()

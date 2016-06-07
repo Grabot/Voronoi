@@ -9,6 +9,7 @@ namespace VoronoiDCEL
 		private Face m_IncidentFace; // the face to the left.
 		private HalfEdge m_Next; // next halfedge on the boundary of IncidentFace.
 		private HalfEdge m_Previous; // previous halfedge on the boundary of IncidentFace
+		private Edge m_ParentEdge;
 
 		public Vertex Origin
 		{
@@ -38,6 +39,12 @@ namespace VoronoiDCEL
 		{
 			get { return m_IncidentFace; }
 			set { m_IncidentFace = value; }
+		}
+
+		public Edge ParentEdge
+		{
+			get { return m_ParentEdge; }
+			set { m_ParentEdge = value; }
 		}
 	}
 }
