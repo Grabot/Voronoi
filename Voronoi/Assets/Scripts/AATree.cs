@@ -1,6 +1,6 @@
 ﻿namespace VoronoiDCEL
 {
-	public class AATree
+	public class AATree<T> where T: System.IComparable<T>, System.IEquatable<T>
 	{
 		private Node m_Bottom; // Sentinel.
 		private Node m_Deleted;
@@ -18,7 +18,7 @@
 			public Node left;
 			public Node right;
 			public int level;
-			public Vertex data;
+			public T data;
 		}
 
 		public AATree()
@@ -31,7 +31,7 @@
 			m_Tree = m_Bottom;
 		}
 
-		public bool Insert(Vertex data)
+		public bool Insert(T data)
 		{
 			bool result = Insert(data, m_Tree);
 			if (result)
@@ -42,7 +42,7 @@
 			return false;
 		}
 
-		public bool Delete(Vertex data)
+		public bool Delete(T data)
 		{
 			bool result = Delete(data, m_Tree);
 			if (result)
@@ -53,7 +53,7 @@
 			return false;
 		}
 
-		public bool Contains(Vertex data)
+		public bool Contains(T data)
 		{
 			return Contains(data, m_Tree);
 		}
@@ -63,7 +63,7 @@
 			return ComputeSize(m_Tree);
 		}
 
-		public Vertex FindMin()
+		public T FindMin()
 		{
 			Node min = m_Tree;
 			while (min.left != m_Bottom)
@@ -73,7 +73,7 @@
 			return min.data;
 		}
 
-		public Vertex FindMax()
+		public T FindMax()
 		{
 			Node max = m_Tree;
 			while (max.right != m_Bottom)
@@ -85,7 +85,7 @@
 
 		public bool DeleteMax()
 		{
-			Vertex max = FindMax();
+			T max = FindMax();
 			if (max != null)
 			{
 				return Delete(max);
@@ -98,7 +98,7 @@
 
 		public bool DeleteMin()
 		{
-			Vertex min = FindMin();
+			T min = FindMin();
 			if (min != null)
 			{
 				return Delete(min);
@@ -134,7 +134,7 @@
 			}
 		}
 
-		private bool Insert(Vertex data, Node t)
+		private bool Insert(T data, Node t)
 		{
 			if (t == m_Bottom)
 			{
@@ -148,11 +148,11 @@
 			else
 			{
 				bool result = false;
-				if (data < m_Tree.data)
+				if (data.CompareTo(m_Tree.data) < 0)
 				{
 					result = Insert(data, t.left);
 				}
-				else if (data > t.data)
+				else if (data.CompareTo(t.data) > 0)
 				{
 					result = Insert(data, t.right);
 				}
@@ -166,7 +166,7 @@
 			}
 		}
 
-		private bool Delete(Vertex data, Node t)
+		private bool Delete(T data, Node t)
 		{
 			if (t == m_Bottom)
 			{
@@ -177,7 +177,7 @@
 				// Search down the tree and set pointers last and deleted.
 				m_Last = t;
 				bool result = false;
-				if (data < t.data)
+				if (data.CompareTo(t.data) < 0)
 				{
 					result = Delete(data, t.left);
 				}
@@ -188,7 +188,7 @@
 				}
 
 				// At the bottom of the tree we remove the element if it is present.
-				if (t == m_Last && m_Deleted != m_Bottom && data == m_Deleted.data)
+				if (t == m_Last && m_Deleted != m_Bottom && data.Equals(m_Deleted.data))
 				{
 					m_Deleted.data = t.data;
 					m_Deleted = m_Bottom;
@@ -214,7 +214,7 @@
 			}
 		}
 
-		private bool Contains(Vertex data, Node t)
+		private bool Contains(T data, Node t)
 		{
 			if (t == m_Bottom)
 			{
@@ -224,7 +224,7 @@
 			{
 				return true;
 			}
-			else if (data < t.data)
+			else if (data.CompareTo(t.data) < 0)
 			{
 				return Contains(data, t.left);
 			}

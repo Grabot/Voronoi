@@ -328,13 +328,13 @@ namespace VoronoiDCEL
 
 		public void FindIntersections()
 		{
-			AATree eventQueue = new AATree();
+			AATree<Vertex> eventQueue = new AATree<Vertex>();
 			foreach (Edge e in m_Edges)
 			{
 				eventQueue.Insert(e.UpperEndpoint);
 				eventQueue.Insert(e.LowerEndpoint);
 			}
-			AATree status = new AATree();
+			AATree<Edge> status = new AATree<Edge>();
 			while (eventQueue.Size != 0)
 			{
 				Vertex p = eventQueue.FindMax();
@@ -343,7 +343,7 @@ namespace VoronoiDCEL
 			}
 		}
 
-		private void HandleEventPoint(Vertex a_Point, AATree a_Status)
+		private void HandleEventPoint(Vertex a_Point, AATree<Edge> a_Status)
 		{
 			HashSet<Edge> upperEndpointEdges = new HashSet<Edge>();
 			foreach (HalfEdge h in a_Point.IncidentEdges)
