@@ -2,18 +2,18 @@
 {
 	public class AATree<T> where T: System.IComparable<T>, System.IEquatable<T>
 	{
-		private Node m_Bottom; // Sentinel.
-		private Node m_Deleted;
-		private Node m_Last;
-		private Node m_Tree;
-		private int m_Size = 0;
+		protected Node m_Bottom; // Sentinel.
+		protected Node m_Deleted;
+		protected Node m_Last;
+		protected Node m_Tree;
+		protected int m_Size = 0;
 
 		public int Size
 		{
 			get { return m_Size; }
 		}
 
-		internal class Node
+		protected internal class Node
 		{
 			public Node left;
 			public Node right;
