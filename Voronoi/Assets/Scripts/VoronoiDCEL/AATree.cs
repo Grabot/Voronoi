@@ -7,6 +7,7 @@
 		protected Node m_Last;
 		protected Node m_Tree;
 		protected int m_Size = 0;
+		protected bool m_AllowEqualData;
 
 		public int Size
 		{
@@ -55,7 +56,7 @@
 
 		public bool Contains(T data)
 		{
-			return Contains(data, m_Tree);
+			return FindNode(data, m_Tree) != null;
 		}
 
 		public int ComputeSize()
@@ -148,11 +149,12 @@
 			else
 			{
 				bool result = false;
-				if (data.CompareTo(m_Tree.data) < 0)
+				int comparisonResult = CompareTo(data, t.data);
+				if (comparisonResult < 0)
 				{
 					result = Insert(data, t.left);
 				}
-				else if (data.CompareTo(t.data) > 0)
+				else if (comparisonResult > 0 || (m_AllowEqualData && comparisonResult == 0))
 				{
 					result = Insert(data, t.right);
 				}
@@ -177,7 +179,7 @@
 				// Search down the tree and set pointers last and deleted.
 				m_Last = t;
 				bool result = false;
-				if (data.CompareTo(t.data) < 0)
+				if (CompareTo(data, t.data) < 0)
 				{
 					result = Delete(data, t.left);
 				}
@@ -188,7 +190,7 @@
 				}
 
 				// At the bottom of the tree we remove the element if it is present.
-				if (t == m_Last && m_Deleted != m_Bottom && data.Equals(m_Deleted.data))
+				if (t == m_Last && m_Deleted != m_Bottom && IsEqual(data, m_Deleted.data))
 				{
 					m_Deleted.data = t.data;
 					m_Deleted = m_Bottom;
@@ -214,23 +216,23 @@
 			}
 		}
 
-		private bool Contains(T data, Node t)
+		private Node FindNode(T data, Node t)
 		{
 			if (t == m_Bottom)
 			{
-				return false;
+				return null;
 			}
-			else if (t.data.Equals(data))
+			else if (IsEqual(t.data, data))
 			{
-				return true;
+				return t;
 			}
-			else if (data.CompareTo(t.data) < 0)
+			else if (CompareTo(data, t.data) < 0)
 			{
-				return Contains(data, t.left);
+				return FindNode(data, t.left);
 			}
 			else
 			{
-				return Contains(data, t.right);
+				return FindNode(data, t.right);
 			}
 		}
 
@@ -247,6 +249,16 @@
 				result += ComputeSize(t.right);
 				return result;
 			}
+		}
+
+		protected virtual int CompareTo(T a, T b)
+		{
+			return a.CompareTo(b);
+		}
+
+		protected virtual bool IsEqual(T a, T b)
+		{
+			return a.Equals(b);
 		}
 	}
 }

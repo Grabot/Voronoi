@@ -334,7 +334,7 @@ namespace VoronoiDCEL
 				eventQueue.Insert(e.UpperEndpoint);
 				eventQueue.Insert(e.LowerEndpoint);
 			}
-			StatusTree<Edge> status = new StatusTree<Edge>();
+			StatusTree status = new StatusTree();
 			while (eventQueue.Size != 0)
 			{
 				Vertex p = eventQueue.FindMax();
@@ -343,7 +343,7 @@ namespace VoronoiDCEL
 			}
 		}
 
-		private void HandleEventPoint(Vertex a_Point, StatusTree<Edge> a_Status)
+		private void HandleEventPoint(Vertex a_Point, StatusTree a_Status)
 		{
 			HashSet<Edge> upperEndpointEdges = new HashSet<Edge>();
 			foreach (HalfEdge h in a_Point.IncidentEdges)

@@ -38,24 +38,36 @@ namespace VoronoiDCEL
 			return a.Y > b.Y || (a.Y == b.Y && a.X > b.X);
 		}
 
-		public static bool operator<(Vertex a, Edge b)
+		public bool OnLine(Edge a_Edge)
 		{
-			return Orient2D(a, b.LowerEndpoint, b.UpperEndpoint) > 0;
+			return Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint) == 0;
 		}
 
-		public static bool operator<(Edge a, Vertex b)
+		public bool LeftOfLine(Edge a_Edge)
 		{
-			return Orient2D(b, a.LowerEndpoint, a.UpperEndpoint) < 0;
+			return Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint) > 0;
 		}
 
-		public static bool operator>(Vertex a, Edge b)
+		public bool RightOfLine(Edge a_Edge)
 		{
-			return Orient2D(a, b.LowerEndpoint, b.UpperEndpoint) < 0;
+			return Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint) < 0;
 		}
 
-		public static bool operator>(Edge a, Vertex b)
+		public int CompareTo(Edge a_Edge)
 		{
-			return Orient2D(b, a.LowerEndpoint, a.UpperEndpoint) > 0;
+			double result = Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint);
+			if (result == 0)
+			{
+				return 0;
+			}
+			else if (result < 0)
+			{
+				return 1;
+			}
+			else 
+			{
+				return -1;
+			}
 		}
 
 		public override bool Equals(object obj)
