@@ -11,6 +11,11 @@ namespace VoronoiDCEL
 		private List<HalfEdge> m_HalfEdges;
 		private List<Face> m_Faces;
 
+		public List<Vertex> Vertices { get { return m_Vertices; } }
+		public List<Edge> Edges { get { return m_Edges; } }
+		public List<HalfEdge> HalfEdges { get { return m_HalfEdges; } }
+		public List<Face> Faces { get { return m_Faces; } }
+
 		public DCEL()
 		{
 			m_Vertices = new List<Vertex>();

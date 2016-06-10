@@ -48,14 +48,43 @@
 			return Insert(statusData);
 		}
 
-		protected override int CompareTo(StatusData a, StatusData b)
+		public bool Delete(Edge a_Edge)
 		{
-			return a.CompareTo(b);
+			StatusData statusData = new StatusData();
+			statusData.edge = a_Edge;
+			return Delete(statusData);
 		}
 
-		protected override bool IsEqual(StatusData a, StatusData b)
+		protected override int CompareTo(StatusData a, StatusData b, COMPARISON_TYPE a_ComparisonType)
 		{
-			return a.Equals(b);
+			if (a_ComparisonType == COMPARISON_TYPE.INSERT)
+			{
+				return a.edge.UpperEndpoint.CompareTo(b.edge);
+			}
+			else if (a_ComparisonType == COMPARISON_TYPE.DELETE)
+			{
+				return a.edge.LowerEndpoint.CompareTo(b.edge);
+			}
+			else
+			{
+				throw new System.NotImplementedException("Find comparison not yet implemented.");
+			}
+		}
+
+		protected override bool IsEqual(StatusData a, StatusData b, COMPARISON_TYPE a_ComparisonType)
+		{
+			if (a_ComparisonType == COMPARISON_TYPE.INSERT)
+			{
+				return a.edge.UpperEndpoint.OnLine(b.edge);
+			}
+			else if (a_ComparisonType == COMPARISON_TYPE.DELETE)
+			{
+				return a.edge.Equals(b.edge);
+			}
+			else
+			{
+				throw new System.NotImplementedException("Find comparison not yet implemented.");
+			}
 		}
 	}
 }

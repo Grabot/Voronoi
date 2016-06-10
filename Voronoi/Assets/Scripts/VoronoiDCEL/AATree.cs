@@ -1,5 +1,8 @@
 ﻿namespace VoronoiDCEL
 {
+	using System;
+	using System.Collections.Generic;
+
 	public class AATree<T> where T: System.IComparable<T>, System.IEquatable<T>
 	{
 		protected Node m_Bottom; // Sentinel.
@@ -7,7 +10,7 @@
 		protected Node m_Last;
 		protected Node m_Tree;
 		protected int m_Size = 0;
-		protected bool m_AllowEqualData;
+		protected enum COMPARISON_TYPE { INSERT, DELETE, FIND }
 
 		public int Size
 		{
@@ -30,28 +33,6 @@
 			m_Bottom.right = m_Bottom;
 			m_Deleted = m_Bottom;
 			m_Tree = m_Bottom;
-		}
-
-		public bool Insert(T data)
-		{
-			bool result = Insert(data, m_Tree);
-			if (result)
-			{
-				++m_Size;
-				return true;
-			}
-			return false;
-		}
-
-		public bool Delete(T data)
-		{
-			bool result = Delete(data, m_Tree);
-			if (result)
-			{
-				--m_Size;
-				return true;
-			}
-			return false;
 		}
 
 		public bool Contains(T data)
@@ -135,84 +116,134 @@
 			}
 		}
 
-		private bool Insert(T data, Node t)
+		public bool Insert(T data)
 		{
-			if (t == m_Bottom)
+			if (data == null)
 			{
-				t = new Node();
-				t.data = data;
-				t.left = m_Bottom;
-				t.right = m_Bottom;
-				t.level = 1;
+				return false;
+			}
+			else if (m_Tree == m_Bottom)
+			{
+				m_Tree = CreateNode(data);
 				return true;
 			}
 			else
 			{
-				bool result = false;
-				int comparisonResult = CompareTo(data, t.data);
+				Node currentNode = m_Tree;
+				Node parent = null;
+				int comparisonResult = 0;
+				Stack<Node> nodeStack = new Stack<Node>((int)Math.Ceiling(Math.Log(m_Size + 1, 2)) + 1);
+				while (currentNode != m_Bottom)
+				{
+					parent = currentNode;
+					comparisonResult = CompareTo(data, currentNode.data, COMPARISON_TYPE.INSERT);
+					if (comparisonResult < 0)
+					{
+						currentNode = currentNode.left;
+					}
+					else if (comparisonResult > 0)
+					{
+						currentNode = currentNode.right;
+					}
+					else
+					{
+						return false;
+					}
+					nodeStack.Push(parent);
+				}
+
 				if (comparisonResult < 0)
 				{
-					result = Insert(data, t.left);
+					parent.left = CreateNode(data);
 				}
-				else if (comparisonResult > 0 || (m_AllowEqualData && comparisonResult == 0))
+				else if (comparisonResult > 0)
 				{
-					result = Insert(data, t.right);
+					parent.right = CreateNode(data);
+				}
+
+				while (nodeStack.Count != 0)
+				{
+					Node t = nodeStack.Pop();
+					Skew(t);
+					Split(t);
+				}
+				return true;
+			}
+		}
+
+		private Node CreateNode(T data)
+		{
+			Node n = new Node();
+			n.data = data;
+			n.left = m_Bottom;
+			n.right = m_Bottom;
+			n.level = 1;
+			++m_Size;
+			return n;
+		}
+
+		public bool Delete(T data)
+		{
+			if (m_Tree == m_Bottom || data == null)
+			{
+				return false;
+			}
+			else
+			{
+				Node currentNode = m_Tree;
+				Node parent = null;
+				Node deleted = m_Bottom;
+				Stack<Node> nodeStack = new Stack<Node>((int)Math.Ceiling(Math.Log(m_Size + 1, 2)) + 1);
+				while (currentNode != m_Bottom)
+				{
+					parent = currentNode;
+					int comparisonResult = CompareTo(data, currentNode.data, COMPARISON_TYPE.DELETE);
+					if (comparisonResult < 0)
+					{
+						currentNode = currentNode.left;
+					}
+					else
+					{
+						deleted = currentNode;
+						currentNode = currentNode.right;
+					}
+					nodeStack.Push(parent);
+				}
+
+				if (deleted != m_Bottom && CompareTo(data, deleted.data, COMPARISON_TYPE.DELETE) == 0)
+				{
+					deleted.data = parent.data;
+					Node copy = parent.right;
+					parent.data = copy.data;
+					parent.left = copy.left;
+					parent.right = copy.right;
+					parent.level = copy.level;
+					nodeStack.Pop();
+					--m_Size;
 				}
 				else
 				{
 					return false;
 				}
-				Skew(t);
-				Split(t);
-				return result;
-			}
-		}
 
-		private bool Delete(T data, Node t)
-		{
-			if (t == m_Bottom)
-			{
-				return false;	
-			}
-			else
-			{
-				// Search down the tree and set pointers last and deleted.
-				m_Last = t;
-				bool result = false;
-				if (CompareTo(data, t.data) < 0)
+				while (nodeStack.Count != 0)
 				{
-					result = Delete(data, t.left);
-				}
-				else
-				{
-					m_Deleted = t;
-					result = Delete(data, t.right);
-				}
-
-				// At the bottom of the tree we remove the element if it is present.
-				if (t == m_Last && m_Deleted != m_Bottom && IsEqual(data, m_Deleted.data))
-				{
-					m_Deleted.data = t.data;
-					m_Deleted = m_Bottom;
-					t = t.right;
-					m_Last = null;
-					return true;
-				}
-				// On the way back, we rebalance.
-				else if (t.left.level < t.level - 1 || t.right.level < t.level - 1)
-				{
-					--t.level;
-					if (t.right.level > t.level)
+					Node n = nodeStack.Pop();
+					if (n.left.level < n.level - 1 || n.right.level < n.level - 1)
 					{
-						t.right.level = t.level;
+						--n.level;
+						if (n.right.level > n.level)
+						{
+							n.right.level = n.level;
+						}
+						Skew(n);
+						Skew(n.right);
+						Skew(n.right.right);
+						Split(n);
+						Split(n.right);
 					}
-					Skew(t);
-					Skew(t.right);
-					Skew(t.right.right);
-					Split(t);
-					Split(t.right);
 				}
-				return result;
+				return true;
 			}
 		}
 
@@ -222,11 +253,11 @@
 			{
 				return null;
 			}
-			else if (IsEqual(t.data, data))
+			else if (IsEqual(t.data, data, COMPARISON_TYPE.FIND))
 			{
 				return t;
 			}
-			else if (CompareTo(data, t.data) < 0)
+			else if (CompareTo(data, t.data, COMPARISON_TYPE.FIND) < 0)
 			{
 				return FindNode(data, t.left);
 			}
@@ -251,12 +282,12 @@
 			}
 		}
 
-		protected virtual int CompareTo(T a, T b)
+		protected virtual int CompareTo(T a, T b, COMPARISON_TYPE a_ComparisonType)
 		{
 			return a.CompareTo(b);
 		}
 
-		protected virtual bool IsEqual(T a, T b)
+		protected virtual bool IsEqual(T a, T b, COMPARISON_TYPE a_ComparisonType)
 		{
 			return a.Equals(b);
 		}
