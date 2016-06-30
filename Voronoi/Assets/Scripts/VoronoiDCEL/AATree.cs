@@ -296,17 +296,36 @@
                 if (deleted != m_Bottom && CompareTo(data, deleted.data, COMPARISON_TYPE.DELETE) == 0)
                 {
                     nodeStack.Pop(); // Pop since the last entry is m_Bottom
-                    Node last = nodeStack.Pop().node; // This is the node that is leftmost of the node that we want to delete.
+                    TraversalHistory lastHist = nodeStack.Pop();
+                    Node last = lastHist.node; // This is the node that is leftmost of the node that we want to delete.
                     deleted.data = last.data;
                     Node copy = last.right;
-                    last.data = copy.data;
-                    last.left = copy.left;
-                    last.right = copy.right;
-                    last.level = copy.level;
-                    // Destroy the node
-                    copy.data = default(T);
-                    copy.left = null;
-                    copy.right = null;
+                    if (copy != m_Bottom)
+                    {
+                        last.data = copy.data;
+                        last.left = copy.left;
+                        last.right = copy.right;
+                        last.level = copy.level;
+                        // Destroy the node
+                        copy.data = default(T);
+                        copy.left = null;
+                        copy.right = null;
+                    }
+                    else
+                    {
+                        if (lastHist.side == TraversalHistory.ECHILDSIDE.LEFT)
+                        {
+                            lastHist.parentNode.left = m_Bottom;
+                        }
+                        else if (lastHist.side == TraversalHistory.ECHILDSIDE.RIGHT)
+                        {
+                            lastHist.parentNode.right = m_Bottom;
+                        }
+                        else
+                        {
+                            m_Tree = m_Bottom;
+                        }
+                    }
                     --m_Size;
                 }
                 else
