@@ -48,18 +48,94 @@
 
         protected internal class Node
         {
-            public Node left;
-            public Node right;
-            public int level;
-            public T data;
+            private Node m_Left;
+
+            public Node Left
+            {
+                get { return m_Left; }
+                set
+                {
+                    if (EqualityComparer<T>.Default.Equals(m_Data, default(T)))
+                    {
+                        //throw new Exception("Tried to set left child of Bottom!");
+                    }
+                    m_Left = value;
+                }
+            }
+
+            private Node m_Right;
+
+            public Node Right
+            {
+                get { return m_Right; }
+                set
+                {
+                    if (EqualityComparer<T>.Default.Equals(m_Data, default(T)))
+                    {
+                        //throw new Exception("Tried to set right child of Bottom!");
+                    }
+                    m_Right = value;
+                }
+            }
+
+            private int m_Level;
+
+            public int Level
+            {
+                get { return m_Level; }
+                set
+                {
+                    if (EqualityComparer<T>.Default.Equals(m_Data, default(T)))
+                    {
+                        throw new Exception("Tried to set level of Bottom!");
+                    }
+                    m_Level = value;
+                }
+            }
+
+            private T m_Data;
+
+            public T Data
+            {
+                get { return m_Data; }
+                set
+                {
+                    if (EqualityComparer<T>.Default.Equals(m_Data, default(T)))
+                    {
+                        throw new Exception("Tried to set data of Bottom!");
+                    }
+                    m_Data = value;
+                }
+            }
+
+            public Node(T a_Data, Node a_Left, Node a_Right, int a_Level)
+            {
+                m_Data = a_Data;
+                if (EqualityComparer<T>.Default.Equals(a_Data, default(T)))
+                {
+                    m_Left = this;
+                    m_Right = this;
+                    if (a_Level != 0)
+                    {
+                        throw new Exception("Cannot use default value for node other than Bottom!");
+                    }
+                }
+                else
+                {
+                    m_Left = a_Left;
+                    m_Right = a_Right;
+                    if (a_Level != 1)
+                    {
+                        throw new Exception("Cannot create node with level other than 1!");
+                    }
+                }
+                m_Level = a_Level;
+            }
         }
 
         public AATree()
         {
-            m_Bottom = new Node();
-            m_Bottom.level = 0;
-            m_Bottom.left = m_Bottom;
-            m_Bottom.right = m_Bottom;
+            m_Bottom = new Node(default(T), null, null, 0);
             m_Deleted = m_Bottom;
             m_Tree = m_Bottom;
         }
@@ -79,7 +155,7 @@
             Node min = FindMinNode();
             if (min != m_Bottom)
             {
-                out_MinValue = min.data;
+                out_MinValue = min.Data;
                 return true;
             }
             out_MinValue = default(T);
@@ -91,7 +167,7 @@
             Node max = FindMaxNode();
             if (max != m_Bottom)
             {
-                out_MaxValue = max.data;
+                out_MaxValue = max.Data;
                 return true;
             }
             out_MaxValue = default(T);
@@ -101,9 +177,9 @@
         protected Node FindMinNode()
         {
             Node min = m_Tree;
-            while (min.left != m_Bottom)
+            while (min.Left != m_Bottom)
             {
-                min = min.left;
+                min = min.Left;
             }
             return min;
         }
@@ -111,9 +187,9 @@
         protected Node FindMaxNode()
         {
             Node max = m_Tree;
-            while (max.right != m_Bottom)
+            while (max.Right != m_Bottom)
             {
-                max = max.right;
+                max = max.Right;
             }
             return max;
         }
@@ -130,57 +206,65 @@
             return FindMin(out min) && Delete(min);
         }
 
-        private void Skew(Node t, Node parent, TraversalHistory.ECHILDSIDE a_Side)
+        public bool VerifyLevels()
         {
-            if (t.left.level == t.level)
+            return VerifyLevels(m_Tree, m_Tree.Level);
+            return true;
+        }
+
+        private Node Skew(Node t, Node parent, TraversalHistory.ECHILDSIDE a_Side)
+        {
+            if (t.Left.Level == t.Level)
             {
                 // Rotate right.
-                Node oldLeft = t.left;
-                Node newLeft = oldLeft.right;
-                t.left = newLeft;
-                oldLeft.right = t;
+                Node oldLeft = t.Left;
+                Node newLeft = oldLeft.Right;
+                t.Left = newLeft;
+                oldLeft.Right = t;
                 if (a_Side == TraversalHistory.ECHILDSIDE.LEFT)
                 {
-                    parent.left = oldLeft;
+                    parent.Left = oldLeft;
                 }
                 else if (a_Side == TraversalHistory.ECHILDSIDE.RIGHT)
                 {
-                    parent.right = oldLeft;
+                    parent.Right = oldLeft;
                 }
                 else
                 {
                     m_Tree = oldLeft;
                 }
-
+                return oldLeft;
                 //Node temp = t;
                 //t = t.left;
                 //temp.left = t.right;
                 //t.right = temp;
             }
+            return t;
         }
 
-        private void Split(Node t, Node parent, TraversalHistory.ECHILDSIDE a_Side)
+        private Node Split(Node t, Node parent, TraversalHistory.ECHILDSIDE a_Side)
         {
-            if (t.right.right.level == t.level)
+            if (t.Right.Right.Level == t.Level && t.Right != m_Bottom)
             {
                 // Rotate left.
-                Node oldRight = t.right;
-                Node newRight = oldRight.left;
-                t.right = newRight;
-                oldRight.left = t;
+                Node oldRight = t.Right;
+                Node newRight = oldRight.Left;
+                t.Right = newRight;
+                oldRight.Left = t;
                 if (a_Side == TraversalHistory.ECHILDSIDE.LEFT)
                 {
-                    parent.left = oldRight;
+                    parent.Left = oldRight;
                 }
                 else if (a_Side == TraversalHistory.ECHILDSIDE.RIGHT)
                 {
-                    parent.right = oldRight;
+                    parent.Right = oldRight;
                 }
                 else
                 {
                     m_Tree = oldRight;
                 }
-                ++oldRight.level;
+                ++oldRight.Level;
+                return oldRight;
 
                 //Node temp = t;
                 //t = t.right;
@@ -188,10 +272,12 @@
                 //t.left = temp;
                 //++t.level;
             }
+            return t;
         }
 
         public bool Insert(T data)
         {
+            VerifyLevels();
             if (!(data is ValueType) && EqualityComparer<T>.Default.Equals(data, default(T)))
             {
                 return false;
@@ -199,6 +285,7 @@
             else if (m_Tree == m_Bottom)
             {
                 m_Tree = CreateNode(data);
+                VerifyLevels();
                 return true;
             }
             else
@@ -211,52 +298,55 @@
                 while (currentNode != m_Bottom)
                 {
                     parent = currentNode;
-                    comparisonResult = CompareTo(data, currentNode.data, COMPARISON_TYPE.INSERT);
+                    comparisonResult = CompareTo(data, currentNode.Data, COMPARISON_TYPE.INSERT);
                     TraversalHistory histEntry;
                     if (comparisonResult < 0)
                     {
-                        currentNode = currentNode.left;
+                        currentNode = currentNode.Left;
                         histEntry = new TraversalHistory(currentNode, parent, TraversalHistory.ECHILDSIDE.LEFT);
+                        nodeStack.Push(histEntry);
                     }
                     else if (comparisonResult > 0)
                     {
-                        currentNode = currentNode.right;
+                        currentNode = currentNode.Right;
                         histEntry = new TraversalHistory(currentNode, parent, TraversalHistory.ECHILDSIDE.RIGHT);
+                        nodeStack.Push(histEntry);
                     }
                     else
                     {
-                        return false;
+                        break;
                     }
-                    nodeStack.Push(histEntry);
                 }
-                nodeStack.Pop(); // This node is m_Bottom.
-
-                if (comparisonResult < 0)
+                bool didInsert = false;
+                if (nodeStack.Pop().node == m_Bottom) // This node must be m_Bottom.
                 {
-                    parent.left = CreateNode(data);
-                }
-                else if (comparisonResult > 0)
-                {
-                    parent.right = CreateNode(data);
+                    if (comparisonResult < 0)
+                    {
+                        parent.Left = CreateNode(data);
+                        didInsert = true;
+                    }
+                    else if (comparisonResult > 0)
+                    {
+                        parent.Right = CreateNode(data);
+                        didInsert = true;
+                    }
                 }
 
                 while (nodeStack.Count != 0)
                 {
                     TraversalHistory t = nodeStack.Pop();
-                    Skew(t.node, t.parentNode, t.side);
-                    Split(t.node, t.parentNode, t.side);
+                    Node n = t.node;
+                    n = Skew(n, t.parentNode, t.side);
+                    Split(n, t.parentNode, t.side);
                 }
-                return true;
+                VerifyLevels();
+                return didInsert;
             }
         }
 
         private Node CreateNode(T data)
         {
-            Node n = new Node();
-            n.data = data;
-            n.left = m_Bottom;
-            n.right = m_Bottom;
-            n.level = 1;
+            Node n = new Node(data, m_Bottom, m_Bottom, 1);
             ++m_Size;
             return n;
         }
@@ -269,6 +359,7 @@
             }
             else
             {
+                VerifyLevels();
                 Node currentNode = m_Tree;
                 Node parent = null;
                 Node deleted = m_Bottom;
@@ -278,48 +369,56 @@
                 {
                     parent = currentNode;
                     TraversalHistory hist;
-                    int comparisonResult = CompareTo(data, currentNode.data, COMPARISON_TYPE.DELETE);
+                    int comparisonResult = CompareTo(data, currentNode.Data, COMPARISON_TYPE.DELETE);
                     if (comparisonResult < 0)
                     {
-                        currentNode = currentNode.left;
+                        currentNode = currentNode.Left;
                         hist = new TraversalHistory(currentNode, parent, TraversalHistory.ECHILDSIDE.LEFT);
                     }
                     else
                     {
                         deleted = currentNode;
-                        currentNode = currentNode.right;
+                        currentNode = currentNode.Right;
                         hist = new TraversalHistory(currentNode, parent, TraversalHistory.ECHILDSIDE.RIGHT);
                     }
                     nodeStack.Push(hist);
                 }
 
-                if (deleted != m_Bottom && CompareTo(data, deleted.data, COMPARISON_TYPE.DELETE) == 0)
+                bool didDelete = false;
+                if (deleted != m_Bottom && CompareTo(data, deleted.Data, COMPARISON_TYPE.DELETE) == 0)
                 {
-                    nodeStack.Pop(); // Pop since the last entry is m_Bottom
+                    if (nodeStack.Pop().node != m_Bottom) // Pop since the last entry is m_Bottom
+                    {
+                        throw new Exception("First node in traversal history was not Bottom!");
+                    }
                     TraversalHistory lastHist = nodeStack.Pop();
                     Node last = lastHist.node; // This is the node that is leftmost of the node that we want to delete.
-                    deleted.data = last.data;
-                    Node copy = last.right;
+                    if (last.Left != m_Bottom)
+                    {
+                        throw new Exception("Last has a left child that is not Bottom!");
+                    }
+                    deleted.Data = last.Data;
+                    Node copy = last.Right;
                     if (copy != m_Bottom)
                     {
-                        last.data = copy.data;
-                        last.left = copy.left;
-                        last.right = copy.right;
-                        last.level = copy.level;
+                        last.Data = copy.Data;
+                        last.Left = copy.Left;
+                        last.Right = copy.Right;
+                        last.Level = copy.Level;
                         // Destroy the node
-                        copy.data = default(T);
-                        copy.left = null;
-                        copy.right = null;
+                        copy.Left = null;
+                        copy.Right = null;
+                        copy.Data = default(T);
                     }
                     else
                     {
                         if (lastHist.side == TraversalHistory.ECHILDSIDE.LEFT)
                         {
-                            lastHist.parentNode.left = m_Bottom;
+                            lastHist.parentNode.Left = m_Bottom;
                         }
                         else if (lastHist.side == TraversalHistory.ECHILDSIDE.RIGHT)
                         {
-                            lastHist.parentNode.right = m_Bottom;
+                            lastHist.parentNode.Right = m_Bottom;
                         }
                         else
                         {
@@ -327,31 +426,29 @@
                         }
                     }
                     --m_Size;
-                }
-                else
-                {
-                    return false;
+                    didDelete = true;
                 }
 
                 while (nodeStack.Count != 0)
                 {
                     TraversalHistory t = nodeStack.Pop();
                     Node n = t.node;
-                    if (n.left.level < n.level - 1 || n.right.level < n.level - 1)
+                    if (n.Left.Level < n.Level - 1 || n.Right.Level < n.Level - 1)
                     {
-                        --n.level;
-                        if (n.right.level > n.level)
+                        --n.Level;
+                        if (n.Right.Level > n.Level)
                         {
-                            n.right.level = n.level;
+                            n.Right.Level = n.Level;
                         }
-                        Skew(n, t.parentNode, t.side);
-                        Skew(n.right, n, TraversalHistory.ECHILDSIDE.RIGHT);
-                        Skew(n.right.right, n.right, TraversalHistory.ECHILDSIDE.RIGHT);
-                        Split(n, t.parentNode, t.side);
-                        Split(n.right, n, TraversalHistory.ECHILDSIDE.RIGHT);
+                        n = Skew(n, t.parentNode, t.side);
+                        n.Right = Skew(n.Right, n, TraversalHistory.ECHILDSIDE.RIGHT);
+                        n.Right.Right = Skew(n.Right.Right, n.Right, TraversalHistory.ECHILDSIDE.RIGHT);
+                        n = Split(n, t.parentNode, t.side);
+                        n.Right = Split(n.Right, n, TraversalHistory.ECHILDSIDE.RIGHT);
                     }
                 }
-                return true;
+                VerifyLevels();
+                return didDelete;
             }
         }
 
@@ -361,17 +458,17 @@
             {
                 return null;
             }
-            else if (IsEqual(t.data, data, COMPARISON_TYPE.FIND))
+            else if (IsEqual(t.Data, data, COMPARISON_TYPE.FIND))
             {
                 return t;
             }
-            else if (CompareTo(data, t.data, COMPARISON_TYPE.FIND) < 0)
+            else if (CompareTo(data, t.Data, COMPARISON_TYPE.FIND) < 0)
             {
-                return FindNode(data, t.left);
+                return FindNode(data, t.Left);
             }
             else
             {
-                return FindNode(data, t.right);
+                return FindNode(data, t.Right);
             }
         }
 
@@ -384,9 +481,25 @@
             else
             {
                 int result = 1;
-                result += ComputeSize(t.left);
-                result += ComputeSize(t.right);
+                result += ComputeSize(t.Left);
+                result += ComputeSize(t.Right);
                 return result;
+            }
+        }
+
+        private bool VerifyLevels(Node t, int parentLevel)
+        {
+            if (t == m_Bottom && parentLevel >= 0)
+            {
+                return true;
+            }
+            else if (t != m_Bottom && t.Level <= parentLevel)
+            {
+                return VerifyLevels(t.Left, t.Level - 1) && VerifyLevels(t.Right, t.Level);
+            }
+            else
+            {
+                return false;
             }
         }
 

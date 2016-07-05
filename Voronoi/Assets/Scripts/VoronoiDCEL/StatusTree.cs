@@ -1,90 +1,99 @@
 ﻿namespace VoronoiDCEL
 {
-	public class StatusData : System.IComparable<StatusData>, System.IEquatable<StatusData>
-	{
-		public Edge edge;
+    public class StatusData : System.IComparable<StatusData>, System.IEquatable<StatusData>
+    {
+        private readonly Edge m_Edge;
 
-		public override bool Equals(object obj)
-		{
-			if (obj != null && obj is StatusData)
-			{
-				return ((StatusData)obj).edge == edge;
-			}
-			else
-			{
-				return false;
-			}
-		}
+        public Edge Edge
+        {
+            get { return m_Edge; }
+        }
 
-		public bool Equals(StatusData a_StatusData)
-		{
-			if (a_StatusData != null)
-			{
-				return a_StatusData.edge == edge;
-			}
-			else
-			{
-				return false;
-			}
-		}
+        public StatusData(Edge a_Edge)
+        {
+            m_Edge = a_Edge;
+        }
 
-		public int CompareTo(StatusData a_StatusData)
-		{
-			return a_StatusData.edge.UpperEndpoint.CompareTo(edge) * -1;
-		}
+        public override bool Equals(object obj)
+        {
+            StatusData statusData = obj as StatusData;
+            if (statusData != null)
+            {
+                return statusData.m_Edge == m_Edge;
+            }
+            else
+            {
+                return false;
+            }
+        }
 
-		public override int GetHashCode()
-		{
-			return edge.GetHashCode();
-		}
-	}
+        public bool Equals(StatusData a_StatusData)
+        {
+            if (a_StatusData != null)
+            {
+                return a_StatusData.m_Edge == m_Edge;
+            }
+            else
+            {
+                return false;
+            }
+        }
 
-	public class StatusTree : AATree<StatusData>
-	{
-		public bool Insert(Edge a_Edge)
-		{
-			StatusData statusData = new StatusData();
-			statusData.edge = a_Edge;
-			return Insert(statusData);
-		}
+        public int CompareTo(StatusData a_StatusData)
+        {
+            return a_StatusData.m_Edge.UpperEndpoint.CompareTo(m_Edge) * -1;
+        }
 
-		public bool Delete(Edge a_Edge)
-		{
-			StatusData statusData = new StatusData();
-			statusData.edge = a_Edge;
-			return Delete(statusData);
-		}
+        public override int GetHashCode()
+        {
+            return m_Edge.GetHashCode();
+        }
+    }
 
-		protected override int CompareTo(StatusData a, StatusData b, COMPARISON_TYPE a_ComparisonType)
-		{
-			if (a_ComparisonType == COMPARISON_TYPE.INSERT)
-			{
-				return a.edge.UpperEndpoint.CompareTo(b.edge);
-			}
-			else if (a_ComparisonType == COMPARISON_TYPE.DELETE)
-			{
-				return a.edge.LowerEndpoint.CompareTo(b.edge);
-			}
-			else
-			{
-				throw new System.NotImplementedException("Find comparison not yet implemented.");
-			}
-		}
+    public class StatusTree : AATree<StatusData>
+    {
+        public bool Insert(Edge a_Edge)
+        {
+            StatusData statusData = new StatusData(a_Edge);
+            return Insert(statusData);
+        }
 
-		protected override bool IsEqual(StatusData a, StatusData b, COMPARISON_TYPE a_ComparisonType)
-		{
-			if (a_ComparisonType == COMPARISON_TYPE.INSERT)
-			{
-				return a.edge.UpperEndpoint.OnLine(b.edge);
-			}
-			else if (a_ComparisonType == COMPARISON_TYPE.DELETE)
-			{
-				return a.edge.Equals(b.edge);
-			}
-			else
-			{
-				throw new System.NotImplementedException("Find comparison not yet implemented.");
-			}
-		}
-	}
+        public bool Delete(Edge a_Edge)
+        {
+            StatusData statusData = new StatusData(a_Edge);
+            return Delete(statusData);
+        }
+
+        protected override int CompareTo(StatusData a, StatusData b, COMPARISON_TYPE a_ComparisonType)
+        {
+            if (a_ComparisonType == COMPARISON_TYPE.INSERT)
+            {
+                return a.Edge.UpperEndpoint.CompareTo(b.Edge);
+            }
+            else if (a_ComparisonType == COMPARISON_TYPE.DELETE)
+            {
+                return a.Edge.LowerEndpoint.CompareTo(b.Edge);
+            }
+            else
+            {
+                throw new System.NotImplementedException("Find comparison not yet implemented.");
+            }
+        }
+
+        protected override bool IsEqual(StatusData a, StatusData b, COMPARISON_TYPE a_ComparisonType)
+        {
+            if (a_ComparisonType == COMPARISON_TYPE.INSERT)
+            {
+                return a.Edge.UpperEndpoint.OnLine(b.Edge);
+            }
+            else if (a_ComparisonType == COMPARISON_TYPE.DELETE)
+            {
+                return a.Edge.Equals(b.Edge);
+            }
+            else
+            {
+                throw new System.NotImplementedException("Find comparison not yet implemented.");
+            }
+        }
+    }
 }
