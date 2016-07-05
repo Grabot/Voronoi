@@ -8,7 +8,7 @@ namespace VoronoiDCEL
     {
         private List<Vertex> m_Vertices;
         private List<Edge> m_Edges;
-        private List<HalfEdge> m_HalfEdges;
+        private readonly List<HalfEdge> m_HalfEdges;
         private List<Face> m_Faces;
 
         public List<Vertex> Vertices { get { return m_Vertices; } }

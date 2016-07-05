@@ -173,7 +173,6 @@
         public bool VerifyLevels()
         {
             return VerifyLevels(m_Tree, m_Tree.Level);
-            return true;
         }
 
         private Node Skew(Node t, Node parent, TraversalHistory.ECHILDSIDE a_Side)
