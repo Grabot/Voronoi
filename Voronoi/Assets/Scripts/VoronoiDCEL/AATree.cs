@@ -48,73 +48,37 @@
 
         protected internal class Node
         {
-            private Node m_Left;
-
             public Node Left
             {
-                get { return m_Left; }
-                set
-                {
-                    if (EqualityComparer<T>.Default.Equals(m_Data, default(T)))
-                    {
-                        //throw new Exception("Tried to set left child of Bottom!");
-                    }
-                    m_Left = value;
-                }
+                get;
+                set;
             }
-
-            private Node m_Right;
 
             public Node Right
             {
-                get { return m_Right; }
-                set
-                {
-                    if (EqualityComparer<T>.Default.Equals(m_Data, default(T)))
-                    {
-                        //throw new Exception("Tried to set right child of Bottom!");
-                    }
-                    m_Right = value;
-                }
+                get;
+                set;
             }
-
-            private int m_Level;
 
             public int Level
             {
-                get { return m_Level; }
-                set
-                {
-                    if (EqualityComparer<T>.Default.Equals(m_Data, default(T)))
-                    {
-                        throw new Exception("Tried to set level of Bottom!");
-                    }
-                    m_Level = value;
-                }
+                get;
+                set;
             }
-
-            private T m_Data;
 
             public T Data
             {
-                get { return m_Data; }
-                set
-                {
-                    if (EqualityComparer<T>.Default.Equals(m_Data, default(T)))
-                    {
-                        throw new Exception("Tried to set data of Bottom!");
-                    }
-                    m_Data = value;
-                }
+                get;
+                set;
             }
 
             public Node(T a_Data, Node a_Left, Node a_Right, int a_Level)
             {
-                m_Data = a_Data;
+                Data = a_Data;
                 if (EqualityComparer<T>.Default.Equals(a_Data, default(T)))
                 {
-                    m_Left = this;
-                    m_Right = this;
+                    Left = this;
+                    Right = this;
                     if (a_Level != 0)
                     {
                         throw new Exception("Cannot use default value for node other than Bottom!");
@@ -122,14 +86,14 @@
                 }
                 else
                 {
-                    m_Left = a_Left;
-                    m_Right = a_Right;
+                    Left = a_Left;
+                    Right = a_Right;
                     if (a_Level != 1)
                     {
                         throw new Exception("Cannot create node with level other than 1!");
                     }
                 }
-                m_Level = a_Level;
+                Level = a_Level;
             }
         }
 
@@ -234,10 +198,6 @@
                     m_Tree = oldLeft;
                 }
                 return oldLeft;
-                //Node temp = t;
-                //t = t.left;
-                //temp.left = t.right;
-                //t.right = temp;
             }
             return t;
         }
@@ -265,19 +225,12 @@
                 }
                 ++oldRight.Level;
                 return oldRight;
-
-                //Node temp = t;
-                //t = t.right;
-                //temp.right = t.left;
-                //t.left = temp;
-                //++t.level;
             }
             return t;
         }
 
         public bool Insert(T data)
         {
-            VerifyLevels();
             if (!(data is ValueType) && EqualityComparer<T>.Default.Equals(data, default(T)))
             {
                 return false;
@@ -285,7 +238,6 @@
             else if (m_Tree == m_Bottom)
             {
                 m_Tree = CreateNode(data);
-                VerifyLevels();
                 return true;
             }
             else
@@ -339,7 +291,6 @@
                     n = Skew(n, t.parentNode, t.side);
                     Split(n, t.parentNode, t.side);
                 }
-                VerifyLevels();
                 return didInsert;
             }
         }
@@ -359,7 +310,6 @@
             }
             else
             {
-                VerifyLevels();
                 Node currentNode = m_Tree;
                 Node parent = null;
                 Node deleted = m_Bottom;
@@ -447,7 +397,6 @@
                         n.Right = Split(n.Right, n, TraversalHistory.ECHILDSIDE.RIGHT);
                     }
                 }
-                VerifyLevels();
                 return didDelete;
             }
         }
