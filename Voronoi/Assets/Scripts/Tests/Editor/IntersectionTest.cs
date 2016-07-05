@@ -34,14 +34,14 @@ namespace VoronoiDCEL.Tests
             while (eventQueue.Size != 0)
             {
                 eventCount++;
-                Debug.Log("iteration " + eventCount);
-                Debug.Log("Event size: " + eventQueue.Size + " Computed: " + eventQueue.ComputeSize() + " Count: " + insertCount);
+                //Debug.Log("iteration " + eventCount);
+                //Debug.Log("Event size: " + eventQueue.Size + " Computed: " + eventQueue.ComputeSize() + " Count: " + insertCount);
                 Assert.IsTrue(eventQueue.Size == eventQueue.ComputeSize());
                 Assert.IsTrue(eventQueue.Size == insertCount);
                 Vertex max;
                 Assert.IsTrue(eventQueue.FindMax(out max));
                 Assert.IsNotNull(max);
-                Debug.Log("Removed vertex from event queue: " + max);
+                //Debug.Log("Removed vertex from event queue: " + max);
                 Assert.IsTrue(eventQueue.Delete(max));
                 Assert.IsTrue(eventQueue.VerifyLevels());
                 insertCount--;
@@ -50,12 +50,12 @@ namespace VoronoiDCEL.Tests
                     if (h.ParentEdge.UpperEndpoint == max)
                     {
                         newEdges.Add(h.ParentEdge);
-                        Debug.Log("Adding vertex to status: " + max);
+                        //Debug.Log("Adding vertex to status: " + max);
                     }
                     else if (h.ParentEdge.LowerEndpoint == max)
                     {
                         exitingEdges.Add(h.ParentEdge);
-                        Debug.Log("Removing vertex from status: " + max);
+                        //Debug.Log("Removing vertex from status: " + max);
                     }
                     else
                     {
@@ -80,7 +80,7 @@ namespace VoronoiDCEL.Tests
                     Assert.IsTrue(status.Size == statusCount);
                 }
                 newEdges.Clear();
-                Debug.Log("Status size: " + status.Size + " Computed: " + status.ComputeSize() + " Count: " + statusCount);
+                //Debug.Log("Status size: " + status.Size + " Computed: " + status.ComputeSize() + " Count: " + statusCount);
             }
             Assert.IsTrue(status.Size == 0);
             Assert.IsTrue(status.ComputeSize() == 0);
@@ -141,10 +141,8 @@ namespace VoronoiDCEL.Tests
             Assert.IsTrue(tree.VerifyLevels());
             for (int i = 3; i < 14; i++)
             {
-                Debug.Log(i);
                 Assert.IsTrue(tree.Delete(i));
                 count--;
-                Debug.Log(count);
                 Assert.IsTrue(count == tree.Size);
                 Assert.IsTrue(count == tree.ComputeSize());
                 Assert.IsTrue(tree.VerifyLevels());
