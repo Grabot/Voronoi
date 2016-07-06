@@ -1,4 +1,6 @@
-﻿namespace VoronoiDCEL
+﻿using System.Collections.Generic;
+
+namespace VoronoiDCEL
 {
     public class StatusData : System.IComparable<StatusData>, System.IEquatable<StatusData>
     {
@@ -64,6 +66,41 @@
             return Delete(statusData);
         }
 
+        public Edge[] FindNodes(Vertex v)
+        {
+            List<StatusData> nodes = new List<StatusData>();
+            FindNodes(v, m_Tree, nodes);
+            int nodeCount = nodes.Count;
+            Edge[] edges = new Edge[nodeCount];
+            for (int i = 0; i < nodeCount; ++i)
+            {
+                edges[i] = nodes[i].Edge;
+            }
+            return edges;
+        }
+
+        private void FindNodes(Vertex v, Node t, List<StatusData> list)
+        {
+            if (t == m_Bottom)
+            {
+                return;
+            }
+            else if (IsEqual(v, t.Data))
+            {
+                list.Add(t.Data);
+                FindNodes(v, t.Left, list);
+                FindNodes(v, t.Right, list);
+            }
+            else if (CompareTo(v, t.Data) < 0)
+            {
+                FindNodes(v, t.Left, list);
+            }
+            else
+            {
+                FindNodes(v, t.Right, list);
+            }
+        }
+
         protected override int CompareTo(StatusData a, StatusData b, COMPARISON_TYPE a_ComparisonType)
         {
             if (a_ComparisonType == COMPARISON_TYPE.INSERT)
@@ -76,7 +113,7 @@
             }
             else
             {
-                throw new System.NotImplementedException("Find comparison not yet implemented.");
+                throw new System.NotImplementedException("Find comparison not implemented.");
             }
         }
 
@@ -92,8 +129,18 @@
             }
             else
             {
-                throw new System.NotImplementedException("Find comparison not yet implemented.");
+                throw new System.NotImplementedException("Find comparison not implemented.");
             }
+        }
+
+        protected bool IsEqual(Vertex v, StatusData b)
+        {
+            return v.OnLine(b.Edge);
+        }
+
+        protected int CompareTo(Vertex v, StatusData b)
+        {
+            return v.CompareTo(b.Edge);
         }
     }
 }

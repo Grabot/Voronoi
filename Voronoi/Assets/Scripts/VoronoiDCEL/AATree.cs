@@ -106,7 +106,7 @@
 
         public bool Contains(T data)
         {
-            return FindNode(data, m_Tree) != null;
+            return FindNodes(data).Length > 0;
         }
 
         public int ComputeSize()
@@ -173,6 +173,19 @@
         public bool VerifyLevels()
         {
             return VerifyLevels(m_Tree, m_Tree.Level);
+        }
+
+
+        public T[] FindNodes(T data)
+        {
+            List<T> nodes = new List<T>();
+            FindNodes(data, m_Tree, nodes);
+            return nodes.ToArray();
+        }
+
+        public bool VerifyBST(T minValue, T maxValue)
+        {
+            return VerifyBST(m_Tree, minValue, maxValue);
         }
 
         private Node Skew(Node t, Node parent, TraversalHistory.ECHILDSIDE a_Side)
@@ -400,23 +413,118 @@
             }
         }
 
-        private Node FindNode(T data, Node t)
+        public bool FindLeftNeighbour(T data, out T out_Neighbour)
+        {
+            Node result = FindNeighbour(data, m_Tree, false);
+            if (result != null && result != m_Bottom)
+            {
+                out_Neighbour = result.Data;
+                return true;
+            }
+            else
+            {
+                out_Neighbour = default(T);
+                return false;
+            }
+        }
+
+        public bool FindRightNeighbour(T data, out T out_Neighbour)
+        {
+            Node result = FindNeighbour(data, m_Tree, true);
+            if (result != null && result != m_Bottom)
+            {
+                out_Neighbour = result.Data;
+                return true;
+            }
+            else
+            {
+                out_Neighbour = default(T);
+                return false;
+            }
+        }
+
+        private Node FindNeighbour(T data, Node t, bool rightNeighbour)
         {
             if (t == m_Bottom)
             {
                 return null;
             }
+            else
+            {
+                int treeSize = (int)Math.Ceiling(Math.Log(m_Size + 1, 2)) + 1;
+                Queue<Node> qn = new Queue<Node>(treeSize);
+                Queue<int> ql = new Queue<int>(treeSize);
+
+                int level = 0;
+
+                qn.Enqueue(m_Tree);
+                ql.Enqueue(level);
+
+                while (qn.Count != 0)
+                {
+                    Node node = qn.Dequeue();
+                    level = ql.Dequeue();
+
+                    if (IsEqual(data, node.Data, COMPARISON_TYPE.FIND))
+                    {
+                        if (ql.Count == 0 || ql.Peek() != level)
+                        {
+                            return null;
+                        }
+                        return qn.Peek();
+                    }
+
+                    if (rightNeighbour)
+                    {
+                        if (node.Left != m_Bottom)
+                        {
+                            qn.Enqueue(node.Left);
+                            ql.Enqueue(level + 1);
+                        }
+                        if (node.Right != m_Bottom)
+                        {
+                            qn.Enqueue(node.Right);
+                            ql.Enqueue(level + 1);
+                        }
+                    }
+                    else
+                    {
+                        if (node.Right != m_Bottom)
+                        {
+                            qn.Enqueue(node.Right);
+                            ql.Enqueue(level + 1);
+                        }
+                        if (node.Left != m_Bottom)
+                        {
+                            qn.Enqueue(node.Left);
+                            ql.Enqueue(level + 1);
+                        }
+                    }
+                }
+
+                return null;
+            }
+        }
+
+        private void FindNodes(T data, Node t, List<T> list)
+        {
+            if (t == m_Bottom)
+            {
+                return;
+            }
             else if (IsEqual(t.Data, data, COMPARISON_TYPE.FIND))
             {
-                return t;
+                list.Add(t.Data);
+                FindNodes(data, t.Left, list);
+                FindNodes(data, t.Right, list);
             }
             else if (CompareTo(data, t.Data, COMPARISON_TYPE.FIND) < 0)
             {
-                return FindNode(data, t.Left);
+                FindNodes(data, t.Left, list);
             }
             else
             {
-                return FindNode(data, t.Right);
+                FindNodes(data, t.Right, list);
             }
         }
 
@@ -448,6 +556,23 @@
             else
             {
                 return false;
+            }
+        }
+
+        private bool VerifyBST(Node t, T minKey, T maxKey)
+        {
+            if (t == m_Bottom)
+            {
+                return true;
+            }
+            else if (CompareTo(minKey, t.Data, COMPARISON_TYPE.FIND) > 0 ||
+                     CompareTo(maxKey, t.Data, COMPARISON_TYPE.FIND) < 0)
+            {
+                return false;
+            }
+            else
+            {
+                return VerifyBST(t.Left, minKey, t.Data) && VerifyBST(t.Right, t.Data, maxKey);
             }
         }
 

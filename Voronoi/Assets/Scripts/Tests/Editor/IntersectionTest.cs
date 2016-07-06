@@ -89,6 +89,79 @@ namespace VoronoiDCEL.Tests
         }
 
         [Test]
+        public void TestIntersections2()
+        {
+            DCEL dcel = new DCEL();
+            dcel.AddEdge(4, 4, 3, 4);
+            dcel.AddEdge(5, 5, 3, 5);
+            dcel.AddEdge(3, 3, 2, 4);
+            AATree<Vertex> eventQueue = new AATree<Vertex>();
+            foreach (Edge e in dcel.Edges)
+            {
+                eventQueue.Insert(e.UpperEndpoint);
+                eventQueue.Insert(e.LowerEndpoint);
+            }
+            Assert.IsTrue(eventQueue.VerifyLevels());
+            Assert.IsTrue(eventQueue.VerifyBST(new Vertex(int.MinValue, int.MinValue), new Vertex(int.MaxValue, int.MaxValue)));
+            Assert.IsTrue(eventQueue.Size == 6);
+            Assert.IsTrue(eventQueue.ComputeSize() == 6);
+
+            Vertex p;
+            Assert.IsTrue(eventQueue.FindMax(out p));
+            Assert.IsNotNull(p);
+            Assert.IsTrue(eventQueue.Delete(p));
+            Assert.AreEqual(new Vertex(5, 5), p);
+            Assert.IsTrue(eventQueue.VerifyLevels());
+            Assert.IsTrue(eventQueue.VerifyBST(new Vertex(int.MinValue, int.MinValue), new Vertex(int.MaxValue, int.MaxValue)));
+            Assert.IsTrue(eventQueue.Size == 5);
+            Assert.IsTrue(eventQueue.ComputeSize() == 5);
+
+            Assert.IsTrue(eventQueue.FindMax(out p));
+            Assert.IsNotNull(p);
+            Assert.IsTrue(eventQueue.Delete(p));
+            Assert.AreEqual(new Vertex(3, 5), p);
+            Assert.IsTrue(eventQueue.VerifyLevels());
+            Assert.IsTrue(eventQueue.VerifyBST(new Vertex(int.MinValue, int.MinValue), new Vertex(int.MaxValue, int.MaxValue)));
+            Assert.IsTrue(eventQueue.Size == 4);
+            Assert.IsTrue(eventQueue.ComputeSize() == 4);
+
+            Assert.IsTrue(eventQueue.FindMax(out p));
+            Assert.IsNotNull(p);
+            Assert.IsTrue(eventQueue.Delete(p));
+            Assert.AreEqual(new Vertex(4, 4), p);
+            Assert.IsTrue(eventQueue.VerifyLevels());
+            Assert.IsTrue(eventQueue.VerifyBST(new Vertex(int.MinValue, int.MinValue), new Vertex(int.MaxValue, int.MaxValue)));
+            Assert.IsTrue(eventQueue.Size == 3);
+            Assert.IsTrue(eventQueue.ComputeSize() == 3);
+
+            Assert.IsTrue(eventQueue.FindMax(out p));
+            Assert.IsNotNull(p);
+            Assert.IsTrue(eventQueue.Delete(p));
+            Assert.AreEqual(new Vertex(3, 4), p);
+            Assert.IsTrue(eventQueue.VerifyLevels());
+            Assert.IsTrue(eventQueue.Size == 2);
+            Assert.IsTrue(eventQueue.ComputeSize() == 2);
+
+            Assert.IsTrue(eventQueue.FindMax(out p));
+            Assert.IsNotNull(p);
+            Assert.IsTrue(eventQueue.Delete(p));
+            Assert.AreEqual(new Vertex(2, 4), p);
+            Assert.IsTrue(eventQueue.VerifyLevels());
+            Assert.IsTrue(eventQueue.VerifyBST(new Vertex(int.MinValue, int.MinValue), new Vertex(int.MaxValue, int.MaxValue)));
+            Assert.IsTrue(eventQueue.Size == 1);
+            Assert.IsTrue(eventQueue.ComputeSize() == 1);
+
+            Assert.IsTrue(eventQueue.FindMax(out p));
+            Assert.IsNotNull(p);
+            Assert.IsTrue(eventQueue.Delete(p));
+            Assert.AreEqual(new Vertex(3, 3), p);
+            Assert.IsTrue(eventQueue.VerifyLevels());
+            Assert.IsTrue(eventQueue.VerifyBST(new Vertex(int.MinValue, int.MinValue), new Vertex(int.MaxValue, int.MaxValue)));
+            Assert.IsTrue(eventQueue.Size == 0);
+            Assert.IsTrue(eventQueue.ComputeSize() == 0);
+        }
+
+        [Test]
         public void TestTree()
         {
             AATree<int> tree = new AATree<int>();
@@ -96,29 +169,37 @@ namespace VoronoiDCEL.Tests
             Assert.IsTrue(tree.Insert(2));
             Assert.IsTrue(1 == tree.ComputeSize());
             Assert.IsTrue(tree.VerifyLevels());
+            Assert.IsTrue(tree.VerifyBST(int.MinValue, int.MaxValue));
             Assert.IsTrue(tree.Insert(1));
             Assert.IsTrue(2 == tree.ComputeSize());
             Assert.IsTrue(tree.VerifyLevels());
+            Assert.IsTrue(tree.VerifyBST(int.MinValue, int.MaxValue));
             Assert.IsTrue(tree.Delete(2));
             Assert.IsTrue(1 == tree.ComputeSize());
             Assert.IsTrue(tree.VerifyLevels());
+            Assert.IsTrue(tree.VerifyBST(int.MinValue, int.MaxValue));
             Assert.IsTrue(tree.Delete(1));
             Assert.IsTrue(0 == tree.ComputeSize());
             Assert.IsTrue(tree.VerifyLevels());
+            Assert.IsTrue(tree.VerifyBST(int.MinValue, int.MaxValue));
             Assert.IsTrue(0 == tree.Size);
 
             Assert.IsTrue(tree.Insert(2));
             Assert.IsTrue(1 == tree.ComputeSize());
             Assert.IsTrue(tree.VerifyLevels());
+            Assert.IsTrue(tree.VerifyBST(int.MinValue, int.MaxValue));
             Assert.IsTrue(tree.Insert(1));
             Assert.IsTrue(2 == tree.ComputeSize());
             Assert.IsTrue(tree.VerifyLevels());
+            Assert.IsTrue(tree.VerifyBST(int.MinValue, int.MaxValue));
             Assert.IsTrue(tree.Delete(1));
             Assert.IsTrue(1 == tree.ComputeSize());
             Assert.IsTrue(tree.VerifyLevels());
+            Assert.IsTrue(tree.VerifyBST(int.MinValue, int.MaxValue));
             Assert.IsTrue(tree.Delete(2));
             Assert.IsTrue(0 == tree.ComputeSize());
             Assert.IsTrue(tree.VerifyLevels());
+            Assert.IsTrue(tree.VerifyBST(int.MinValue, int.MaxValue));
             Assert.IsTrue(0 == tree.Size);
 
             int count = 0;
@@ -131,6 +212,7 @@ namespace VoronoiDCEL.Tests
                     Assert.IsTrue(count == tree.Size);
                     Assert.IsTrue(count == tree.ComputeSize());
                     Assert.IsTrue(tree.VerifyLevels());
+                    Assert.IsTrue(tree.VerifyBST(int.MinValue, int.MaxValue));
                 }
             }
             Assert.IsTrue(tree.Insert(6));
@@ -138,6 +220,7 @@ namespace VoronoiDCEL.Tests
             Assert.IsTrue(count == tree.Size);
             Assert.IsTrue(count == tree.ComputeSize());
             Assert.IsTrue(tree.VerifyLevels());
+            Assert.IsTrue(tree.VerifyBST(int.MinValue, int.MaxValue));
             for (int i = 3; i < 14; i++)
             {
                 Assert.IsTrue(tree.Delete(i));
@@ -145,12 +228,14 @@ namespace VoronoiDCEL.Tests
                 Assert.IsTrue(count == tree.Size);
                 Assert.IsTrue(count == tree.ComputeSize());
                 Assert.IsTrue(tree.VerifyLevels());
+                Assert.IsTrue(tree.VerifyBST(int.MinValue, int.MaxValue));
             }
             Assert.IsTrue(tree.Insert(3));
             count++;
             Assert.IsTrue(count == tree.Size);
             Assert.IsTrue(count == tree.ComputeSize());
             Assert.IsTrue(tree.VerifyLevels());
+            Assert.IsTrue(tree.VerifyBST(int.MinValue, int.MaxValue));
             for (int i = 1; i < 4; i++)
             {
                 Assert.IsTrue(tree.Delete(i));
@@ -158,11 +243,30 @@ namespace VoronoiDCEL.Tests
                 Assert.IsTrue(count == tree.Size);
                 Assert.IsTrue(count == tree.ComputeSize());
                 Assert.IsTrue(tree.VerifyLevels());
+                Assert.IsTrue(tree.VerifyBST(int.MinValue, int.MaxValue));
             }
             Assert.IsFalse(tree.Delete(1));
             Assert.IsTrue(0 == tree.Size);
             Assert.IsTrue(0 == tree.ComputeSize());
             Assert.IsTrue(tree.VerifyLevels());
+            Assert.IsTrue(tree.VerifyBST(int.MinValue, int.MaxValue));
+        }
+
+        [Test]
+        public void TestTreeNeighbours()
+        {
+            AATree<int> tree = new AATree<int>();
+            Assert.IsTrue(tree.Insert(1));
+            Assert.IsTrue(tree.Insert(2));
+            Assert.IsTrue(tree.Insert(3));
+            Assert.IsTrue(3 == tree.ComputeSize());
+            Assert.IsTrue(tree.VerifyLevels());
+            Assert.IsTrue(tree.VerifyBST(int.MinValue, int.MaxValue));
+            int neighbour;
+            Assert.IsTrue(tree.FindRightNeighbour(1, out neighbour));
+            Assert.AreEqual(3, neighbour);
+            Assert.IsTrue(tree.FindLeftNeighbour(3, out neighbour));
+            Assert.AreEqual(1, neighbour);
         }
     }
 }

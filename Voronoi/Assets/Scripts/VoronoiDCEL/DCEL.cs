@@ -337,6 +337,7 @@ namespace VoronoiDCEL
         public void FindIntersections()
         {
             AATree<Vertex> eventQueue = new AATree<Vertex>();
+            List<Vertex> intersections = new List<Vertex>();
             foreach (Edge e in m_Edges)
             {
                 eventQueue.Insert(e.UpperEndpoint);
@@ -349,7 +350,7 @@ namespace VoronoiDCEL
                 if (eventQueue.FindMax(out p))
                 {
                     eventQueue.Delete(p);
-                    HandleEventPoint(p, status);
+                    HandleEventPoint(p, status, eventQueue, intersections);
                 }
                 else
                 {
@@ -358,14 +359,67 @@ namespace VoronoiDCEL
             }
         }
 
-        private void HandleEventPoint(Vertex a_Point, StatusTree a_Status)
+        private static void HandleEventPoint(Vertex a_Point, StatusTree a_Status,
+                                             AATree<Vertex> eventQueue, List<Vertex> intersections)
         {
-            HashSet<Edge> upperEndpointEdges = new HashSet<Edge>();
+            HashSet<Edge> upperEndpointEdges = new HashSet<Edge>(); // U(p)
+            HashSet<Edge> lowerEndpointEdges = new HashSet<Edge>(); // L(p)
             foreach (HalfEdge h in a_Point.IncidentEdges)
             {
-                upperEndpointEdges.Add(h.ParentEdge);
+                if (h.ParentEdge.UpperEndpoint == a_Point)
+                {
+                    upperEndpointEdges.Add(h.ParentEdge);
+                }
+                if (h.ParentEdge.LowerEndpoint == a_Point)
+                {
+                    lowerEndpointEdges.Add(h.ParentEdge);
+                }
             }
-            // Continue implementing this.
+            HashSet<Edge> containingEdges = new HashSet<Edge>(a_Status.FindNodes(a_Point));
+            containingEdges.IntersectWith(lowerEndpointEdges); // C(p)
+            HashSet<Edge> union = new HashSet<Edge>(lowerEndpointEdges);
+            union.UnionWith(upperEndpointEdges);
+            union.UnionWith(containingEdges);
+            if (union.Count > 1)
+            {
+                // Intersection!
+                intersections.Add(a_Point);
+                // Also register L(p), U(p) and C(p)
+            }
+            union = new HashSet<Edge>(lowerEndpointEdges);
+            union.UnionWith(containingEdges);
+            foreach (Edge e in union)
+            {
+                a_Status.Delete(e);
+            }
+            union = new HashSet<Edge>(upperEndpointEdges);
+            union.UnionWith(containingEdges);
+            foreach (Edge e in union)
+            {
+                a_Status.Insert(e);
+            }
+            if (union.Count > 0)
+            {
+                // Find the left and right neighbours of point in Status.
+                // FindNewEvent(left, right, point, eventQueue)
+            }
+            else
+            {
+                // Find the leftmost segment of U(p) U C(p) in Status
+                // Find the left neighbour of the leftmost segment.
+                // FindNewEvent(leftseg, left, point, eventQueue)
+
+                // Find the rightmost segment of U(p) U C(p) in Status
+                // Find the right neighbour of the rightmost segment.
+                // FindNewEvent(rightmost, right, point, eventQueue)
+            }
+        }
+
+        public void FindNewEvent(Edge a, Edge b, Vertex point, AATree<Vertex> eventQueue)
+        {
+            // Check if a and b intersect below the sweep line, or on the sweep line but to the right of
+            // the current event point. If the intersection is not already present in the event queue, insert it.
+            //eventQueue.Insert(intersection);
         }
 
         public void Draw()
