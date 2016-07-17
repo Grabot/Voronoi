@@ -268,5 +268,28 @@ namespace VoronoiDCEL.Tests
             Assert.IsTrue(tree.FindLeftNeighbour(3, out neighbour));
             Assert.AreEqual(1, neighbour);
         }
+
+        [Test]
+        public void TestExtremeSegments()
+        {
+            DCEL dcel = new DCEL();
+            dcel.AddEdge(4, 4, 3, 4);
+            dcel.AddEdge(5, 5, 3, 5);
+            dcel.AddEdge(1, 1, 2, 2);
+            StatusTree tree = new StatusTree();
+            foreach (Edge e in dcel.Edges)
+            {
+                Assert.IsTrue(tree.Insert(e));
+            }
+            Assert.IsTrue(tree.Size == 3);
+            Assert.IsTrue(tree.ComputeSize() == 3);
+            Assert.IsTrue(tree.VerifyLevels());
+            Edge leftMost;
+            HashSet<Edge> segmentSet = new HashSet<Edge>();
+            segmentSet.Add(dcel.Edges[1]);
+            segmentSet.Add(dcel.Edges[2]);
+            Assert.IsTrue(tree.FindLeftMostSegmentInSet(segmentSet, out leftMost));
+            Assert.IsNotNull(leftMost);
+        }
     }
 }

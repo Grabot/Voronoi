@@ -360,7 +360,7 @@ namespace VoronoiDCEL
         }
 
         private static void HandleEventPoint(Vertex a_Point, StatusTree a_Status,
-                                             AATree<Vertex> eventQueue, List<Vertex> intersections)
+                                             AATree<Vertex> a_EventQueue, List<Vertex> intersections)
         {
             HashSet<Edge> upperEndpointEdges = new HashSet<Edge>(); // U(p)
             HashSet<Edge> lowerEndpointEdges = new HashSet<Edge>(); // L(p)
@@ -398,24 +398,39 @@ namespace VoronoiDCEL
             {
                 a_Status.Insert(e);
             }
-            if (union.Count > 0)
+            if (union.Count == 0)
             {
-                // Find the left and right neighbours of point in Status.
-                // FindNewEvent(left, right, point, eventQueue)
+                StatusData leftNeighbour;
+                StatusData rightNeighbour;
+                if (a_Status.FindLeftNeighbour(a_Point, out leftNeighbour) && a_Status.FindRightNeighbour(a_Point, out rightNeighbour))
+                {
+                    FindNewEvent(leftNeighbour.Edge, rightNeighbour.Edge, a_Point, a_EventQueue);
+                }
             }
             else
             {
-                // Find the leftmost segment of U(p) U C(p) in Status
-                // Find the left neighbour of the leftmost segment.
-                // FindNewEvent(leftseg, left, point, eventQueue)
-
-                // Find the rightmost segment of U(p) U C(p) in Status
-                // Find the right neighbour of the rightmost segment.
-                // FindNewEvent(rightmost, right, point, eventQueue)
+                Edge leftMost;
+                if (a_Status.FindLeftMostSegmentInSet(union, out leftMost))
+                {
+                    Edge leftNeighbour;
+                    if (a_Status.FindLeftNeighbour(leftMost, out leftNeighbour))
+                    {
+                        FindNewEvent(leftMost, leftNeighbour, a_Point, a_EventQueue);
+                    }
+                }
+                Edge rightMost;
+                if (a_Status.FindRightMostSegmentInSet(union, out rightMost))
+                {
+                    Edge rightNeighbour;
+                    if (a_Status.FindRightNeighbour(rightMost, out rightNeighbour))
+                    {
+                        FindNewEvent(rightMost, rightNeighbour, a_Point, a_EventQueue);
+                    }
+                }
             }
         }
 
-        public void FindNewEvent(Edge a, Edge b, Vertex point, AATree<Vertex> eventQueue)
+        public static void FindNewEvent(Edge a, Edge b, Vertex point, AATree<Vertex> eventQueue)
         {
             // Check if a and b intersect below the sweep line, or on the sweep line but to the right of
             // the current event point. If the intersection is not already present in the event queue, insert it.

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Voronoi
+﻿namespace Voronoi
 {
     public class HalfEdge
     {
