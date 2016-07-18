@@ -156,7 +156,7 @@ namespace VoronoiDCEL
             }
             else
             {
-                throw new NotImplementedException("Find comparison not implemented.");
+                return a.Equals(b);
             }
         }
 
@@ -280,23 +280,46 @@ namespace VoronoiDCEL
             }
             else
             {
+                out_LeftMost = null;
                 // Perform a DFS.
+                int setCount = a_Set.Count;
                 Stack<Node> nodes = new Stack<Node>(m_Size);
+                Stack<int> nodesLevel = new Stack<int>(m_Size);
                 nodes.Push(t);
-                while (nodes.Count != 0)
+                nodesLevel.Push(0);
+                int lowestLevel = -1;
+                while (nodes.Count != 0 && setCount != 0)
                 {
+                    int curLevel = nodesLevel.Pop();
+                    if (curLevel <= lowestLevel && out_LeftMost != null)
+                    {
+                        return true;
+                    }
                     Node curNode = nodes.Pop();
                     if (a_Set.Contains(curNode.Data.Edge))
                     {
-                        if (curNode.Left == m_Bottom || a_Set.Count == 1)
+                        --setCount;
+                        if (out_LeftMost == null)
                         {
-                            out_LeftMost = curNode.Data.Edge;
-                            return true;
+                            if (curNode.Left == m_Bottom || setCount == 0)
+                            {
+                                out_LeftMost = curNode.Data.Edge;
+                                return true;
+                            }
+                            else
+                            {
+                                out_LeftMost = curNode.Data.Edge;
+                                lowestLevel = curLevel;
+                                nodes.Push(curNode.Left);
+                                nodesLevel.Push(curLevel + 1);
+                            }
                         }
                         else
                         {
-                            a_Set.Remove(curNode.Data.Edge);
+                            out_LeftMost = curNode.Data.Edge;
+                            lowestLevel = curLevel;
                             nodes.Push(curNode.Left);
+                            nodesLevel.Push(curLevel + 1);
                         }
                     }
                     else
@@ -304,44 +327,68 @@ namespace VoronoiDCEL
                         if (curNode.Right != m_Bottom)
                         {
                             nodes.Push(curNode.Right);
+                            nodesLevel.Push(curLevel + 1);
                         }
                         if (curNode.Left != m_Bottom)
                         {
                             nodes.Push(curNode.Left);
+                            nodesLevel.Push(curLevel + 1);
                         }
                     }
                 }
-                out_LeftMost = null;
-                return false;
+                return out_LeftMost != null;
             }
         }
 
-        private bool FindRightMostSegmentInSet(HashSet<Edge> a_Set, Node t, out Edge out_Rightmost)
+        private bool FindRightMostSegmentInSet(HashSet<Edge> a_Set, Node t, out Edge out_RightMost)
         {
             if (t == m_Bottom)
             {
-                out_Rightmost = null;
+                out_RightMost = null;
                 return false;
             }
             else
             {
+                out_RightMost = null;
                 // Perform a DFS.
+                int setCount = a_Set.Count;
                 Stack<Node> nodes = new Stack<Node>(m_Size);
+                Stack<int> nodesLevel = new Stack<int>(m_Size);
                 nodes.Push(t);
-                while (nodes.Count != 0)
+                nodesLevel.Push(0);
+                int lowestLevel = -1;
+                while (nodes.Count != 0 && setCount != 0)
                 {
+                    int curLevel = nodesLevel.Pop();
+                    if (curLevel <= lowestLevel && out_RightMost != null)
+                    {
+                        return true;
+                    }
                     Node curNode = nodes.Pop();
                     if (a_Set.Contains(curNode.Data.Edge))
                     {
-                        if (curNode.Right == m_Bottom || a_Set.Count == 1)
+                        --setCount;
+                        if (out_RightMost == null)
                         {
-                            out_Rightmost = curNode.Data.Edge;
-                            return true;
+                            if (curNode.Right == m_Bottom || setCount == 0)
+                            {
+                                out_RightMost = curNode.Data.Edge;
+                                return true;
+                            }
+                            else
+                            {
+                                out_RightMost = curNode.Data.Edge;
+                                lowestLevel = curLevel;
+                                nodes.Push(curNode.Right);
+                                nodesLevel.Push(curLevel + 1);
+                            }
                         }
                         else
                         {
-                            a_Set.Remove(curNode.Data.Edge);
+                            out_RightMost = curNode.Data.Edge;
+                            lowestLevel = curLevel;
                             nodes.Push(curNode.Right);
+                            nodesLevel.Push(curLevel + 1);
                         }
                     }
                     else
@@ -349,15 +396,16 @@ namespace VoronoiDCEL
                         if (curNode.Left != m_Bottom)
                         {
                             nodes.Push(curNode.Left);
+                            nodesLevel.Push(curLevel + 1);
                         }
                         if (curNode.Right != m_Bottom)
                         {
                             nodes.Push(curNode.Right);
+                            nodesLevel.Push(curLevel + 1);
                         }
                     }
                 }
-                out_Rightmost = null;
-                return false;
+                return out_RightMost != null;
             }
         }
 

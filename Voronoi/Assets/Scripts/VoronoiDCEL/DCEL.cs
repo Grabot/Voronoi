@@ -392,7 +392,6 @@ namespace VoronoiDCEL
                 }
             }
             HashSet<Edge> containingEdges = new HashSet<Edge>(a_Status.FindNodes(a_Point));
-            containingEdges.IntersectWith(lowerEndpointEdges); // C(p)
             HashSet<Edge> union = new HashSet<Edge>(lowerEndpointEdges);
             union.UnionWith(upperEndpointEdges);
             union.UnionWith(containingEdges);
@@ -400,8 +399,11 @@ namespace VoronoiDCEL
             {
                 Intersection intersection = new Intersection();
                 intersection.point = a_Point;
+                intersection.upperEndpointEdges = new Edge[upperEndpointEdges.Count];
                 upperEndpointEdges.CopyTo(intersection.upperEndpointEdges);
+                intersection.lowerEndpointEdges = new Edge[lowerEndpointEdges.Count];
                 lowerEndpointEdges.CopyTo(intersection.lowerEndpointEdges);
+                intersection.containingEdges = new Edge[containingEdges.Count];
                 containingEdges.CopyTo(intersection.containingEdges);
                 intersections.Add(intersection);
             }
@@ -409,13 +411,19 @@ namespace VoronoiDCEL
             union.UnionWith(containingEdges);
             foreach (Edge e in union)
             {
-                a_Status.Delete(e);
+                if (!a_Status.Delete(e))
+                {
+                    throw new Exception("Could not delete lower endpoint or containing edge from status!");
+                }
             }
             union = new HashSet<Edge>(upperEndpointEdges);
             union.UnionWith(containingEdges);
             foreach (Edge e in union)
             {
-                a_Status.Insert(e);
+                if (!a_Status.Insert(e))
+                {
+                    throw new Exception("Could not insert upper endpiont or containing edge into status!");
+                }
             }
             if (union.Count == 0)
             {
