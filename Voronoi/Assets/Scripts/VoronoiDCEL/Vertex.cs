@@ -46,22 +46,22 @@ namespace VoronoiDCEL
 
         public bool OnLine(Edge a_Edge)
         {
-            return Math.Abs(Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint)) <= double.Epsilon;
+            return Math.Abs(Orient2D(this, a_Edge.UpperEndpoint, a_Edge.LowerEndpoint)) <= double.Epsilon;
         }
 
         public bool LeftOfLine(Edge a_Edge)
         {
-            return Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint) > 0;
+            return Orient2D(this, a_Edge.UpperEndpoint, a_Edge.LowerEndpoint) > 0;
         }
 
         public bool RightOfLine(Edge a_Edge)
         {
-            return Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint) < 0;
+            return Orient2D(this, a_Edge.UpperEndpoint, a_Edge.LowerEndpoint) < 0;
         }
 
         public int CompareTo(Edge a_Edge)
         {
-            double result = Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint);
+            double result = Orient2D(this, a_Edge.UpperEndpoint, a_Edge.LowerEndpoint);
             if (Math.Abs(result) <= double.Epsilon)
             {
                 return 0;

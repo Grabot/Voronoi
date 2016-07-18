@@ -411,7 +411,7 @@ namespace VoronoiDCEL
             union.UnionWith(containingEdges);
             foreach (Edge e in union)
             {
-                if (!a_Status.Delete(e))
+                if (!a_Status.Delete(e, a_Point.Y))
                 {
                     throw new Exception("Could not delete lower endpoint or containing edge from status!");
                 }
@@ -477,7 +477,7 @@ namespace VoronoiDCEL
             }
         }
 
-        private static bool IntersectLines(Vertex a, Vertex b, Vertex c, Vertex d, out Vertex o_Intersection)
+        public static bool IntersectLines(Vertex a, Vertex b, Vertex c, Vertex d, out Vertex o_Intersection)
         {
             double numerator = Vertex.Orient2D(c, d, a);
             if ((numerator * Vertex.Orient2D(c, d, b) <= 0) && (Vertex.Orient2D(a, b, c) * Vertex.Orient2D(a, b, d) <= 0))

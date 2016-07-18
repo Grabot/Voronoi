@@ -3,18 +3,31 @@ using System;
 
 namespace VoronoiDCEL
 {
-    public class StatusData : System.IComparable<StatusData>, System.IEquatable<StatusData>
+    public class StatusData : IComparable<StatusData>, IEquatable<StatusData>
     {
         private readonly Edge m_Edge;
+        private readonly Vertex m_Vertex;
 
         public Edge Edge
         {
             get { return m_Edge; }
         }
 
+        public Vertex Vertex
+        {
+            get { return m_Vertex; }
+        }
+
         public StatusData(Edge a_Edge)
         {
             m_Edge = a_Edge;
+            m_Vertex = Vertex.Zero;
+        }
+
+        public StatusData(Edge a_Edge, Vertex a_Vertex)
+        {
+            m_Edge = a_Edge;
+            m_Vertex = a_Vertex;
         }
 
         public override bool Equals(object obj)
@@ -64,6 +77,18 @@ namespace VoronoiDCEL
         public bool Delete(Edge a_Edge)
         {
             StatusData statusData = new StatusData(a_Edge);
+            return Delete(statusData);
+        }
+
+        public bool Delete(Edge a_Edge, double a_SweepLineHeight)
+        {
+            Vertex intersection;
+            if (!DCEL.IntersectLines(a_Edge.UpperEndpoint, a_Edge.LowerEndpoint, new Vertex(Math.Min(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X), a_SweepLineHeight),
+                    new Vertex(Math.Max(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X), a_SweepLineHeight), out intersection))
+            {
+                intersection = a_Edge.LowerEndpoint;
+            }
+            StatusData statusData = new StatusData(a_Edge, intersection);
             return Delete(statusData);
         }
 
@@ -136,7 +161,7 @@ namespace VoronoiDCEL
             }
             else if (a_ComparisonType == COMPARISON_TYPE.DELETE)
             {
-                return a.Edge.LowerEndpoint.CompareTo(b.Edge);
+                return a.Vertex.CompareTo(b.Edge);
             }
             else
             {
