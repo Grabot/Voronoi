@@ -293,16 +293,29 @@ namespace VoronoiDCEL.Tests
         }
 
         [Test]
-        public void TestIntersections3()
+        public void TestNonIntersectingLines()
         {
             DCEL dcel = new DCEL();
             dcel.AddEdge(4, 4, 3, 4);
             dcel.AddEdge(5, 5, 3, 5);
             dcel.AddEdge(3, 3, 2, 4);
             DCEL.Intersection[] intersections;
+            Assert.IsFalse(dcel.FindIntersections(out intersections));
+            Assert.IsNull(intersections);
+        }
+
+        [Test]
+        public void TestIntersections3()
+        {
+            DCEL dcel = new DCEL();
+            dcel.AddEdge(4, 4, 3, 4);
+            dcel.AddEdge(5, 5, 3, 5);
+            dcel.AddEdge(3, 3, 2, 4);
+            dcel.AddEdge(3, 3, 3, 5);
+            DCEL.Intersection[] intersections;
             Assert.IsTrue(dcel.FindIntersections(out intersections));
             Assert.IsNotNull(intersections);
-            Assert.IsTrue(intersections.Length > 0);
+            Assert.IsTrue(intersections.Length == 3);
         }
     }
 }
