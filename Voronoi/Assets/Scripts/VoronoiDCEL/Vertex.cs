@@ -36,12 +36,14 @@ namespace VoronoiDCEL
 
         public static bool operator <(Vertex a, Vertex b)
         {
-            return a.Y < b.Y || (a.Y == b.Y && a.X < b.X);
+            return a.Y < b.Y || (a.Y == b.Y && a.X > b.X);
+            //return a.Y < b.Y || (a.Y == b.Y && a.X < b.X);
         }
 
         public static bool operator >(Vertex a, Vertex b)
         {
-            return a.Y > b.Y || (a.Y == b.Y && a.X > b.X);
+            return a.Y > b.Y || (a.Y == b.Y && a.X < b.X);
+            //return a.Y > b.Y || (a.Y == b.Y && a.X > b.X);
         }
 
         public bool OnLine(Edge a_Edge)

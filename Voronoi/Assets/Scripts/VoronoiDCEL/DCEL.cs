@@ -392,6 +392,8 @@ namespace VoronoiDCEL
                 }
             }
             HashSet<Edge> containingEdges = new HashSet<Edge>(a_Status.FindNodes(a_Point));
+            containingEdges.IntersectWith(upperEndpointEdges);
+            containingEdges.IntersectWith(lowerEndpointEdges);
             HashSet<Edge> union = new HashSet<Edge>(lowerEndpointEdges);
             union.UnionWith(upperEndpointEdges);
             union.UnionWith(containingEdges);
