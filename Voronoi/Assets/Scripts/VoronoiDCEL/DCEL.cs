@@ -335,10 +335,10 @@ namespace VoronoiDCEL
             m_Edges.Add(e);
         }
 
-        public void FindIntersections()
+        public bool FindIntersections(out Intersection[] out_Intersections)
         {
             AATree<Vertex> eventQueue = new AATree<Vertex>();
-            List<Vertex> intersections = new List<Vertex>();
+            List<Intersection> intersections = new List<Intersection>();
             foreach (Edge e in m_Edges)
             {
                 eventQueue.Insert(e.UpperEndpoint);
@@ -358,10 +358,25 @@ namespace VoronoiDCEL
                     throw new Exception("Couldn't find max node in non-empty tree!");
                 }
             }
+            if (intersections.Count > 0)
+            {
+                out_Intersections = intersections.ToArray();
+                return true;
+            }
+            out_Intersections = null;
+            return false;
+        }
+
+        public sealed class Intersection
+        {
+            public Vertex point;
+            public Edge[] upperEndpointEdges;
+            public Edge[] lowerEndpointEdges;
+            public Edge[] containingEdges;
         }
 
         private static void HandleEventPoint(Vertex a_Point, StatusTree a_Status,
-                                             AATree<Vertex> a_EventQueue, List<Vertex> intersections)
+                                             AATree<Vertex> a_EventQueue, List<Intersection> intersections)
         {
             HashSet<Edge> upperEndpointEdges = new HashSet<Edge>(); // U(p)
             HashSet<Edge> lowerEndpointEdges = new HashSet<Edge>(); // L(p)
@@ -383,9 +398,12 @@ namespace VoronoiDCEL
             union.UnionWith(containingEdges);
             if (union.Count > 1)
             {
-                // Intersection!
-                intersections.Add(a_Point);
-                // Also register L(p), U(p) and C(p)
+                Intersection intersection = new Intersection();
+                intersection.point = a_Point;
+                upperEndpointEdges.CopyTo(intersection.upperEndpointEdges);
+                lowerEndpointEdges.CopyTo(intersection.lowerEndpointEdges);
+                containingEdges.CopyTo(intersection.containingEdges);
+                intersections.Add(intersection);
             }
             union = new HashSet<Edge>(lowerEndpointEdges);
             union.UnionWith(containingEdges);
