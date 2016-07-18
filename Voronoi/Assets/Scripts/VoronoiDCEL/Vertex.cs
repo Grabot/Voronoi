@@ -18,6 +18,11 @@ namespace VoronoiDCEL
             m_IncidentEdges = new List<HalfEdge>();
         }
 
+        public static Vertex Zero
+        {
+            get { return new Vertex(0, 0); }
+        }
+
         public List<HalfEdge> IncidentEdges
         {
             get { return m_IncidentEdges; }
@@ -41,7 +46,7 @@ namespace VoronoiDCEL
 
         public bool OnLine(Edge a_Edge)
         {
-            return Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint) == 0;
+            return Math.Abs(Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint)) <= double.Epsilon;
         }
 
         public bool LeftOfLine(Edge a_Edge)
@@ -57,7 +62,7 @@ namespace VoronoiDCEL
         public int CompareTo(Edge a_Edge)
         {
             double result = Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint);
-            if (result == 0)
+            if (Math.Abs(result) <= double.Epsilon)
             {
                 return 0;
             }
@@ -126,7 +131,7 @@ namespace VoronoiDCEL
             }
         }
 
-        private static double Orient2D(Vertex a, Vertex b, Vertex c)
+        public static double Orient2D(Vertex a, Vertex b, Vertex c)
         {
             double[,] orientArray = new double[,]
             {

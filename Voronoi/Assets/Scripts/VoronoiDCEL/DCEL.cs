@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using MNMatrix = MathNet.Numerics.LinearAlgebra.Matrix<double>;
 
 namespace VoronoiDCEL
 {
@@ -418,6 +419,10 @@ namespace VoronoiDCEL
                         FindNewEvent(leftMost, leftNeighbour, a_Point, a_EventQueue);
                     }
                 }
+                else
+                {
+                    throw new Exception("Leftmost segment not found in status, but must exist!");
+                }
                 Edge rightMost;
                 if (a_Status.FindRightMostSegmentInSet(union, out rightMost))
                 {
@@ -427,14 +432,58 @@ namespace VoronoiDCEL
                         FindNewEvent(rightMost, rightNeighbour, a_Point, a_EventQueue);
                     }
                 }
+                else
+                {
+                    throw new Exception("Rightmost segment not found in status, but must exist!");
+                }
             }
         }
 
         public static void FindNewEvent(Edge a, Edge b, Vertex point, AATree<Vertex> eventQueue)
         {
-            // Check if a and b intersect below the sweep line, or on the sweep line but to the right of
-            // the current event point. If the intersection is not already present in the event queue, insert it.
-            //eventQueue.Insert(intersection);
+            Vertex intersection;
+            if (IntersectLines(a.UpperEndpoint, a.LowerEndpoint, b.UpperEndpoint, b.LowerEndpoint, out intersection))
+            {
+                if (intersection.Y < point.Y || (Math.Abs(intersection.Y - point.Y) <= double.Epsilon && intersection.X > point.X))
+                {
+                    eventQueue.Insert(intersection);
+                }
+            }
+        }
+
+        private static bool IntersectLines(Vertex a, Vertex b, Vertex c, Vertex d, out Vertex o_Intersection)
+        {
+            double numerator = Vertex.Orient2D(c, d, a);
+            if ((numerator * Vertex.Orient2D(c, d, b) <= 0) && (Vertex.Orient2D(a, b, c) * Vertex.Orient2D(a, b, d) <= 0))
+            {
+                double[,] denominatorArray =
+                    {
+                        { b.X - a.X, b.Y - a.Y },
+                        { d.X - c.X, d.Y - c.Y }
+                    };
+
+                MNMatrix denominatorMatrix = MNMatrix.Build.DenseOfArray(denominatorArray);
+                double denominator = denominatorMatrix.Determinant();
+
+                if (Math.Abs(denominator) <= double.Epsilon)
+                { // ab and cd are parallel or equal
+                    o_Intersection = Vertex.Zero;
+                    return false;
+                }
+                else
+                { // can optionally check if p is very close to b, c, or d and then flip so that a is nearest p.
+                    double alpha = numerator / denominator;
+                    double directionX = (b.X - a.X) * alpha;
+                    double directionY = (b.Y - a.Y) * alpha;
+                    o_Intersection = new Vertex(a.X + directionX, a.Y + directionY);
+                    return true;
+                }
+            }
+            else
+            {
+                o_Intersection = Vertex.Zero;
+                return false;
+            }
         }
 
         public void Draw()
