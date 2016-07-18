@@ -424,7 +424,7 @@ namespace VoronoiDCEL
             {
                 if (!a_Status.Insert(e))
                 {
-                    throw new Exception("Could not insert upper endpiont or containing edge into status!");
+                    throw new Exception("Could not insert upper endpoint or containing edge into status!");
                 }
             }
             if (union.Count == 0)

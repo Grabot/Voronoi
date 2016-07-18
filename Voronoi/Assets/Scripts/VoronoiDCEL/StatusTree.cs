@@ -157,7 +157,12 @@ namespace VoronoiDCEL
         {
             if (a_ComparisonType == COMPARISON_TYPE.INSERT)
             {
-                return a.Edge.UpperEndpoint.CompareTo(b.Edge);
+                int side = a.Edge.UpperEndpoint.CompareTo(b.Edge);
+                if (side == 0)
+                {
+                    return a.Edge.LowerEndpoint.CompareTo(b.Edge);
+                }
+                return side;
             }
             else if (a_ComparisonType == COMPARISON_TYPE.DELETE)
             {
@@ -173,7 +178,7 @@ namespace VoronoiDCEL
         {
             if (a_ComparisonType == COMPARISON_TYPE.INSERT)
             {
-                return a.Edge.UpperEndpoint.OnLine(b.Edge);
+                return a.Edge.UpperEndpoint.OnLine(b.Edge) && a.Edge.LowerEndpoint.OnLine(b.Edge);
             }
             else if (a_ComparisonType == COMPARISON_TYPE.DELETE)
             {
