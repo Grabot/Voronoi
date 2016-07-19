@@ -422,7 +422,7 @@ namespace VoronoiDCEL
             union.UnionWith(containingEdges);
             foreach (Edge e in union)
             {
-                if (!a_Status.Insert(e))
+                if (!a_Status.Insert(e, a_Point.Y))
                 {
                     throw new Exception("Could not insert upper endpoint or containing edge into status!");
                 }

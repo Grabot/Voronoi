@@ -63,7 +63,7 @@ namespace VoronoiDCEL.Tests
                 }
                 foreach (Edge edge in exitingEdges)
                 {
-                    Assert.IsTrue(status.Delete(edge));
+                    Assert.IsTrue(status.Delete(edge, edge.LowerEndpoint.Y));
                     Assert.IsTrue(status.VerifyLevels());
                     Assert.IsTrue(status.Size == status.ComputeSize());
                     statusCount--;
@@ -72,7 +72,7 @@ namespace VoronoiDCEL.Tests
                 exitingEdges.Clear();
                 foreach (Edge edge in newEdges)
                 {
-                    Assert.IsTrue(status.Insert(edge));
+                    Assert.IsTrue(status.Insert(edge, edge.UpperEndpoint.Y));
                     Assert.IsTrue(status.VerifyLevels());
                     Assert.IsTrue(status.Size == status.ComputeSize());
                     statusCount++;
@@ -110,7 +110,7 @@ namespace VoronoiDCEL.Tests
             Assert.IsTrue(eventQueue.FindMax(out p));
             Assert.IsNotNull(p);
             Assert.IsTrue(eventQueue.Delete(p));
-            Assert.AreEqual(new Vertex(5, 5), p);
+            Assert.AreEqual(new Vertex(3, 5), p);
             Assert.IsTrue(eventQueue.VerifyLevels());
             Assert.IsTrue(eventQueue.VerifyBST(new Vertex(int.MinValue, int.MinValue), new Vertex(int.MaxValue, int.MaxValue)));
             Assert.IsTrue(eventQueue.Size == 5);
@@ -119,7 +119,7 @@ namespace VoronoiDCEL.Tests
             Assert.IsTrue(eventQueue.FindMax(out p));
             Assert.IsNotNull(p);
             Assert.IsTrue(eventQueue.Delete(p));
-            Assert.AreEqual(new Vertex(3, 5), p);
+            Assert.AreEqual(new Vertex(5, 5), p);
             Assert.IsTrue(eventQueue.VerifyLevels());
             Assert.IsTrue(eventQueue.VerifyBST(new Vertex(int.MinValue, int.MinValue), new Vertex(int.MaxValue, int.MaxValue)));
             Assert.IsTrue(eventQueue.Size == 4);
@@ -128,7 +128,7 @@ namespace VoronoiDCEL.Tests
             Assert.IsTrue(eventQueue.FindMax(out p));
             Assert.IsNotNull(p);
             Assert.IsTrue(eventQueue.Delete(p));
-            Assert.AreEqual(new Vertex(4, 4), p);
+            Assert.AreEqual(new Vertex(2, 4), p);
             Assert.IsTrue(eventQueue.VerifyLevels());
             Assert.IsTrue(eventQueue.VerifyBST(new Vertex(int.MinValue, int.MinValue), new Vertex(int.MaxValue, int.MaxValue)));
             Assert.IsTrue(eventQueue.Size == 3);
@@ -145,7 +145,7 @@ namespace VoronoiDCEL.Tests
             Assert.IsTrue(eventQueue.FindMax(out p));
             Assert.IsNotNull(p);
             Assert.IsTrue(eventQueue.Delete(p));
-            Assert.AreEqual(new Vertex(2, 4), p);
+            Assert.AreEqual(new Vertex(4, 4), p);
             Assert.IsTrue(eventQueue.VerifyLevels());
             Assert.IsTrue(eventQueue.VerifyBST(new Vertex(int.MinValue, int.MinValue), new Vertex(int.MaxValue, int.MaxValue)));
             Assert.IsTrue(eventQueue.Size == 1);
@@ -279,7 +279,7 @@ namespace VoronoiDCEL.Tests
             StatusTree tree = new StatusTree();
             foreach (Edge e in dcel.Edges)
             {
-                Assert.IsTrue(tree.Insert(e));
+                Assert.IsTrue(tree.Insert(e, e.UpperEndpoint.Y));
             }
             Assert.IsTrue(tree.Size == 3);
             Assert.IsTrue(tree.ComputeSize() == 3);

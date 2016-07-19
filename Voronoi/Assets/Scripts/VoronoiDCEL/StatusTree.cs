@@ -68,23 +68,23 @@ namespace VoronoiDCEL
 
     public class StatusTree : AATree<StatusData>
     {
-        public bool Insert(Edge a_Edge)
+        public bool Insert(Edge a_Edge, double a_SweepLineHeight)
         {
-            StatusData statusData = new StatusData(a_Edge);
+            Vertex intersection;
+            if (!DCEL.IntersectLines(a_Edge.UpperEndpoint, a_Edge.LowerEndpoint, new Vertex(Math.Min(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X) - 1, a_SweepLineHeight),
+                    new Vertex(Math.Max(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X) + 1, a_SweepLineHeight), out intersection))
+            {
+                intersection = a_Edge.LowerEndpoint;
+            }
+            StatusData statusData = new StatusData(a_Edge, intersection);
             return Insert(statusData);
-        }
-
-        public bool Delete(Edge a_Edge)
-        {
-            StatusData statusData = new StatusData(a_Edge);
-            return Delete(statusData);
         }
 
         public bool Delete(Edge a_Edge, double a_SweepLineHeight)
         {
             Vertex intersection;
-            if (!DCEL.IntersectLines(a_Edge.UpperEndpoint, a_Edge.LowerEndpoint, new Vertex(Math.Min(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X), a_SweepLineHeight),
-                    new Vertex(Math.Max(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X), a_SweepLineHeight), out intersection))
+            if (!DCEL.IntersectLines(a_Edge.UpperEndpoint, a_Edge.LowerEndpoint, new Vertex(Math.Min(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X) - 1, a_SweepLineHeight),
+                    new Vertex(Math.Max(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X) + 1, a_SweepLineHeight), out intersection))
             {
                 intersection = a_Edge.LowerEndpoint;
             }
@@ -157,10 +157,21 @@ namespace VoronoiDCEL
         {
             if (a_ComparisonType == COMPARISON_TYPE.INSERT)
             {
-                int side = a.Edge.UpperEndpoint.CompareTo(b.Edge);
+                int side = a.Vertex.CompareTo(b.Edge);
                 if (side == 0)
                 {
-                    return a.Edge.LowerEndpoint.CompareTo(b.Edge);
+                    if (a.Vertex.X <= b.Edge.UpperEndpoint.X)
+                    {
+                        return -1;
+                    }
+                    else if (a.Vertex.X >= b.Edge.LowerEndpoint.X)
+                    {
+                        return 1;
+                    }
+                    else
+                    {
+                        return -1;
+                    }
                 }
                 return side;
             }

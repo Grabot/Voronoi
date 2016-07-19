@@ -3,12 +3,10 @@
     using System;
     using System.Collections.Generic;
 
-    public class AATree<T> where T: System.IComparable<T>, System.IEquatable<T>
+    public class AATree<T> where T: IComparable<T>, IEquatable<T>
     {
-        protected Node m_Bottom;
         // Sentinel.
-        protected Node m_Deleted;
-        protected Node m_Last;
+        protected Node m_Bottom;
         protected Node m_Tree;
         protected int m_Size = 0;
 
@@ -100,7 +98,6 @@
         public AATree()
         {
             m_Bottom = new Node(default(T), null, null, 0);
-            m_Deleted = m_Bottom;
             m_Tree = m_Bottom;
         }
 
