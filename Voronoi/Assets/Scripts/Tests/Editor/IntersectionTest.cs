@@ -317,5 +317,20 @@ namespace VoronoiDCEL.Tests
             Assert.IsNotNull(intersections);
             Assert.IsTrue(intersections.Length == 3);
         }
+
+        [Test]
+        public void TestVoronoiStart()
+        {
+            DCEL dcel = new DCEL();
+            dcel.AddEdge(-500000, -500000, 500000, 500000);
+            dcel.AddEdge(500000, 500000, -500000, 500000);
+            dcel.AddEdge(-500000, 500000, -500000, -500000);
+            dcel.AddEdge(-500000, -500000, 500000, -500000);
+            dcel.AddEdge(500000, -500000, 500000, 500000);
+            DCEL.Intersection[] intersections;
+            Assert.IsTrue(dcel.FindIntersections(out intersections));
+            Assert.IsNotNull(intersections);
+            Assert.IsTrue(intersections.Length == 4);
+        }
     }
 }

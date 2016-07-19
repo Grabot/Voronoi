@@ -22,6 +22,7 @@ public class GraphManager : MonoBehaviour
     private Rect m_MeshRect;
     private List<Vector2> m_ClippingEdges = new List<Vector2>();
     private VoronoiDCEL.DCEL m_DCEL;
+    private VoronoiDCEL.DCEL.Intersection[] m_DCELIntersections;
 
     [Flags]
     private enum ERectangleSide
@@ -87,6 +88,8 @@ public class GraphManager : MonoBehaviour
     private void UpdateVoronoiMesh()
     {
         m_DCEL = CreateVoronoiDiagram();
+        m_DCELIntersections = null;
+        m_DCEL.FindIntersections(out m_DCELIntersections);
         MeshDescription newDescription = TriangulateVoronoi();
         m_GUIManager.SetPlayerAreaOwned(newDescription.playerArea[0], newDescription.playerArea[1]);
         Mesh mesh = m_MeshFilter.mesh;
@@ -123,7 +126,7 @@ public class GraphManager : MonoBehaviour
             GL.Color(triangle.Color);
             radius = Convert.ToSingle(Math.Sqrt(triangle.CircumcenterRangeSquared));
             float heading = 0;
-            float extra = (360 / 100);
+            const float extra = (360 / 100);
             for (int a = 0; a < (360 + extra); a += 360 / 100)
             {
                 //the circle.
@@ -227,7 +230,7 @@ public class GraphManager : MonoBehaviour
     }
 
     private static bool IntersectLineWithRectangle(Vector2 a_From, Vector2 a_To, Rect a_Rectangle, int a_MaxIntersections, out Vector2[] o_Intersections,
-                                                out ERectangleSide o_Sides)
+                                                   out ERectangleSide o_Sides)
     {
         bool intersected = false;
         o_Sides = ERectangleSide.NONE;
@@ -235,7 +238,7 @@ public class GraphManager : MonoBehaviour
         List<Vector2> intersectionsList = new List<Vector2>(a_MaxIntersections);
 
         if (IntersectLines(a_From, a_To, new Vector2(a_Rectangle.xMin, a_Rectangle.yMin),
-            new Vector2(a_Rectangle.xMin, a_Rectangle.yMax), out intersection))
+                new Vector2(a_Rectangle.xMin, a_Rectangle.yMax), out intersection))
         {
             intersectionsList.Add(intersection);
             o_Sides = ERectangleSide.LEFT;
@@ -247,7 +250,7 @@ public class GraphManager : MonoBehaviour
             }
         }
         if (IntersectLines(a_From, a_To, new Vector2(a_Rectangle.xMin, a_Rectangle.yMax),
-            new Vector2(a_Rectangle.xMax, a_Rectangle.yMax), out intersection))
+                new Vector2(a_Rectangle.xMax, a_Rectangle.yMax), out intersection))
         {
             intersectionsList.Add(intersection);
             o_Sides = o_Sides & ERectangleSide.TOP;
@@ -259,7 +262,7 @@ public class GraphManager : MonoBehaviour
             }
         }
         if (IntersectLines(a_From, a_To, new Vector2(a_Rectangle.xMax, a_Rectangle.yMax),
-            new Vector2(a_Rectangle.xMax, a_Rectangle.yMin), out intersection))
+                new Vector2(a_Rectangle.xMax, a_Rectangle.yMin), out intersection))
         {
             intersectionsList.Add(intersection);
             o_Sides = o_Sides & ERectangleSide.RIGHT;
@@ -271,7 +274,7 @@ public class GraphManager : MonoBehaviour
             }
         }
         if (IntersectLines(a_From, a_To, new Vector2(a_Rectangle.xMax, a_Rectangle.yMin),
-            new Vector2(a_Rectangle.xMin, a_Rectangle.yMin), out intersection))
+                new Vector2(a_Rectangle.xMin, a_Rectangle.yMin), out intersection))
         {
             intersectionsList.Add(intersection);
             o_Sides = o_Sides & ERectangleSide.BOTTOM;
@@ -282,8 +285,8 @@ public class GraphManager : MonoBehaviour
     }
 
     private void ReplaceVoronoiVertex(Vertex a_InvalidVertex, Vertex a_ReplacingVertex, Dictionary<Vertex, HashSet<Vertex>> a_VoronoiEdges,
-                                   Dictionary<Vertex, HashSet<Vertex>> a_VoronoiToInternal,
-                                   Dictionary<Vertex, HashSet<Vertex>> a_InternalEdges)
+                                      Dictionary<Vertex, HashSet<Vertex>> a_VoronoiToInternal,
+                                      Dictionary<Vertex, HashSet<Vertex>> a_InternalEdges)
     {
         HashSet<Vertex> adjacentVoronoiVertices;
         if (a_VoronoiEdges.TryGetValue(a_InvalidVertex, out adjacentVoronoiVertices))
@@ -330,9 +333,9 @@ public class GraphManager : MonoBehaviour
     }
 
     private void FixInvalidVoronoiEdges(List<InvalidEdge> a_InvalidEdges, List<Vertex> a_VerticesToRemove,
-                                     Dictionary<Vertex, HashSet<Vertex>> a_VoronoiEdges,
-                                     Dictionary<Vertex, HashSet<Vertex>> a_InternalEdges,
-                                     Dictionary<Vertex, HashSet<Vertex>> a_VoronoiToInternal)
+                                        Dictionary<Vertex, HashSet<Vertex>> a_VoronoiEdges,
+                                        Dictionary<Vertex, HashSet<Vertex>> a_InternalEdges,
+                                        Dictionary<Vertex, HashSet<Vertex>> a_VoronoiToInternal)
     {
         foreach (InvalidEdge invalidEdge in a_InvalidEdges)
         {
@@ -369,7 +372,7 @@ public class GraphManager : MonoBehaviour
                             Vector2[] intersections;
                             ERectangleSide intersectedSides;
                             if (IntersectLineWithRectangle(voronoiPos, adjacentVoronoiPos, m_MeshRect, 1, out intersections,
-                                out intersectedSides))
+                                    out intersectedSides))
                             {
                                 a_ClippingEdges.Add(voronoiPos);
                                 a_ClippingEdges.Add(intersections[0]);
@@ -383,7 +386,7 @@ public class GraphManager : MonoBehaviour
                             Vector2[] intersections;
                             ERectangleSide intersectedSides;
                             if (IntersectLineWithRectangle(voronoiPos, adjacentVoronoiPos, m_MeshRect, 2, out intersections,
-                                out intersectedSides))
+                                    out intersectedSides))
                             {
                                 // The edge intersects the rectangle in 2 places, find the intersection on the rectangle that is
                                 // on "this side" of the rectangle, seen from the first vertex of the edge that we are processing.
@@ -549,8 +552,8 @@ public class GraphManager : MonoBehaviour
     }
 
     private static void ProcessHalfEdge(HalfEdge a_H1, Dictionary<Vertex, HashSet<Vertex>> a_VoronoiEdges,
-                                     Dictionary<Vertex, HashSet<Vertex>> a_InternalEdges,
-                                     Dictionary<Vertex, HashSet<Vertex>> a_VoronoiToInternalEdges)
+                                        Dictionary<Vertex, HashSet<Vertex>> a_InternalEdges,
+                                        Dictionary<Vertex, HashSet<Vertex>> a_VoronoiToInternalEdges)
     {
         if (a_H1.Twin == null)
         {
@@ -658,6 +661,19 @@ public class GraphManager : MonoBehaviour
             if (m_DCEL != null)
             {
                 m_DCEL.Draw();
+                if (m_DCELIntersections != null)
+                {
+                    foreach (VoronoiDCEL.DCEL.Intersection intersection in m_DCELIntersections)
+                    {
+                        GL.Begin(GL.QUADS);
+                        const float size = 1;
+                        GL.Vertex(new Vector3((float)intersection.point.X - size, (float)intersection.point.Y - size, 0));
+                        GL.Vertex(new Vector3((float)intersection.point.X - size, (float)intersection.point.Y + size, 0));
+                        GL.Vertex(new Vector3((float)intersection.point.X + size, (float)intersection.point.Y + size, 0));
+                        GL.Vertex(new Vector3((float)intersection.point.X + size, (float)intersection.point.Y - size, 0));
+                        GL.End();
+                    }
+                }
             }
         }
 
