@@ -89,7 +89,7 @@ namespace VoronoiDCEL
             {
                 Vector3 edgeDirection = new Vector3((float)(h.Twin.Origin.X - h.Origin.X), (float)(h.Twin.Origin.Y - h.Origin.Y), 0);
                 edgeDirection.Normalize();
-                float turnSize = 0;
+                const float turnSize = 0;
                 HalfEdge mostLeftTurn = null;
                 foreach (HalfEdge h2 in h.Twin.Origin.IncidentEdges)
                 {
@@ -392,8 +392,8 @@ namespace VoronoiDCEL
                 }
             }
             HashSet<Edge> containingEdges = new HashSet<Edge>(a_Status.FindNodes(a_Point));
-            containingEdges.IntersectWith(upperEndpointEdges);
-            containingEdges.IntersectWith(lowerEndpointEdges);
+            containingEdges.ExceptWith(upperEndpointEdges);
+            containingEdges.ExceptWith(lowerEndpointEdges);
             HashSet<Edge> union = new HashSet<Edge>(lowerEndpointEdges);
             union.UnionWith(upperEndpointEdges);
             union.UnionWith(containingEdges);
@@ -474,7 +474,10 @@ namespace VoronoiDCEL
             {
                 if (intersection.Y < point.Y || (Math.Abs(intersection.Y - point.Y) <= double.Epsilon && intersection.X > point.X))
                 {
-                    eventQueue.Insert(intersection);
+                    if (!eventQueue.Insert(intersection))
+                    {
+                        Debug.Log("Did not insert event; already in queue.");
+                    }
                 }
             }
         }
