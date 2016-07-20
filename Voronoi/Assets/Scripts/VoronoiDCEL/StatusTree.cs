@@ -359,8 +359,11 @@ namespace VoronoiDCEL
                         {
                             out_LeftMost = curNode.Data.Edge;
                             lowestLevel = curLevel;
-                            nodes.Push(curNode.Left);
-                            nodesLevel.Push(curLevel + 1);
+                            if (curNode.Left != m_Bottom)
+                            {
+                                nodes.Push(curNode.Left);
+                                nodesLevel.Push(curLevel + 1);
+                            }
                         }
                     }
                     else
@@ -428,8 +431,11 @@ namespace VoronoiDCEL
                         {
                             out_RightMost = curNode.Data.Edge;
                             lowestLevel = curLevel;
-                            nodes.Push(curNode.Right);
-                            nodesLevel.Push(curLevel + 1);
+                            if (curNode.Right != m_Bottom)
+                            {
+                                nodes.Push(curNode.Right);
+                                nodesLevel.Push(curLevel + 1);
+                            }
                         }
                     }
                     else
