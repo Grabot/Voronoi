@@ -666,11 +666,12 @@ public class GraphManager : MonoBehaviour
                     foreach (VoronoiDCEL.DCEL.Intersection intersection in m_DCELIntersections)
                     {
                         GL.Begin(GL.QUADS);
-                        const float size = 1;
-                        GL.Vertex(new Vector3((float)intersection.point.X - size, (float)intersection.point.Y - size, 0));
-                        GL.Vertex(new Vector3((float)intersection.point.X - size, (float)intersection.point.Y + size, 0));
-                        GL.Vertex(new Vector3((float)intersection.point.X + size, (float)intersection.point.Y + size, 0));
-                        GL.Vertex(new Vector3((float)intersection.point.X + size, (float)intersection.point.Y - size, 0));
+                        GL.Color(Color.cyan);
+                        const float size = 0.1f;
+                        GL.Vertex(new Vector3((float)intersection.point.X - size, 0, (float)intersection.point.Y - size));
+                        GL.Vertex(new Vector3((float)intersection.point.X - size, 0, (float)intersection.point.Y + size));
+                        GL.Vertex(new Vector3((float)intersection.point.X + size, 0, (float)intersection.point.Y + size));
+                        GL.Vertex(new Vector3((float)intersection.point.X + size, 0, (float)intersection.point.Y - size));
                         GL.End();
                     }
                 }

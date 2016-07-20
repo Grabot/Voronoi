@@ -332,5 +332,31 @@ namespace VoronoiDCEL.Tests
             Assert.IsNotNull(intersections);
             Assert.IsTrue(intersections.Length == 4);
         }
+
+        [Test]
+        public void TestDelanauyExample()
+        {
+            DCEL dcel = new DCEL();
+            dcel.AddEdge(-4, 4, -4.5, 0);
+            dcel.AddEdge(-4.5, 0, -4, -4);
+            dcel.AddEdge(-4, -4, 0, -4.5);
+            dcel.AddEdge(0, -4.5, 4, -4);
+            dcel.AddEdge(4, -4, 4.5, 0);
+            dcel.AddEdge(4.5, 0, 4, 4);
+            dcel.AddEdge(4, 4, 0, 4.5);
+            dcel.AddEdge(0, 4.5, -4, 4);
+            // part 2
+            dcel.AddEdge(-4.5, 0, 0, -4.5);
+            dcel.AddEdge(0, -4.5, 4.5, 0);
+            dcel.AddEdge(4.5, 0, 0, 4.5);
+            dcel.AddEdge(0, 4.5, -4.5, 0);
+            // part 3
+            dcel.AddEdge(0, 4.5, 0, -4.5);
+            dcel.AddEdge(-4.5, 0, 4.5, 0);
+            DCEL.Intersection[] intersections;
+            Assert.IsTrue(dcel.FindIntersections(out intersections));
+            Assert.IsNotNull(intersections);
+            Assert.IsTrue(intersections.Length == 29);
+        }
     }
 }
