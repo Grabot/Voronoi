@@ -160,7 +160,7 @@ namespace VoronoiDCEL
                 int side = a.Vertex.CompareTo(b.Edge);
                 if (side == 0)
                 {
-                    if (a.Vertex.X <= b.Edge.UpperEndpoint.X)
+                    if (a.Vertex.X < b.Edge.UpperEndpoint.X)
                     {
                         return -1;
                     }
