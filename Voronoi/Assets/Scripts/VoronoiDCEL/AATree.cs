@@ -182,7 +182,16 @@
 
         public bool VerifyBST(T minValue, T maxValue)
         {
-            return VerifyBST(m_Tree, minValue, maxValue);
+            return VerifyBST(m_Tree, minValue, maxValue, COMPARISON_TYPE.INSERT) &&
+            VerifyBST(m_Tree, minValue, maxValue, COMPARISON_TYPE.DELETE) &&
+            VerifyBST(m_Tree, minValue, maxValue, COMPARISON_TYPE.FIND);
+        }
+
+        public bool VerifyOrder()
+        {
+            return VerifyOrder(m_Tree, COMPARISON_TYPE.INSERT) &&
+            VerifyOrder(m_Tree, COMPARISON_TYPE.DELETE) &&
+            VerifyOrder(m_Tree, COMPARISON_TYPE.FIND);
         }
 
         private Node Skew(Node t, Node parent, TraversalHistory.ECHILDSIDE a_Side)
@@ -556,20 +565,48 @@
             }
         }
 
-        private bool VerifyBST(Node t, T minKey, T maxKey)
+        private bool VerifyBST(Node t, T minKey, T maxKey, COMPARISON_TYPE a_ComparisonType)
         {
             if (t == m_Bottom)
             {
                 return true;
             }
-            else if (CompareTo(minKey, t.Data, COMPARISON_TYPE.FIND) > 0 ||
-                     CompareTo(maxKey, t.Data, COMPARISON_TYPE.FIND) < 0)
+            else if (CompareTo(minKey, t.Data, a_ComparisonType) > 0 ||
+                     CompareTo(maxKey, t.Data, a_ComparisonType) < 0)
             {
                 return false;
             }
             else
             {
-                return VerifyBST(t.Left, minKey, t.Data) && VerifyBST(t.Right, t.Data, maxKey);
+                return VerifyBST(t.Left, minKey, t.Data, a_ComparisonType) &&
+                VerifyBST(t.Right, t.Data, maxKey, a_ComparisonType);
+            }
+        }
+
+        private bool VerifyOrder(Node t, COMPARISON_TYPE a_ComparisonType)
+        {
+            try
+            {
+                if (t == m_Bottom)
+                {
+                    return true;
+                }
+                else if ((t.Left == m_Bottom || CompareTo(t.Data, t.Left.Data, a_ComparisonType) > 0) &&
+                         (t.Right == m_Bottom || CompareTo(t.Data, t.Right.Data, a_ComparisonType) <= 0))
+                {
+                    return VerifyOrder(t.Left, a_ComparisonType) &&
+                    VerifyOrder(t.Right, a_ComparisonType);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (NotImplementedException)
+            {
+                // If a particular comparison type is not implemented, just assume that was done
+                // for a good reason and return true. (Otherwise the user's application will not work anyway)
+                return true;
             }
         }
 

@@ -1,6 +1,8 @@
 ﻿namespace VoronoiDCEL
 {
-    public class Edge : System.IComparable<Edge>, System.IEquatable<Edge>
+    using System;
+
+    public class Edge : IComparable<Edge>, IEquatable<Edge>
     {
         private HalfEdge m_Half1;
         private HalfEdge m_Half2;
@@ -29,15 +31,16 @@
                 }
                 else
                 {
-                    if (m_Half1.Origin < m_Half2.Origin)
+                    if (m_Half1.Origin.Y > m_Half2.Origin.Y ||
+                        (Math.Abs(m_Half1.Origin.Y - m_Half2.Origin.Y) <= double.Epsilon && m_Half1.Origin.X < m_Half2.Origin.X))
                     {
-                        m_LowerEndpoint = m_Half1.Origin;
-                        m_UpperEndpoint = m_Half2.Origin;
+                        m_UpperEndpoint = m_Half1.Origin;
+                        m_LowerEndpoint = m_Half2.Origin;
                     }
                     else
                     {
-                        m_LowerEndpoint = m_Half2.Origin;
-                        m_UpperEndpoint = m_Half1.Origin;
+                        m_UpperEndpoint = m_Half2.Origin;
+                        m_LowerEndpoint = m_Half1.Origin;
                     }
                     return m_UpperEndpoint;
                 }
@@ -54,7 +57,8 @@
                 }
                 else
                 {
-                    if (m_Half1.Origin < m_Half2.Origin)
+                    if (m_Half1.Origin.Y < m_Half2.Origin.Y ||
+                        (Math.Abs(m_Half1.Origin.Y - m_Half2.Origin.Y) <= double.Epsilon && m_Half1.Origin.X > m_Half2.Origin.X))
                     {
                         m_LowerEndpoint = m_Half1.Origin;
                         m_UpperEndpoint = m_Half2.Origin;
@@ -64,7 +68,7 @@
                         m_LowerEndpoint = m_Half2.Origin;
                         m_UpperEndpoint = m_Half1.Origin;
                     }
-                    return m_LowerEndpoint;
+                    return m_UpperEndpoint;
                 }
             }
         }

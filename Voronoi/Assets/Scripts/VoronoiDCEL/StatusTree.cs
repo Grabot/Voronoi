@@ -74,7 +74,7 @@ namespace VoronoiDCEL
             if (!DCEL.IntersectLines(a_Edge.UpperEndpoint, a_Edge.LowerEndpoint, new Vertex(Math.Min(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X) - 1, a_SweepLineHeight),
                     new Vertex(Math.Max(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X) + 1, a_SweepLineHeight), out intersection))
             {
-                intersection = a_Edge.LowerEndpoint;
+                intersection = a_Edge.UpperEndpoint;
             }
             StatusData statusData = new StatusData(a_Edge, intersection);
             return Insert(statusData);
@@ -160,24 +160,34 @@ namespace VoronoiDCEL
                 int side = a.Vertex.CompareTo(b.Edge);
                 if (side == 0)
                 {
-                    if (a.Vertex.X < b.Edge.UpperEndpoint.X)
+                    side = a.Edge.LowerEndpoint.CompareTo(b.Edge);
+                    if (side == 0)
                     {
-                        return -1;
-                    }
-                    else if (a.Vertex.X >= b.Edge.LowerEndpoint.X)
-                    {
-                        return 1;
-                    }
-                    else
-                    {
-                        return -1;
+                        throw new Exception("Edges cannot overlap!");
                     }
                 }
                 return side;
             }
             else if (a_ComparisonType == COMPARISON_TYPE.DELETE)
             {
-                return a.Vertex.CompareTo(b.Edge);
+                int side = a.Vertex.CompareTo(b.Edge);
+                if (side == 0)
+                {
+                    side = a.Edge.UpperEndpoint.CompareTo(b.Edge);
+                    if (side == 0)
+                    {
+                        if (a.Edge.UpperEndpoint.Equals(b.Edge.UpperEndpoint) &&
+                            a.Edge.LowerEndpoint.Equals(b.Edge.LowerEndpoint))
+                        {
+                            return 0;
+                        }
+                        else
+                        {
+                            throw new Exception("Edges cannot overlap!");
+                        }
+                    }
+                }
+                return side;
             }
             else
             {
