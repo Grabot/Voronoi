@@ -396,6 +396,7 @@ namespace VoronoiDCEL.Tests
             DCEL.Intersection[] intersections;
             Assert.IsTrue(dcel.FindIntersections(out intersections));
             Assert.IsNotNull(intersections);
+            UnityEngine.Debug.Log(intersections.Length);
             Assert.IsTrue(intersections.Length == 29);
         }
     }

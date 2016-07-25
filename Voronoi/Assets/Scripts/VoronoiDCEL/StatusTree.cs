@@ -86,7 +86,7 @@ namespace VoronoiDCEL
             if (!DCEL.IntersectLines(a_Edge.UpperEndpoint, a_Edge.LowerEndpoint, new Vertex(Math.Min(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X) - 1, a_SweepLineHeight),
                     new Vertex(Math.Max(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X) + 1, a_SweepLineHeight), out intersection))
             {
-                intersection = a_Edge.LowerEndpoint;
+                intersection = a_Edge.UpperEndpoint;
             }
             StatusData statusData = new StatusData(a_Edge, intersection);
             return Delete(statusData);
@@ -157,37 +157,90 @@ namespace VoronoiDCEL
         {
             if (a_ComparisonType == COMPARISON_TYPE.INSERT)
             {
-                int side = a.Vertex.CompareTo(b.Edge);
-                if (side == 0)
+                if (Math.Abs(a.Edge.LowerEndpoint.Y - a.Edge.UpperEndpoint.Y) <= double.Epsilon)
                 {
-                    side = a.Edge.LowerEndpoint.CompareTo(b.Edge);
-                    if (side == 0)
+                    if (Math.Abs(b.Edge.LowerEndpoint.Y - b.Edge.UpperEndpoint.Y) <= double.Epsilon)
                     {
-                        throw new Exception("Edges cannot overlap!");
-                    }
-                }
-                return side;
-            }
-            else if (a_ComparisonType == COMPARISON_TYPE.DELETE)
-            {
-                int side = a.Vertex.CompareTo(b.Edge);
-                if (side == 0)
-                {
-                    side = a.Edge.UpperEndpoint.CompareTo(b.Edge);
-                    if (side == 0)
-                    {
-                        if (a.Edge.UpperEndpoint.Equals(b.Edge.UpperEndpoint) &&
-                            a.Edge.LowerEndpoint.Equals(b.Edge.LowerEndpoint))
+                        if (a.Edge.LowerEndpoint.X <= b.Edge.UpperEndpoint.X ||
+                            b.Edge.LowerEndpoint.X <= a.Edge.UpperEndpoint.X)
                         {
-                            return 0;
+                            return a.Edge.LowerEndpoint.X <= b.Edge.UpperEndpoint.X ? -1 : 1;
                         }
                         else
+                        {
+                            throw new Exception("Horizontal edges cannot overlap!");
+                        }
+                    }
+                    else
+                    {
+                        return a.Edge.LowerEndpoint.CompareTo(b.Edge) < 0 ? -1 : 1;
+                    }
+                }
+                else
+                {
+                    int side = a.Vertex.CompareTo(b.Edge);
+                    if (side == 0)
+                    {
+                        side = a.Edge.LowerEndpoint.CompareTo(b.Edge);
+                        if (side == 0)
                         {
                             throw new Exception("Edges cannot overlap!");
                         }
                     }
+                    return side;
                 }
-                return side;
+            }
+            else if (a_ComparisonType == COMPARISON_TYPE.DELETE)
+            {
+                if (a.Edge.LowerEndpoint.Equals(b.Edge.LowerEndpoint) &&
+                    a.Edge.UpperEndpoint.Equals(b.Edge.UpperEndpoint))
+                {
+                    return 0;
+                }
+                else if (Math.Abs(a.Edge.LowerEndpoint.Y - a.Edge.UpperEndpoint.Y) <= double.Epsilon)
+                {
+                    if (Math.Abs(b.Edge.LowerEndpoint.Y - b.Edge.UpperEndpoint.Y) <= double.Epsilon)
+                    {
+                        if (a.Edge.LowerEndpoint.X <= b.Edge.UpperEndpoint.X ||
+                            b.Edge.LowerEndpoint.X <= a.Edge.UpperEndpoint.X)
+                        {
+                            return a.Edge.LowerEndpoint.X <= b.Edge.UpperEndpoint.X ? -1 : 1;
+                        }
+                        else
+                        {
+                            throw new Exception("Horizontal edges cannot overlap!");
+                        }
+                    }
+                    else
+                    {
+                        return a.Edge.LowerEndpoint.CompareTo(b.Edge) < 0 ? -1 : 1;
+                    }
+                }
+                else if (Math.Abs(b.Edge.LowerEndpoint.Y - b.Edge.UpperEndpoint.Y) <= double.Epsilon)
+                {
+                    return a.Vertex.X > b.Edge.LowerEndpoint.X ? 1 : -1;
+                }
+                else
+                {
+                    int side = a.Vertex.CompareTo(b.Edge);
+                    if (side == 0)
+                    {
+                        side = a.Edge.UpperEndpoint.CompareTo(b.Edge);
+                        if (side == 0)
+                        {
+                            if (a.Edge.UpperEndpoint.Equals(b.Edge.UpperEndpoint) &&
+                                a.Edge.LowerEndpoint.Equals(b.Edge.LowerEndpoint))
+                            {
+                                return 0;
+                            }
+                            else
+                            {
+                                throw new Exception("Edges cannot overlap!");
+                            }
+                        }
+                    }
+                    return side;
+                }
             }
             else
             {
