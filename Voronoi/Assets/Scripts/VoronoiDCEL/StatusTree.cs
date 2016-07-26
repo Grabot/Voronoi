@@ -6,28 +6,41 @@ namespace VoronoiDCEL
     public class StatusData : IComparable<StatusData>, IEquatable<StatusData>
     {
         private readonly Edge m_Edge;
-        private readonly Vertex m_Vertex;
+        private readonly Vertex m_SweeplineIntersectionPoint;
+        private readonly Vertex m_PointP;
 
         public Edge Edge
         {
             get { return m_Edge; }
         }
 
-        public Vertex Vertex
+        public Vertex SweeplineIntersectionPoint
         {
-            get { return m_Vertex; }
+            get { return m_SweeplineIntersectionPoint; }
+        }
+
+        public Vertex PointP
+        {
+            get { return m_PointP; }
         }
 
         public StatusData(Edge a_Edge)
         {
             m_Edge = a_Edge;
-            m_Vertex = Vertex.Zero;
+            m_SweeplineIntersectionPoint = Vertex.Zero;
+            m_PointP = Vertex.Zero;
         }
 
-        public StatusData(Edge a_Edge, Vertex a_Vertex)
+        public StatusData(Edge a_Edge, Vertex a_PointP)
         {
             m_Edge = a_Edge;
-            m_Vertex = a_Vertex;
+            m_PointP = a_PointP;
+            double sweeplineHeight = a_PointP.Y;
+            if (!DCEL.IntersectLines(a_Edge.UpperEndpoint, a_Edge.LowerEndpoint, new Vertex(Math.Min(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X) - 1, sweeplineHeight),
+                    new Vertex(Math.Max(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X) + 1, sweeplineHeight), out m_SweeplineIntersectionPoint))
+            {
+                m_SweeplineIntersectionPoint = a_Edge.UpperEndpoint;
+            }
         }
 
         public override bool Equals(object obj)
@@ -68,53 +81,41 @@ namespace VoronoiDCEL
 
     public class StatusTree : AATree<StatusData>
     {
-        public bool Insert(Edge a_Edge, double a_SweepLineHeight)
+        public bool Insert(Edge a_Edge, Vertex a_PointP)
         {
-            Vertex intersection;
-            if (!DCEL.IntersectLines(a_Edge.UpperEndpoint, a_Edge.LowerEndpoint, new Vertex(Math.Min(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X) - 1, a_SweepLineHeight),
-                    new Vertex(Math.Max(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X) + 1, a_SweepLineHeight), out intersection))
-            {
-                intersection = a_Edge.UpperEndpoint;
-            }
-            StatusData statusData = new StatusData(a_Edge, intersection);
+            StatusData statusData = new StatusData(a_Edge, a_PointP);
             return Insert(statusData);
         }
 
-        public bool Delete(Edge a_Edge, double a_SweepLineHeight)
+        public bool Delete(Edge a_Edge, Vertex a_PointP)
         {
-            Vertex intersection;
-            if (!DCEL.IntersectLines(a_Edge.UpperEndpoint, a_Edge.LowerEndpoint, new Vertex(Math.Min(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X) - 1, a_SweepLineHeight),
-                    new Vertex(Math.Max(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X) + 1, a_SweepLineHeight), out intersection))
-            {
-                intersection = a_Edge.UpperEndpoint;
-            }
-            StatusData statusData = new StatusData(a_Edge, intersection);
+            StatusData statusData = new StatusData(a_Edge, a_PointP);
             return Delete(statusData);
         }
 
-        public bool FindRightNeighbour(Edge a_Edge, out Edge out_RightNeighbour)
+        public bool FindNextBiggest(Edge a_Edge, Vertex a_PointP, out Edge out_NextBiggest)
         {
-            StatusData statusData = new StatusData(a_Edge);
-            StatusData neighbour;
-            if (FindRightNeighbour(statusData, out neighbour))
+            StatusData statusData = new StatusData(a_Edge, a_PointP);
+            StatusData nextBiggest;
+            if (FindNextBiggest(statusData, out nextBiggest))
             {
-                out_RightNeighbour = neighbour.Edge;
+                out_NextBiggest = nextBiggest.Edge;
                 return true;
             }
-            out_RightNeighbour = null;
+            out_NextBiggest = null;
             return false;
         }
 
-        public bool FindLeftNeighbour(Edge a_Edge, out Edge out_LeftNeighbour)
+        public bool FindNextSmallest(Edge a_Edge, Vertex a_PointP, out Edge out_NextSmallest)
         {
-            StatusData statusData = new StatusData(a_Edge);
-            StatusData neighbour;
-            if (FindLeftNeighbour(statusData, out neighbour))
+            StatusData statusData = new StatusData(a_Edge, a_PointP);
+            StatusData nextSmallest;
+            if (FindNextSmallest(statusData, out nextSmallest))
             {
-                out_LeftNeighbour = neighbour.Edge;
+                out_NextSmallest = nextSmallest.Edge;
                 return true;
             }
-            out_LeftNeighbour = null;
+            out_NextSmallest = null;
             return false;
         }
 
@@ -155,96 +156,87 @@ namespace VoronoiDCEL
 
         protected override int CompareTo(StatusData a, StatusData b, COMPARISON_TYPE a_ComparisonType)
         {
-            if (a_ComparisonType == COMPARISON_TYPE.INSERT)
+            // If the edge we're comparing with is the one we're trying to delete or find, then return 0.
+            if (a_ComparisonType != COMPARISON_TYPE.INSERT &&
+                a.Edge.LowerEndpoint.Equals(b.Edge.LowerEndpoint) &&
+                a.Edge.UpperEndpoint.Equals(b.Edge.UpperEndpoint))
             {
-                if (Math.Abs(a.Edge.LowerEndpoint.Y - a.Edge.UpperEndpoint.Y) <= double.Epsilon)
+                return 0;
+            }
+
+            // Is the edge we're inserting/deleting horizontal?
+            if (a.Edge.IsHorizontal)
+            {
+                // Is the edge we're comparing with also horizontal?
+                if (b.Edge.IsHorizontal)
                 {
-                    if (Math.Abs(b.Edge.LowerEndpoint.Y - b.Edge.UpperEndpoint.Y) <= double.Epsilon)
+                    // Check if the two horizontal edges overlap; this is invalid.
+                    if (a.Edge.LowerEndpoint.X <= b.Edge.UpperEndpoint.X ||
+                        b.Edge.LowerEndpoint.X <= a.Edge.UpperEndpoint.X)
                     {
-                        if (a.Edge.LowerEndpoint.X <= b.Edge.UpperEndpoint.X ||
-                            b.Edge.LowerEndpoint.X <= a.Edge.UpperEndpoint.X)
-                        {
-                            return a.Edge.LowerEndpoint.X <= b.Edge.UpperEndpoint.X ? -1 : 1;
-                        }
-                        else
-                        {
-                            throw new Exception("Horizontal edges cannot overlap!");
-                        }
+                        // The two horizontal edges don't overlap, so return if it's left or right.
+                        return a.Edge.LowerEndpoint.X <= b.Edge.UpperEndpoint.X ? -1 : 1;
                     }
                     else
                     {
-                        return a.Edge.LowerEndpoint.CompareTo(b.Edge) < 0 ? -1 : 1;
+                        throw new Exception("Horizontal edges cannot overlap!");
                     }
                 }
                 else
                 {
-                    int side = a.Vertex.CompareTo(b.Edge);
-                    if (side == 0)
+                    // Edge b is not horizontal, but a is, so compare using a's lower endpoint.
+                    // If the lower endpoint is to the left or on b then the whole of a is to the left.
+                    // But if the lower endpoint is to the right of b, then either a is intersecting b
+                    // or the whole of a is on the right of b. Horizontal segments always come last among segments
+                    // that are intersecting p, so in both cases we can return that it's to the right.
+                    if (a_ComparisonType != COMPARISON_TYPE.DELETE && a.PointP.CompareTo(b.Edge) == 0 && !b.Edge.LowerEndpoint.Equals(a.PointP) && !b.Edge.UpperEndpoint.Equals(a.PointP))
                     {
-                        side = a.Edge.LowerEndpoint.CompareTo(b.Edge);
-                        if (side == 0)
-                        {
-                            throw new Exception("Edges cannot overlap!");
-                        }
+                        return 1;
                     }
-                    return side;
+                    if (a_ComparisonType == COMPARISON_TYPE.DELETE && a.Edge.LowerEndpoint.Equals(a.PointP) && a.Edge.LowerEndpoint.CompareTo(b.Edge) > 0)
+                    {
+                        return 1;
+                    }
+                    return a.Edge.UpperEndpoint.CompareTo(b.Edge) < 0 ? -1 : 1;
                 }
             }
-            else if (a_ComparisonType == COMPARISON_TYPE.DELETE)
+            // a is not horizontal. Is the edge we're comparing with horizontal?
+            else if (b.Edge.IsHorizontal)
             {
-                if (a.Edge.LowerEndpoint.Equals(b.Edge.LowerEndpoint) &&
-                    a.Edge.UpperEndpoint.Equals(b.Edge.UpperEndpoint))
+                // If the point on a that is intersecting with the sweep line (a.Vertex) is
+                // to the left of b's lower endpoint, then either we are on the left or intersecting.
+                // In both cases we return left, because horizontal segments always come last.
+                if (a_ComparisonType != COMPARISON_TYPE.DELETE && a.PointP.CompareTo(a.Edge) == 0 && !a.Edge.LowerEndpoint.Equals(a.PointP) && !a.Edge.UpperEndpoint.Equals(a.PointP))
                 {
-                    return 0;
+                    return -1;
                 }
-                else if (Math.Abs(a.Edge.LowerEndpoint.Y - a.Edge.UpperEndpoint.Y) <= double.Epsilon)
-                {
-                    if (Math.Abs(b.Edge.LowerEndpoint.Y - b.Edge.UpperEndpoint.Y) <= double.Epsilon)
-                    {
-                        if (a.Edge.LowerEndpoint.X <= b.Edge.UpperEndpoint.X ||
-                            b.Edge.LowerEndpoint.X <= a.Edge.UpperEndpoint.X)
-                        {
-                            return a.Edge.LowerEndpoint.X <= b.Edge.UpperEndpoint.X ? -1 : 1;
-                        }
-                        else
-                        {
-                            throw new Exception("Horizontal edges cannot overlap!");
-                        }
-                    }
-                    else
-                    {
-                        return a.Edge.LowerEndpoint.CompareTo(b.Edge) < 0 ? -1 : 1;
-                    }
-                }
-                else if (Math.Abs(b.Edge.LowerEndpoint.Y - b.Edge.UpperEndpoint.Y) <= double.Epsilon)
-                {
-                    return a.Vertex.X > b.Edge.LowerEndpoint.X ? 1 : -1;
-                }
-                else
-                {
-                    int side = a.Vertex.CompareTo(b.Edge);
-                    if (side == 0)
-                    {
-                        side = a.Edge.UpperEndpoint.CompareTo(b.Edge);
-                        if (side == 0)
-                        {
-                            if (a.Edge.UpperEndpoint.Equals(b.Edge.UpperEndpoint) &&
-                                a.Edge.LowerEndpoint.Equals(b.Edge.LowerEndpoint))
-                            {
-                                return 0;
-                            }
-                            else
-                            {
-                                throw new Exception("Edges cannot overlap!");
-                            }
-                        }
-                    }
-                    return side;
-                }
+                return a.SweeplineIntersectionPoint.X <= b.Edge.UpperEndpoint.X ? -1 : 1;
             }
             else
             {
-                throw new NotImplementedException("Find comparison not implemented.");
+                // Both a and b are not horizontal. The easy case! Use a.Vertex (the point of a intersecting the sweep line)
+                // and look on what side of b it is.
+                int side = a.SweeplineIntersectionPoint.CompareTo(b.Edge);
+                if (side == 0)
+                {
+                    // If we're deleting and the point p is a's lower endpoint, then we cannot use a's
+                    // lower endpoint to resolve this case, so we must use the upper endpoint.
+                    if (a_ComparisonType == COMPARISON_TYPE.DELETE && a.SweeplineIntersectionPoint.Equals(a.Edge.LowerEndpoint))
+                    {
+                        side = a.Edge.UpperEndpoint.CompareTo(b.Edge);
+                    }
+                    else
+                    {
+                        // a.Vertex was on b, so use a's lower endpoint to check on what side it is.
+                        side = a.Edge.LowerEndpoint.CompareTo(b.Edge);
+                    }
+                    if (side == 0)
+                    {
+                        // a's lower endpoint is also on b, this should not occur in a planar subdivision!
+                        throw new Exception("Edges cannot overlap!");
+                    }
+                }
+                return side;
             }
         }
 

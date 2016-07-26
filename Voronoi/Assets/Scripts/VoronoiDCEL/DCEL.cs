@@ -413,7 +413,7 @@ namespace VoronoiDCEL
             union.UnionWith(containingEdges);
             foreach (Edge e in union)
             {
-                if (!a_Status.Delete(e, a_Point.Y))
+                if (!a_Status.Delete(e, a_Point))
                 {
                     throw new Exception("Could not delete lower endpoint or containing edge from status!");
                 }
@@ -422,7 +422,7 @@ namespace VoronoiDCEL
             union.UnionWith(containingEdges);
             foreach (Edge e in union)
             {
-                if (!a_Status.Insert(e, a_Point.Y))
+                if (!a_Status.Insert(e, a_Point))
                 {
                     throw new Exception("Could not insert upper endpoint or containing edge into status!");
                 }
@@ -442,7 +442,7 @@ namespace VoronoiDCEL
                 if (a_Status.FindLeftMostSegmentInSet(union, out leftMost))
                 {
                     Edge leftNeighbour;
-                    if (a_Status.FindLeftNeighbour(leftMost, out leftNeighbour))
+                    if (a_Status.FindNextSmallest(leftMost, a_Point, out leftNeighbour))
                     {
                         FindNewEvent(leftMost, leftNeighbour, a_Point, a_EventQueue);
                     }
@@ -455,7 +455,7 @@ namespace VoronoiDCEL
                 if (a_Status.FindRightMostSegmentInSet(union, out rightMost))
                 {
                     Edge rightNeighbour;
-                    if (a_Status.FindRightNeighbour(rightMost, out rightNeighbour))
+                    if (a_Status.FindNextBiggest(rightMost, a_Point, out rightNeighbour))
                     {
                         FindNewEvent(rightMost, rightNeighbour, a_Point, a_EventQueue);
                     }

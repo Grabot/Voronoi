@@ -67,7 +67,7 @@ namespace VoronoiDCEL.Tests
                 }
                 foreach (Edge edge in exitingEdges)
                 {
-                    Assert.IsTrue(status.Delete(edge, edge.LowerEndpoint.Y));
+                    Assert.IsTrue(status.Delete(edge, edge.LowerEndpoint));
                     Assert.IsTrue(status.VerifyLevels());
                     //Assert.IsTrue(status.VerifyOrder());
                     Assert.IsTrue(status.Size == status.ComputeSize());
@@ -77,7 +77,7 @@ namespace VoronoiDCEL.Tests
                 exitingEdges.Clear();
                 foreach (Edge edge in newEdges)
                 {
-                    Assert.IsTrue(status.Insert(edge, edge.UpperEndpoint.Y));
+                    Assert.IsTrue(status.Insert(edge, edge.UpperEndpoint));
                     Assert.IsTrue(status.VerifyLevels());
                     //Assert.IsTrue(status.VerifyOrder());
                     Assert.IsTrue(status.Size == status.ComputeSize());
@@ -290,14 +290,19 @@ namespace VoronoiDCEL.Tests
             Assert.IsTrue(tree.Insert(2));
             Assert.IsTrue(tree.Insert(3));
             Assert.IsTrue(3 == tree.ComputeSize());
+            Assert.IsTrue(3 == tree.Size);
             Assert.IsTrue(tree.VerifyLevels());
             Assert.IsTrue(tree.VerifyBST(int.MinValue, int.MaxValue));
             Assert.IsTrue(tree.VerifyOrder());
             int neighbour;
-            Assert.IsTrue(tree.FindRightNeighbour(1, out neighbour));
-            Assert.AreEqual(3, neighbour);
-            Assert.IsTrue(tree.FindLeftNeighbour(3, out neighbour));
+            Assert.IsTrue(tree.FindNextBiggest(1, out neighbour));
+            Assert.AreEqual(2, neighbour);
+            Assert.IsTrue(tree.FindNextSmallest(3, out neighbour));
+            Assert.AreEqual(2, neighbour);
+            Assert.IsTrue(tree.FindNextSmallest(2, out neighbour));
             Assert.AreEqual(1, neighbour);
+            Assert.IsTrue(tree.FindNextBiggest(2, out neighbour));
+            Assert.AreEqual(3, neighbour);
         }
 
         [Test]
@@ -315,7 +320,7 @@ namespace VoronoiDCEL.Tests
             int size = 0;
             foreach (Edge e in dcel.Edges)
             {
-                Assert.IsTrue(tree.Insert(e, e.UpperEndpoint.Y));
+                Assert.IsTrue(tree.Insert(e, e.UpperEndpoint));
                 ++size;
                 Assert.IsTrue(tree.Size == size);
                 Assert.IsTrue(tree.ComputeSize() == size);
@@ -396,8 +401,7 @@ namespace VoronoiDCEL.Tests
             DCEL.Intersection[] intersections;
             Assert.IsTrue(dcel.FindIntersections(out intersections));
             Assert.IsNotNull(intersections);
-            UnityEngine.Debug.Log(intersections.Length);
-            Assert.IsTrue(intersections.Length == 29);
+            Assert.IsTrue(intersections.Length == 9);
         }
     }
 }

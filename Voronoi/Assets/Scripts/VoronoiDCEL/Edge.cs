@@ -9,16 +9,55 @@
         private Vertex m_UpperEndpoint;
         private Vertex m_LowerEndpoint;
 
+        private enum E_ISHORIZONTAL
+        {
+            YES,
+            NO,
+            DONTKNOW
+        }
+
+        private E_ISHORIZONTAL m_IsHorizontal = E_ISHORIZONTAL.DONTKNOW;
+
         public HalfEdge Half1
         {
             get { return m_Half1; }
-            set { m_Half1 = value; }
+            set
+            {
+                m_Half1 = value;
+                m_IsHorizontal = E_ISHORIZONTAL.DONTKNOW;
+            }
         }
 
         public HalfEdge Half2
         {
             get { return m_Half2; }
-            set { m_Half2 = value; }
+            set
+            {
+                m_Half2 = value;
+                m_IsHorizontal = E_ISHORIZONTAL.DONTKNOW;
+            }
+        }
+
+        public bool IsHorizontal
+        {
+            get
+            {
+                if (m_IsHorizontal == E_ISHORIZONTAL.DONTKNOW)
+                {
+                    m_IsHorizontal = ComputeHorizontal();
+                }
+                switch (m_IsHorizontal)
+                {
+                    case E_ISHORIZONTAL.YES:
+                        return true;
+                    case E_ISHORIZONTAL.NO:
+                        return false;
+                    case E_ISHORIZONTAL.DONTKNOW:
+                        throw new Exception("Unable to compute if edge is horizontal");
+                    default:
+                        throw new Exception("Unable to compute if edge is horizontal");
+                }
+            }
         }
 
         public Vertex UpperEndpoint
@@ -73,6 +112,18 @@
             }
         }
 
+        private E_ISHORIZONTAL ComputeHorizontal()
+        {
+            if (m_Half1 != null && m_Half2 != null)
+            {
+                return (Math.Abs(m_Half1.Origin.Y - m_Half2.Origin.Y) <= double.Epsilon) ? E_ISHORIZONTAL.YES : E_ISHORIZONTAL.NO;
+            }
+            else
+            {
+                return E_ISHORIZONTAL.DONTKNOW;
+            }
+        }
+
         public override bool Equals(object obj)
         {
             if (obj != null && obj is Edge)
@@ -101,7 +152,7 @@
 
         public int CompareTo(Edge a_Edge)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public override int GetHashCode()

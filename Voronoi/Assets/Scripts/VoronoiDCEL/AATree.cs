@@ -419,96 +419,67 @@
             }
         }
 
-        public bool FindLeftNeighbour(T data, out T out_Neighbour)
+        public bool FindNextBiggest(T data, out T out_NextBiggest)
         {
-            Node result = FindNeighbour(data, m_Tree, false);
-            if (result != null && result != m_Bottom)
-            {
-                out_Neighbour = result.Data;
-                return true;
-            }
-            else
-            {
-                out_Neighbour = default(T);
-                return false;
-            }
+            return FindNextBiggestOrSmallest(data, m_Tree, true, out out_NextBiggest);
         }
 
-        public bool FindRightNeighbour(T data, out T out_Neighbour)
+        public bool FindNextSmallest(T data, out T out_NextSmallest)
         {
-            Node result = FindNeighbour(data, m_Tree, true);
-            if (result != null && result != m_Bottom)
-            {
-                out_Neighbour = result.Data;
-                return true;
-            }
-            else
-            {
-                out_Neighbour = default(T);
-                return false;
-            }
+            return FindNextBiggestOrSmallest(data, m_Tree, false, out out_NextSmallest);
         }
 
-        private Node FindNeighbour(T data, Node t, bool rightNeighbour)
+        private bool FindNextBiggestOrSmallest(T data, Node t, bool a_Bigger, out T out_NextBiggest)
         {
-            if (t == m_Bottom)
+            if (t == m_Bottom || EqualityComparer<T>.Default.Equals(data, default(T)))
             {
-                return null;
+                out_NextBiggest = default(T);
+                return false;
             }
             else
             {
-                int treeSize = (int)Math.Ceiling(Math.Log(m_Size + 1, 2)) + 1;
-                Queue<Node> qn = new Queue<Node>(treeSize);
-                Queue<int> ql = new Queue<int>(treeSize);
-
-                int level = 0;
-
-                qn.Enqueue(m_Tree);
-                ql.Enqueue(level);
-
-                while (qn.Count != 0)
+                Node currentNode = t;
+                Node target = m_Bottom;
+                while (true)
                 {
-                    Node node = qn.Dequeue();
-                    level = ql.Dequeue();
-
-                    if (IsEqual(data, node.Data, COMPARISON_TYPE.FIND))
+                    int comparisonResult = CompareTo(data, currentNode.Data, COMPARISON_TYPE.FIND);
+                    Node nextNode;
+                    if (a_Bigger)
                     {
-                        if (ql.Count == 0 || ql.Peek() != level)
+                        nextNode = (comparisonResult < 0) ? currentNode.Left : currentNode.Right;
+                        if (comparisonResult >= 0)
                         {
-                            return null;
-                        }
-                        return qn.Peek();
-                    }
-
-                    if (rightNeighbour)
-                    {
-                        if (node.Left != m_Bottom)
-                        {
-                            qn.Enqueue(node.Left);
-                            ql.Enqueue(level + 1);
-                        }
-                        if (node.Right != m_Bottom)
-                        {
-                            qn.Enqueue(node.Right);
-                            ql.Enqueue(level + 1);
+                            target = currentNode;
                         }
                     }
                     else
                     {
-                        if (node.Right != m_Bottom)
+                        nextNode = (comparisonResult <= 0) ? currentNode.Left : currentNode.Right;
+                        if (comparisonResult <= 0)
                         {
-                            qn.Enqueue(node.Right);
-                            ql.Enqueue(level + 1);
-                        }
-                        if (node.Left != m_Bottom)
-                        {
-                            qn.Enqueue(node.Left);
-                            ql.Enqueue(level + 1);
+                            target = currentNode;
                         }
                     }
+                    if (nextNode != m_Bottom)
+                    {
+                        currentNode = nextNode;
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
-
-                return null;
+                    
+                if (target != m_Bottom && currentNode != target && currentNode != m_Bottom && CompareTo(data, target.Data, COMPARISON_TYPE.FIND) == 0)
+                {
+                    out_NextBiggest = currentNode.Data;
+                    return true;
+                }
+                else
+                {
+                    out_NextBiggest = default(T);
+                    return false;
+                }
             }
         }
 
