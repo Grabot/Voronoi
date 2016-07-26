@@ -440,24 +440,35 @@
             {
                 Node currentNode = t;
                 Node target = m_Bottom;
+                Node lastSwitch = m_Bottom;
                 while (true)
                 {
                     int comparisonResult = CompareTo(data, currentNode.Data, COMPARISON_TYPE.FIND);
                     Node nextNode;
                     if (a_Bigger)
                     {
-                        nextNode = (comparisonResult < 0) ? currentNode.Left : currentNode.Right;
-                        if (comparisonResult >= 0)
+                        if (comparisonResult < 0)
                         {
+                            nextNode = currentNode.Left;
+                            lastSwitch = currentNode;
+                        }
+                        else
+                        {
+                            nextNode = currentNode.Right;
                             target = currentNode;
                         }
                     }
                     else
                     {
-                        nextNode = (comparisonResult <= 0) ? currentNode.Left : currentNode.Right;
                         if (comparisonResult <= 0)
                         {
+                            nextNode = currentNode.Left;
                             target = currentNode;
+                        }
+                        else
+                        {
+                            nextNode = currentNode.Right;
+                            lastSwitch = currentNode;
                         }
                     }
                     if (nextNode != m_Bottom)
@@ -470,16 +481,21 @@
                     }
                 }
                     
-                if (target != m_Bottom && currentNode != target && currentNode != m_Bottom && CompareTo(data, target.Data, COMPARISON_TYPE.FIND) == 0)
+                if (target != m_Bottom && CompareTo(data, target.Data, COMPARISON_TYPE.FIND) == 0)
                 {
-                    out_NextBiggest = currentNode.Data;
-                    return true;
+                    if (currentNode != target && currentNode != m_Bottom)
+                    {
+                        out_NextBiggest = currentNode.Data;
+                        return true;
+                    }
+                    else if (lastSwitch != m_Bottom)
+                    {
+                        out_NextBiggest = lastSwitch.Data;
+                        return true;
+                    }
                 }
-                else
-                {
-                    out_NextBiggest = default(T);
-                    return false;
-                }
+                out_NextBiggest = default(T);
+                return false;
             }
         }
 

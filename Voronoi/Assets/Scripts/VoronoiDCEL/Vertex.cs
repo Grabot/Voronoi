@@ -34,18 +34,6 @@ namespace VoronoiDCEL
         public double Y
 		{ get { return m_y; } }
 
-        public static bool operator <(Vertex a, Vertex b)
-        {
-            return a.Y < b.Y || (a.Y == b.Y && a.X > b.X);
-            //return a.Y < b.Y || (a.Y == b.Y && a.X < b.X);
-        }
-
-        public static bool operator >(Vertex a, Vertex b)
-        {
-            return a.Y > b.Y || (a.Y == b.Y && a.X < b.X);
-            //return a.Y > b.Y || (a.Y == b.Y && a.X > b.X);
-        }
-
         public bool OnLine(Edge a_Edge)
         {
             return Math.Abs(Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint)) <= double.Epsilon;
@@ -80,9 +68,10 @@ namespace VoronoiDCEL
 
         public override bool Equals(object obj)
         {
-            if (obj != null && obj is Vertex)
+            Vertex vertex = obj as Vertex;
+            if (vertex != null)
             {
-                return m_y == ((Vertex)obj).Y && m_x == ((Vertex)obj).X;
+                return Math.Abs(m_y - vertex.Y) <= double.Epsilon && Math.Abs(m_x - vertex.X) <= double.Epsilon;
             }
             else
             {
@@ -94,7 +83,7 @@ namespace VoronoiDCEL
         {
             if (a_Vertex != null)
             {
-                return m_y == a_Vertex.Y && m_x == a_Vertex.X;
+                return Math.Abs(m_y - a_Vertex.Y) <= double.Epsilon && Math.Abs(m_x - a_Vertex.X) <= double.Epsilon;
             }
             else
             {
@@ -104,21 +93,28 @@ namespace VoronoiDCEL
 
         public int CompareTo(Vertex a_Vertex)
         {
-            if (this < a_Vertex)
-            {
-                return -1;
-            }
-            else if (this > a_Vertex)
+            if (m_y > a_Vertex.Y)
             {
                 return 1;
             }
-            else if (m_y == a_Vertex.Y && m_x == a_Vertex.X)
+            else if (Math.Abs(m_y - a_Vertex.Y) <= double.Epsilon)
             {
-                return 0;
+                if (m_x < a_Vertex.X)
+                {
+                    return 1;
+                }
+                else if (Math.Abs(m_x - a_Vertex.X) <= double.Epsilon)
+                {
+                    return 0;
+                }
+                else
+                {
+                    return -1;
+                }
             }
             else
             {
-                throw new Exception("Error comparing vertex!");
+                return -1;
             }
         }
 
