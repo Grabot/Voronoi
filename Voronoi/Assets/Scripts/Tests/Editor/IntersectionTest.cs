@@ -287,10 +287,17 @@ namespace VoronoiDCEL.Tests
         {
             AATree<int> tree = new AATree<int>();
             Assert.IsTrue(tree.Insert(1));
-            Assert.IsTrue(tree.Insert(2));
+            Assert.IsTrue(tree.Insert(13));
             Assert.IsTrue(tree.Insert(3));
-            Assert.IsTrue(3 == tree.ComputeSize());
-            Assert.IsTrue(3 == tree.Size);
+            Assert.IsTrue(tree.Insert(100));
+            Assert.IsTrue(tree.Insert(4));
+            Assert.IsTrue(tree.Insert(9));
+            Assert.IsTrue(tree.Insert(16));
+            Assert.IsTrue(tree.Insert(7));
+            Assert.IsTrue(tree.Insert(11));
+            Assert.IsTrue(tree.Insert(2));
+            Assert.IsTrue(10 == tree.ComputeSize());
+            Assert.IsTrue(10 == tree.Size);
             Assert.IsTrue(tree.VerifyLevels());
             Assert.IsTrue(tree.VerifyBST(int.MinValue, int.MaxValue));
             Assert.IsTrue(tree.VerifyOrder());
@@ -303,6 +310,20 @@ namespace VoronoiDCEL.Tests
             Assert.AreEqual(1, neighbour);
             Assert.IsTrue(tree.FindNextBiggest(2, out neighbour));
             Assert.AreEqual(3, neighbour);
+            Assert.IsTrue(tree.FindNextBiggest(16, out neighbour));
+            Assert.AreEqual(100, neighbour);
+            Assert.IsTrue(tree.FindNextSmallest(13, out neighbour));
+            Assert.AreEqual(11, neighbour);
+            Assert.IsTrue(tree.FindNextSmallest(9, out neighbour));
+            Assert.AreEqual(7, neighbour);
+            Assert.IsTrue(tree.FindNextBiggest(4, out neighbour));
+            Assert.AreEqual(7, neighbour);
+            Assert.IsTrue(tree.FindNextSmallest(100, out neighbour));
+            Assert.AreEqual(16, neighbour);
+            Assert.IsTrue(tree.FindNextSmallest(16, out neighbour));
+            Assert.AreEqual(13, neighbour);
+            Assert.IsTrue(tree.FindNextBiggest(7, out neighbour));
+            Assert.AreEqual(9, neighbour);
         }
 
         [Test]
