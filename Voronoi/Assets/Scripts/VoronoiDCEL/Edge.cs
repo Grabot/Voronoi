@@ -165,5 +165,17 @@
                 return hash;
             }
         }
+
+        public override string ToString()
+        {
+            System.Text.StringBuilder builder = new System.Text.StringBuilder();
+            builder.Append("Lower endpoint: ");
+            builder.Append(m_LowerEndpoint.ToString());
+            builder.Append(" Upper endpoint: ");
+            builder.Append(m_UpperEndpoint.ToString());
+            builder.Append(" Is horizontal: ");
+            builder.Append(m_IsHorizontal.ToString());
+            return builder.ToString();
+        }
     }
 }

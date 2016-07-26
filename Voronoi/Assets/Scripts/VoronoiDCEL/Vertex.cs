@@ -52,17 +52,17 @@ namespace VoronoiDCEL
         public int CompareTo(Edge a_Edge)
         {
             double result = Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint);
-            if (Math.Abs(result) <= double.Epsilon)
-            {
-                return 0;
-            }
-            else if (result < 0)
+            if (result < 0)
             {
                 return 1;
             }
-            else
+            else if (result > 0)
             {
                 return -1;
+            }
+            else
+            {
+                return 0;
             }
         }
 
@@ -143,7 +143,15 @@ namespace VoronoiDCEL
 
         public override string ToString()
         {
-            return "(" + m_x + "," + m_y + "): " + m_IncidentEdges.Count;
+            System.Text.StringBuilder builder = new System.Text.StringBuilder();
+            builder.Append("(");
+            builder.Append(m_x);
+            builder.Append(",");
+            builder.Append(m_y);
+            builder.Append(") ");
+            builder.Append("Nr incident edges: ");
+            builder.Append(m_IncidentEdges.Count);
+            return builder.ToString();
         }
     }
 }

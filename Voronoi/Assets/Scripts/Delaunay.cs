@@ -19,7 +19,7 @@ namespace Voronoi
 
         public void Create()
         {
-            const float farAway = 500000;
+            const float farAway = 1000; // 500000
             Vertex v1 = new Vertex(-farAway, -farAway);
             Vertex v2 = new Vertex(farAway, farAway);
             Vertex v3 = new Vertex(-farAway, farAway);

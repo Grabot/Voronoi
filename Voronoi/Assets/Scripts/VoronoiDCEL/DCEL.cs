@@ -44,11 +44,11 @@ namespace VoronoiDCEL
             Vertex v2 = null;
             foreach (Vertex v in m_Vertices)
             {
-                if (Math.Abs(v.X - a_x) <= float.Epsilon && Math.Abs(v.Y - a_y) <= float.Epsilon)
+                if (Math.Abs(v.X - a_x) <= double.Epsilon && Math.Abs(v.Y - a_y) <= double.Epsilon)
                 {
                     v1 = v;
                 }
-                else if (Math.Abs(v.X - b_x) <= float.Epsilon && Math.Abs(v.Y - b_y) <= float.Epsilon)
+                else if (Math.Abs(v.X - b_x) <= double.Epsilon && Math.Abs(v.Y - b_y) <= double.Epsilon)
                 {
                     v2 = v;
                 }
@@ -429,11 +429,11 @@ namespace VoronoiDCEL
             }
             if (union.Count == 0)
             {
-                StatusData leftNeighbour;
-                StatusData rightNeighbour;
-                if (a_Status.FindLeftNeighbour(a_Point, out leftNeighbour) && a_Status.FindRightNeighbour(a_Point, out rightNeighbour))
+                Edge leftNeighbour;
+                Edge rightNeighbour;
+                if (a_Status.FindNeighboursOfPoint(a_Point, out leftNeighbour, out rightNeighbour))
                 {
-                    FindNewEvent(leftNeighbour.Edge, rightNeighbour.Edge, a_Point, a_EventQueue);
+                    FindNewEvent(leftNeighbour, rightNeighbour, a_Point, a_EventQueue);
                 }
             }
             else
@@ -444,7 +444,7 @@ namespace VoronoiDCEL
                     Edge leftNeighbour;
                     if (a_Status.FindNextSmallest(leftMost, a_Point, out leftNeighbour))
                     {
-                        FindNewEvent(leftMost, leftNeighbour, a_Point, a_EventQueue);
+                        FindNewEvent(leftNeighbour, leftMost, a_Point, a_EventQueue);
                     }
                 }
                 else
@@ -474,10 +474,7 @@ namespace VoronoiDCEL
             {
                 if (intersection.Y < point.Y || (Math.Abs(intersection.Y - point.Y) <= double.Epsilon && intersection.X > point.X))
                 {
-                    if (!eventQueue.Insert(intersection))
-                    {
-                        Debug.Log("Did not insert event; already in queue.");
-                    }
+                    eventQueue.Insert(intersection);
                 }
             }
         }

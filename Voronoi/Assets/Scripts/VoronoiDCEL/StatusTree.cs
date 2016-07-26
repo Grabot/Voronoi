@@ -157,8 +157,7 @@ namespace VoronoiDCEL
         protected override int CompareTo(StatusData a, StatusData b, COMPARISON_TYPE a_ComparisonType)
         {
             // If the edge we're comparing with is the one we're trying to delete or find, then return 0.
-            if (a_ComparisonType != COMPARISON_TYPE.INSERT &&
-                a.Edge.LowerEndpoint.Equals(b.Edge.LowerEndpoint) &&
+            if (a.Edge.LowerEndpoint.Equals(b.Edge.LowerEndpoint) &&
                 a.Edge.UpperEndpoint.Equals(b.Edge.UpperEndpoint))
             {
                 return 0;
@@ -217,7 +216,7 @@ namespace VoronoiDCEL
                 // Both a and b are not horizontal. The easy case! Use a.Vertex (the point of a intersecting the sweep line)
                 // and look on what side of b it is.
                 int side = a.SweeplineIntersectionPoint.CompareTo(b.Edge);
-                if (side == 0)
+                if (0 == side)
                 {
                     // If we're deleting and the point p is a's lower endpoint, then we cannot use a's
                     // lower endpoint to resolve this case, so we must use the upper endpoint.
@@ -230,9 +229,12 @@ namespace VoronoiDCEL
                         // a.Vertex was on b, so use a's lower endpoint to check on what side it is.
                         side = a.Edge.LowerEndpoint.CompareTo(b.Edge);
                     }
-                    if (side == 0)
+                    if (0 == side)
                     {
                         // a's lower endpoint is also on b, this should not occur in a planar subdivision!
+                        UnityEngine.Debug.Log("Overlapping edges:");
+                        UnityEngine.Debug.Log(a.Edge.ToString());
+                        UnityEngine.Debug.Log(b.Edge.ToString());
                         throw new Exception("Edges cannot overlap!");
                     }
                 }
@@ -266,33 +268,46 @@ namespace VoronoiDCEL
             return v.CompareTo(b.Edge);
         }
 
-        public bool FindLeftNeighbour(Vertex v, out StatusData out_Neighbour)
+        public bool FindNeighboursOfPoint(Vertex a_Point, out Edge out_LeftNeighbour, out Edge out_RightNeighbour)
         {
-            Node result = FindNeighbour(v, m_Tree, false);
-            if (result != null && result != m_Bottom)
+            if (m_Tree == m_Bottom || a_Point == null)
             {
-                out_Neighbour = result.Data;
-                return true;
+                out_LeftNeighbour = null;
+                out_RightNeighbour = null;
+                return false;
             }
             else
             {
-                out_Neighbour = null;
-                return false;
-            }
-        }
+                Node currentNode = m_Tree;
+                Node lastRight = m_Bottom;
+                Node lastLeft = m_Bottom;
+                while (true)
+                {
+                    int comparisonResult = a_Point.CompareTo(currentNode.Data.Edge);
+                    Node nextNode;
+                    if (comparisonResult < 0)
+                    {
+                        nextNode = currentNode.Left;
+                        lastLeft = currentNode;
+                    }
+                    else
+                    {
+                        nextNode = currentNode.Right;
+                        lastRight = currentNode;
+                    }
+                    if (nextNode != m_Bottom)
+                    {
+                        currentNode = nextNode;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
 
-        public bool FindRightNeighbour(Vertex v, out StatusData out_Neighbour)
-        {
-            Node result = FindNeighbour(v, m_Tree, true);
-            if (result != null && result != m_Bottom)
-            {
-                out_Neighbour = result.Data;
-                return true;
-            }
-            else
-            {
-                out_Neighbour = null;
-                return false;
+                out_RightNeighbour = lastLeft != m_Bottom ? lastLeft.Data.Edge : null;
+                out_LeftNeighbour = lastRight != m_Bottom ? lastRight.Data.Edge : null;
+                return lastLeft != m_Bottom && lastRight != m_Bottom;
             }
         }
 
@@ -304,67 +319,6 @@ namespace VoronoiDCEL
         public bool FindRightMostSegmentInSet(HashSet<Edge> a_Set, out Edge out_Rightmost)
         {
             return FindRightMostSegmentInSet(a_Set, m_Tree, out out_Rightmost);
-        }
-
-        private Node FindNeighbour(Vertex v, Node t, bool rightNeighbour)
-        {
-            if (t == m_Bottom)
-            {
-                return null;
-            }
-            else
-            {
-                Queue<Node> qn = new Queue<Node>(m_Size);
-                Queue<int> ql = new Queue<int>(m_Size);
-
-                int level = 0;
-
-                qn.Enqueue(m_Tree);
-                ql.Enqueue(level);
-
-                while (qn.Count != 0)
-                {
-                    Node node = qn.Dequeue();
-                    level = ql.Dequeue();
-
-                    if (IsEqual(v, node.Data))
-                    {
-                        if (ql.Count == 0 || ql.Peek() != level)
-                        {
-                            return null;
-                        }
-                        return qn.Peek();
-                    }
-
-                    if (rightNeighbour)
-                    {
-                        if (node.Left != m_Bottom)
-                        {
-                            qn.Enqueue(node.Left);
-                            ql.Enqueue(level + 1);
-                        }
-                        if (node.Right != m_Bottom)
-                        {
-                            qn.Enqueue(node.Right);
-                            ql.Enqueue(level + 1);
-                        }
-                    }
-                    else
-                    {
-                        if (node.Right != m_Bottom)
-                        {
-                            qn.Enqueue(node.Right);
-                            ql.Enqueue(level + 1);
-                        }
-                        if (node.Left != m_Bottom)
-                        {
-                            qn.Enqueue(node.Left);
-                            ql.Enqueue(level + 1);
-                        }
-                    }
-                }
-                return null;
-            }
         }
 
         private bool FindLeftMostSegmentInSet(HashSet<Edge> a_Set, Node t, out Edge out_LeftMost)
