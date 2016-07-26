@@ -220,7 +220,7 @@ namespace VoronoiDCEL
                 {
                     // If we're deleting and the point p is a's lower endpoint, then we cannot use a's
                     // lower endpoint to resolve this case, so we must use the upper endpoint.
-                    if (a_ComparisonType == COMPARISON_TYPE.DELETE && a.SweeplineIntersectionPoint.Equals(a.Edge.LowerEndpoint))
+                    if (a.SweeplineIntersectionPoint.Equals(a.Edge.LowerEndpoint))
                     {
                         side = a.Edge.UpperEndpoint.CompareTo(b.Edge);
                     }
@@ -235,6 +235,9 @@ namespace VoronoiDCEL
                         UnityEngine.Debug.Log("Overlapping edges:");
                         UnityEngine.Debug.Log(a.Edge.ToString());
                         UnityEngine.Debug.Log(b.Edge.ToString());
+                        UnityEngine.Debug.Log(a.SweeplineIntersectionPoint.ToString());
+                        UnityEngine.Debug.Log(a_ComparisonType.ToString());
+                        UnityEngine.Debug.Log(side);
                         throw new Exception("Edges cannot overlap!");
                     }
                 }

@@ -83,7 +83,8 @@ namespace VoronoiDCEL
         {
             if (a_Vertex != null)
             {
-                return Math.Abs(m_y - a_Vertex.Y) <= double.Epsilon && Math.Abs(m_x - a_Vertex.X) <= double.Epsilon;
+                double tolerance = Math.Exp(-9);
+                return Math.Abs(m_y - a_Vertex.Y) < tolerance && Math.Abs(m_x - a_Vertex.X) < tolerance;
             }
             else
             {
