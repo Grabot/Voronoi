@@ -9,6 +9,7 @@ namespace VoronoiDCEL
         private readonly double m_x;
         private readonly double m_y;
         private readonly List<HalfEdge> m_IncidentEdges;
+        private static readonly double m_Tolerance = Math.Exp(-9);
         // IncidentEdges must have this vertex as origin.
 
         public Vertex(double a_x, double a_y)
@@ -36,7 +37,7 @@ namespace VoronoiDCEL
 
         public bool OnLine(Edge a_Edge)
         {
-            return Math.Abs(Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint)) <= double.Epsilon;
+            return Math.Abs(Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint)) < m_Tolerance;
         }
 
         public bool LeftOfLine(Edge a_Edge)
@@ -52,39 +53,30 @@ namespace VoronoiDCEL
         public int CompareTo(Edge a_Edge)
         {
             double result = Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint);
-            if (result < 0)
+            if (Math.Abs(result) < m_Tolerance)
+            {
+                return 0;
+            }
+            else if (result < 0)
             {
                 return 1;
             }
-            else if (result > 0)
-            {
-                return -1;
-            }
             else
             {
-                return 0;
+                return -1;
             }
         }
 
         public override bool Equals(object obj)
         {
-            Vertex vertex = obj as Vertex;
-            if (vertex != null)
-            {
-                return Math.Abs(m_y - vertex.Y) <= double.Epsilon && Math.Abs(m_x - vertex.X) <= double.Epsilon;
-            }
-            else
-            {
-                return false;
-            }
+            return Equals(obj as Vertex);
         }
 
         public bool Equals(Vertex a_Vertex)
         {
             if (a_Vertex != null)
             {
-                double tolerance = Math.Exp(-9);
-                return Math.Abs(m_y - a_Vertex.Y) < tolerance && Math.Abs(m_x - a_Vertex.X) < tolerance;
+                return Math.Abs(m_y - a_Vertex.Y) < m_Tolerance && Math.Abs(m_x - a_Vertex.X) < m_Tolerance;
             }
             else
             {
@@ -94,24 +86,24 @@ namespace VoronoiDCEL
 
         public int CompareTo(Vertex a_Vertex)
         {
-            if (m_y > a_Vertex.Y)
+            if (Math.Abs(m_y - a_Vertex.Y) < m_Tolerance)
             {
-                return 1;
-            }
-            else if (Math.Abs(m_y - a_Vertex.Y) <= double.Epsilon)
-            {
-                if (m_x < a_Vertex.X)
-                {
-                    return 1;
-                }
-                else if (Math.Abs(m_x - a_Vertex.X) <= double.Epsilon)
+                if (Math.Abs(m_x - a_Vertex.X) < m_Tolerance)
                 {
                     return 0;
+                }
+                else if (m_x < a_Vertex.X)
+                {
+                    return 1;
                 }
                 else
                 {
                     return -1;
                 }
+            }
+            else if (m_y > a_Vertex.Y)
+            {
+                return 1;
             }
             else
             {
