@@ -20,6 +20,8 @@ namespace VoronoiDCEL
 
         public List<Face> Faces { get { return m_Faces; } }
 
+        public delegate void IntersectionPointAction(Intersection a_Intersection,StatusTree a_Status,Vertex a_Point);
+
         public DCEL()
         {
             m_Vertices = new List<Vertex>();
@@ -335,7 +337,7 @@ namespace VoronoiDCEL
             m_Edges.Add(e);
         }
 
-        public bool FindIntersections(out Intersection[] out_Intersections)
+        public bool FindIntersections(out Intersection[] out_Intersections, IntersectionPointAction a_IntersectionPointAction = null)
         {
             AATree<Vertex> eventQueue = new AATree<Vertex>();
             List<Intersection> intersections = new List<Intersection>();
@@ -351,7 +353,7 @@ namespace VoronoiDCEL
                 if (eventQueue.FindMax(out p))
                 {
                     eventQueue.Delete(p);
-                    HandleEventPoint(p, status, eventQueue, intersections);
+                    HandleEventPoint(p, status, eventQueue, intersections, a_IntersectionPointAction);
                 }
                 else
                 {
@@ -376,7 +378,7 @@ namespace VoronoiDCEL
         }
 
         private static void HandleEventPoint(Vertex a_Point, StatusTree a_Status,
-                                             AATree<Vertex> a_EventQueue, List<Intersection> intersections)
+                                             AATree<Vertex> a_EventQueue, List<Intersection> intersections, IntersectionPointAction a_IntersectionPointAction = null)
         {
             HashSet<Edge> upperEndpointEdges = new HashSet<Edge>(); // U(p)
             HashSet<Edge> lowerEndpointEdges = new HashSet<Edge>(); // L(p)
@@ -408,6 +410,10 @@ namespace VoronoiDCEL
                 intersection.containingEdges = new Edge[containingEdges.Count];
                 containingEdges.CopyTo(intersection.containingEdges);
                 intersections.Add(intersection);
+                if (a_IntersectionPointAction != null)
+                {
+                    a_IntersectionPointAction(intersection, a_Status, a_Point);
+                }
             }
             union = new HashSet<Edge>(lowerEndpointEdges);
             union.UnionWith(containingEdges);
