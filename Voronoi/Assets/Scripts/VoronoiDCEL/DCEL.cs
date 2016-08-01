@@ -7,10 +7,13 @@ namespace VoronoiDCEL
 {
     public class DCEL
     {
+        private static int m_NextUniqueID = 0;
+
         private List<Vertex> m_Vertices;
         private List<Edge> m_Edges;
         private readonly List<HalfEdge> m_HalfEdges;
         private List<Face> m_Faces;
+        private readonly int m_UniqueID;
 
         public List<Vertex> Vertices { get { return m_Vertices; } }
 
@@ -28,6 +31,7 @@ namespace VoronoiDCEL
             m_Edges = new List<Edge>();
             m_HalfEdges = new List<HalfEdge>();
             m_Faces = new List<Face>();
+            m_UniqueID = m_NextUniqueID++;
         }
 
         public void AddEdge(double a_x, double a_y, double b_x, double b_y)
@@ -335,6 +339,35 @@ namespace VoronoiDCEL
             m_HalfEdges.Add(h1);
             m_HalfEdges.Add(h2);
             m_Edges.Add(e);
+        }
+
+        public static DCEL MapOverlay(DCEL A, DCEL B)
+        {
+            DCEL overlay = new DCEL();
+            foreach (Edge e in A.Edges)
+            {
+                overlay.AddEdge(e.LowerEndpoint.X, e.LowerEndpoint.Y, e.UpperEndpoint.X, e.UpperEndpoint.Y);
+            }
+            foreach (Edge e in B.Edges)
+            {
+                overlay.AddEdge(e.LowerEndpoint.X, e.LowerEndpoint.Y, e.UpperEndpoint.X, e.UpperEndpoint.Y);
+            }
+            Intersection[] intersections;
+            overlay.FindIntersections(out intersections, HandleMapOverlayEvent);
+            // Todo: continue implementing the map overlay algorithm.
+            return overlay;
+        }
+
+        private static void HandleMapOverlayEvent(Intersection a_Intersection, StatusTree a_Status, Vertex a_Point)
+        {
+            HashSet<Edge> edges = new HashSet<Edge>(a_Intersection.upperEndpointEdges);
+            edges.UnionWith(a_Intersection.containingEdges);
+            edges.UnionWith(a_Intersection.lowerEndpointEdges);
+            foreach (Edge e in edges)
+            {
+                // Check if edges from different DCELs are involved.
+            }
+            // Todo.
         }
 
         public bool FindIntersections(out Intersection[] out_Intersections, IntersectionPointAction a_IntersectionPointAction = null)
