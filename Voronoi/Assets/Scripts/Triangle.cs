@@ -5,7 +5,7 @@ using MNVector = MathNet.Numerics.LinearAlgebra.Vector<double>;
 
 namespace Voronoi
 {
-    public class Triangle
+    public sealed class Triangle
     {
         private bool m_Drawn = false;
         private Vertex m_Circumcenter;

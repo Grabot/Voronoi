@@ -4,7 +4,7 @@ using System;
 using Voronoi;
 using MNMatrix = MathNet.Numerics.LinearAlgebra.Matrix<float>;
 
-public class GraphManager : MonoBehaviour
+public sealed class GraphManager : MonoBehaviour
 {
     public GameObject m_Player1Prefab;
     public GameObject m_Player2Prefab;
@@ -85,11 +85,29 @@ public class GraphManager : MonoBehaviour
         GL.End();
     }
 
+    private VoronoiDCEL.DCEL GetScreenDCEL()
+    {
+        VoronoiDCEL.DCEL screen = new VoronoiDCEL.DCEL();
+        Vector3 bottomLeft = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, 0));
+        Vector3 topRight = Camera.main.ViewportToWorldPoint(new Vector3(1, 1, 0));
+        Vector3 bottomRight = Camera.main.ViewportToWorldPoint(new Vector3(1, 0, 0));
+        Vector3 topLeft = Camera.main.ViewportToWorldPoint(new Vector3(0, 1, 0));
+        screen.AddEdge(bottomLeft.x, bottomLeft.z, topLeft.x, topLeft.z);
+        screen.AddEdge(topLeft.x, topLeft.z, topRight.x, topRight.z);
+        screen.AddEdge(topRight.x, topRight.z, bottomRight.x, bottomRight.z);
+        screen.AddEdge(bottomRight.x, bottomRight.z, bottomLeft.x, bottomLeft.z);
+        screen.ConnectHalfEdges();
+        screen.CreateFaces();
+        return screen;
+    }
+
     private void UpdateVoronoiMesh()
     {
         m_DCEL = CreateVoronoiDiagram();
         m_DCELIntersections = null;
         m_DCEL.FindIntersections(out m_DCELIntersections);
+        VoronoiDCEL.DCEL screen = GetScreenDCEL();
+        VoronoiDCEL.DCEL.MapOverlay(m_DCEL, screen);
         MeshDescription newDescription = TriangulateVoronoi();
         m_GUIManager.SetPlayerAreaOwned(newDescription.playerArea[0], newDescription.playerArea[1]);
         Mesh mesh = m_MeshFilter.mesh;

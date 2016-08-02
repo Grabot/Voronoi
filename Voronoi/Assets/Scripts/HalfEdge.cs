@@ -1,6 +1,6 @@
 ﻿namespace Voronoi
 {
-    public class HalfEdge
+    public sealed class HalfEdge
     {
         private Vertex m_Origin;
         public Triangle Triangle;

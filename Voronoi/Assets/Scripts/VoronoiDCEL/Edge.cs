@@ -2,12 +2,13 @@
 {
     using System;
 
-    public class Edge : IComparable<Edge>, IEquatable<Edge>
+    public sealed class Edge : IComparable<Edge>, IEquatable<Edge>
     {
-        private HalfEdge m_Half1;
-        private HalfEdge m_Half2;
+        private readonly HalfEdge m_Half1;
+        private readonly HalfEdge m_Half2;
         private Vertex m_UpperEndpoint;
         private Vertex m_LowerEndpoint;
+        private readonly int m_DCEL_ID;
 
         private enum E_ISHORIZONTAL
         {
@@ -21,21 +22,16 @@
         public HalfEdge Half1
         {
             get { return m_Half1; }
-            set
-            {
-                m_Half1 = value;
-                m_IsHorizontal = E_ISHORIZONTAL.DONTKNOW;
-            }
         }
 
         public HalfEdge Half2
         {
             get { return m_Half2; }
-            set
-            {
-                m_Half2 = value;
-                m_IsHorizontal = E_ISHORIZONTAL.DONTKNOW;
-            }
+        }
+
+        public int DCEL_ID
+        {
+            get { return m_DCEL_ID; }
         }
 
         public bool IsHorizontal
@@ -71,7 +67,7 @@
                 else
                 {
                     if (m_Half1.Origin.Y > m_Half2.Origin.Y ||
-                        (Math.Abs(m_Half1.Origin.Y - m_Half2.Origin.Y) <= double.Epsilon && m_Half1.Origin.X < m_Half2.Origin.X))
+                        (Math.Abs(m_Half1.Origin.Y - m_Half2.Origin.Y) < Math.Exp(-9) && m_Half1.Origin.X < m_Half2.Origin.X))
                     {
                         m_UpperEndpoint = m_Half1.Origin;
                         m_LowerEndpoint = m_Half2.Origin;
@@ -97,7 +93,7 @@
                 else
                 {
                     if (m_Half1.Origin.Y < m_Half2.Origin.Y ||
-                        (Math.Abs(m_Half1.Origin.Y - m_Half2.Origin.Y) <= double.Epsilon && m_Half1.Origin.X > m_Half2.Origin.X))
+                        (Math.Abs(m_Half1.Origin.Y - m_Half2.Origin.Y) < Math.Exp(-9) && m_Half1.Origin.X > m_Half2.Origin.X))
                     {
                         m_LowerEndpoint = m_Half1.Origin;
                         m_UpperEndpoint = m_Half2.Origin;
@@ -112,11 +108,19 @@
             }
         }
 
+        public Edge(HalfEdge a_Half1, HalfEdge a_Half2, int a_DCEL_ID)
+        {
+            m_Half1 = a_Half1;
+            m_Half2 = a_Half2;
+            m_DCEL_ID = a_DCEL_ID;
+            m_IsHorizontal = E_ISHORIZONTAL.DONTKNOW;
+        }
+
         private E_ISHORIZONTAL ComputeHorizontal()
         {
             if (m_Half1 != null && m_Half2 != null)
             {
-                return (Math.Abs(m_Half1.Origin.Y - m_Half2.Origin.Y) <= double.Epsilon) ? E_ISHORIZONTAL.YES : E_ISHORIZONTAL.NO;
+                return (Math.Abs(m_Half1.Origin.Y - m_Half2.Origin.Y) < Math.Exp(-9)) ? E_ISHORIZONTAL.YES : E_ISHORIZONTAL.NO;
             }
             else
             {
@@ -126,15 +130,8 @@
 
         public override bool Equals(object obj)
         {
-            if (obj != null && obj is Edge)
-            {
-                return (((Edge)obj).Half1 == m_Half1 && ((Edge)obj).Half2 == m_Half2) ||
-                (((Edge)obj).Half1 == m_Half2 && ((Edge)obj).Half2 == m_Half1);
-            }
-            else
-            {
-                return false;
-            }
+            Edge edge = obj as Edge;
+            return Equals(edge);
         }
 
         public bool Equals(Edge a_Edge)
@@ -175,6 +172,8 @@
             builder.Append(m_UpperEndpoint.ToString());
             builder.Append(" Is horizontal: ");
             builder.Append(m_IsHorizontal.ToString());
+            builder.Append(" DCEL: ");
+            builder.Append(m_DCEL_ID.ToString());
             return builder.ToString();
         }
     }

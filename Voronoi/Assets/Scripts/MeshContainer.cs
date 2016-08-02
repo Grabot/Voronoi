@@ -1,9 +1,8 @@
-using System;
 using UnityEngine;
 
 namespace UnityStandardAssets.Water
 {
-    public class MeshContainer
+    public sealed class MeshContainer
     {
         public Mesh mesh;
         public Vector3[] vertices;

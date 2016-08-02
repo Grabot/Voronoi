@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Voronoi
 {
@@ -7,8 +6,8 @@ namespace Voronoi
     {
         public static Vertex Midpoint(Vertex v1, Vertex v2)
         {
-			float mx = (v1.X + v2.X) / 2;
-			float my = (v1.Y + v2.Y) / 2;
+            float mx = (v1.X + v2.X) / 2;
+            float my = (v1.Y + v2.Y) / 2;
             return new Vertex(mx, my);
         }
 
@@ -18,14 +17,14 @@ namespace Voronoi
             return value;
         }
 
-		public static float SquaredDistance(Vertex v1, Vertex v2)
-		{
-			return Mathf.Pow (v1.X - v2.X, 2) + Mathf.Pow (v1.Y - v2.Y, 2);
-		}
+        public static float SquaredDistance(Vertex v1, Vertex v2)
+        {
+            return Mathf.Pow(v1.X - v2.X, 2) + Mathf.Pow(v1.Y - v2.Y, 2);
+        }
 
-		public static float Distance(Vertex v1, Vertex v2)
-		{
-			return Mathf.Sqrt(SquaredDistance(v1, v2));
-		}
+        public static float Distance(Vertex v1, Vertex v2)
+        {
+            return Mathf.Sqrt(SquaredDistance(v1, v2));
+        }
     }
 }

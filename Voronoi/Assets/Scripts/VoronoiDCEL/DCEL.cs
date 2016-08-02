@@ -5,7 +5,7 @@ using MNMatrix = MathNet.Numerics.LinearAlgebra.Matrix<double>;
 
 namespace VoronoiDCEL
 {
-    public class DCEL
+    public sealed class DCEL
     {
         private static int m_NextUniqueID = 0;
 
@@ -34,13 +34,30 @@ namespace VoronoiDCEL
             m_UniqueID = m_NextUniqueID++;
         }
 
+        public DCEL(DCEL A, DCEL B)
+        {
+            m_Vertices = new List<Vertex>(A.Vertices.Count + B.Vertices.Count);
+            m_Vertices.AddRange(A.Vertices);
+            m_Vertices.AddRange(B.Vertices);
+            m_Edges = new List<Edge>(A.Edges.Count + B.Edges.Count);
+            m_Edges.AddRange(A.Edges);
+            m_Edges.AddRange(B.Edges);
+            m_HalfEdges = new List<HalfEdge>(A.HalfEdges.Count + B.HalfEdges.Count);
+            m_HalfEdges.AddRange(A.HalfEdges);
+            m_HalfEdges.AddRange(B.HalfEdges);
+            m_Faces = new List<Face>(A.Faces.Count + B.Faces.Count);
+            m_Faces.AddRange(A.Faces);
+            m_Faces.AddRange(B.Faces);
+            m_UniqueID = m_NextUniqueID++;
+        }
+
         public void AddEdge(double a_x, double a_y, double b_x, double b_y)
         {
+            double epsilon = Math.Exp(-9);
+
             HalfEdge h1 = new HalfEdge();
             HalfEdge h2 = new HalfEdge();
-            Edge e = new Edge();
-            e.Half1 = h1;
-            e.Half2 = h2;
+            Edge e = new Edge(h1, h2, m_UniqueID);
             h1.ParentEdge = e;
             h2.ParentEdge = e;
 
@@ -50,11 +67,11 @@ namespace VoronoiDCEL
             Vertex v2 = null;
             foreach (Vertex v in m_Vertices)
             {
-                if (Math.Abs(v.X - a_x) <= double.Epsilon && Math.Abs(v.Y - a_y) <= double.Epsilon)
+                if (Math.Abs(v.X - a_x) < epsilon && Math.Abs(v.Y - a_y) < epsilon)
                 {
                     v1 = v;
                 }
-                else if (Math.Abs(v.X - b_x) <= double.Epsilon && Math.Abs(v.Y - b_y) <= double.Epsilon)
+                else if (Math.Abs(v.X - b_x) < epsilon && Math.Abs(v.Y - b_y) < epsilon)
                 {
                     v2 = v;
                 }
@@ -163,9 +180,7 @@ namespace VoronoiDCEL
             Vertex x = new Vertex(a_x, a_y);
             HalfEdge h1 = new HalfEdge();
             HalfEdge h2 = new HalfEdge();
-            Edge e1 = new Edge();
-            e1.Half1 = h1;
-            e1.Half2 = h2;
+            Edge e1 = new Edge(h1, h2, m_UniqueID);
             h1.ParentEdge = e1;
             h2.ParentEdge = e1;
 
@@ -190,9 +205,7 @@ namespace VoronoiDCEL
             // Now the second halfedge.
             HalfEdge h3 = new HalfEdge();
             HalfEdge h4 = new HalfEdge();
-            Edge e2 = new Edge();
-            e2.Half1 = h3;
-            e2.Half2 = h4;
+            Edge e2 = new Edge(h3, h4, m_UniqueID);
             h3.ParentEdge = e2;
             h4.ParentEdge = e2;
             HalfEdge twinEdge = a_Edge.Half2;
@@ -243,9 +256,7 @@ namespace VoronoiDCEL
             Vertex v = new Vertex(a_x, a_y);
             HalfEdge h1 = new HalfEdge();
             HalfEdge h2 = new HalfEdge();
-            Edge e = new Edge();
-            e.Half1 = h1;
-            e.Half2 = h2;
+            Edge e = new Edge(h1, h2, m_UniqueID);
             h1.ParentEdge = e;
             h2.ParentEdge = e;
 
@@ -285,9 +296,7 @@ namespace VoronoiDCEL
             Face f2 = new Face();
             HalfEdge h1 = new HalfEdge();
             HalfEdge h2 = new HalfEdge();
-            Edge e = new Edge();
-            e.Half1 = h1;
-            e.Half2 = h2;
+            Edge e = new Edge(h1, h2, m_UniqueID);
             h1.ParentEdge = e;
             h2.ParentEdge = e;
 
@@ -343,15 +352,7 @@ namespace VoronoiDCEL
 
         public static DCEL MapOverlay(DCEL A, DCEL B)
         {
-            DCEL overlay = new DCEL();
-            foreach (Edge e in A.Edges)
-            {
-                overlay.AddEdge(e.LowerEndpoint.X, e.LowerEndpoint.Y, e.UpperEndpoint.X, e.UpperEndpoint.Y);
-            }
-            foreach (Edge e in B.Edges)
-            {
-                overlay.AddEdge(e.LowerEndpoint.X, e.LowerEndpoint.Y, e.UpperEndpoint.X, e.UpperEndpoint.Y);
-            }
+            DCEL overlay = new DCEL(A, B);
             Intersection[] intersections;
             overlay.FindIntersections(out intersections, HandleMapOverlayEvent);
             // Todo: continue implementing the map overlay algorithm.
@@ -363,9 +364,21 @@ namespace VoronoiDCEL
             HashSet<Edge> edges = new HashSet<Edge>(a_Intersection.upperEndpointEdges);
             edges.UnionWith(a_Intersection.containingEdges);
             edges.UnionWith(a_Intersection.lowerEndpointEdges);
-            foreach (Edge e in edges)
+            HashSet<Edge>.Enumerator enumerator = edges.GetEnumerator();
+            enumerator.MoveNext();
+            int firstID = enumerator.Current.DCEL_ID;
+            bool bothDCELInvolved = false;
+            while (enumerator.MoveNext())
             {
-                // Check if edges from different DCELs are involved.
+                if (enumerator.Current.DCEL_ID != firstID)
+                {
+                    bothDCELInvolved = true;
+                    break;
+                }
+            }
+            if (bothDCELInvolved)
+            {
+                Debug.Log("Found intersection between DCELs.");
             }
             // Todo.
         }
@@ -454,7 +467,7 @@ namespace VoronoiDCEL
             {
                 if (!a_Status.Delete(e, a_Point))
                 {
-                    throw new Exception("Could not delete lower endpoint or containing edge from status!");
+                    Debug.Log("Could not delete lower endpoint or containing edge from status!");
                 }
             }
             union = new HashSet<Edge>(upperEndpointEdges);
@@ -463,7 +476,7 @@ namespace VoronoiDCEL
             {
                 if (!a_Status.Insert(e, a_Point))
                 {
-                    throw new Exception("Could not insert upper endpoint or containing edge into status!");
+                    Debug.Log("Could not insert upper endpoint or containing edge into status!");
                 }
             }
             if (union.Count == 0)
@@ -511,7 +524,7 @@ namespace VoronoiDCEL
             Vertex intersection;
             if (IntersectLines(a.UpperEndpoint, a.LowerEndpoint, b.UpperEndpoint, b.LowerEndpoint, out intersection))
             {
-                if (intersection.Y < point.Y || (Math.Abs(intersection.Y - point.Y) <= double.Epsilon && intersection.X > point.X))
+                if (intersection.Y < point.Y || (Math.Abs(intersection.Y - point.Y) < Math.Exp(-9) && intersection.X > point.X))
                 {
                     eventQueue.Insert(intersection);
                 }
@@ -532,7 +545,7 @@ namespace VoronoiDCEL
                 MNMatrix denominatorMatrix = MNMatrix.Build.DenseOfArray(denominatorArray);
                 double denominator = denominatorMatrix.Determinant();
 
-                if (Math.Abs(denominator) <= double.Epsilon)
+                if (Math.Abs(denominator) < Math.Exp(-9))
                 { // ab and cd are parallel or equal
                     o_Intersection = Vertex.Zero;
                     return false;

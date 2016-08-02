@@ -2,7 +2,7 @@
 
 namespace VoronoiDCEL
 {
-    public class Face
+    public sealed class Face
     {
         private HalfEdge m_StartingEdge;
         // arbitrary halfedge as starting point for counter-clockwise traversal.

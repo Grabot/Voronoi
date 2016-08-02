@@ -3,7 +3,7 @@ using System;
 
 namespace VoronoiDCEL
 {
-    public class StatusData : IComparable<StatusData>, IEquatable<StatusData>
+    public sealed class StatusData : IComparable<StatusData>, IEquatable<StatusData>
     {
         private readonly Edge m_Edge;
         private readonly Vertex m_SweeplineIntersectionPoint;
@@ -79,7 +79,7 @@ namespace VoronoiDCEL
         }
     }
 
-    public class StatusTree : AATree<StatusData>
+    public sealed class StatusTree : AATree<StatusData>
     {
         public bool Insert(Edge a_Edge, Vertex a_PointP)
         {
@@ -169,16 +169,33 @@ namespace VoronoiDCEL
                 // Is the edge we're comparing with also horizontal?
                 if (b.Edge.IsHorizontal)
                 {
-                    // Check if the two horizontal edges overlap; this is invalid.
-                    if (a.Edge.LowerEndpoint.X <= b.Edge.UpperEndpoint.X ||
-                        b.Edge.LowerEndpoint.X <= a.Edge.UpperEndpoint.X)
+                    // First handle the non-overlapping cases.
+                    if (a.Edge.LowerEndpoint.X <= b.Edge.UpperEndpoint.X)
                     {
-                        // The two horizontal edges don't overlap, so return if it's left or right.
-                        return a.Edge.LowerEndpoint.X <= b.Edge.UpperEndpoint.X ? -1 : 1;
+                        return -1;
+                    }
+                    else if (b.Edge.LowerEndpoint.X <= a.Edge.UpperEndpoint.X)
+                    {
+                        return 1;
                     }
                     else
                     {
-                        throw new Exception("Horizontal edges cannot overlap!");
+                        UnityEngine.Debug.Log("Found overlapping horizontal edges!");
+                        UnityEngine.Debug.Log(a.Edge.ToString());
+                        UnityEngine.Debug.Log(b.Edge.ToString());
+                        UnityEngine.Debug.Log(a.SweeplineIntersectionPoint.ToString());
+                        UnityEngine.Debug.Log(a_ComparisonType.ToString());
+                        // Edges are overlapping.
+                        if (Math.Abs(a.Edge.UpperEndpoint.X - b.Edge.UpperEndpoint.X) < Math.Exp(-9))
+                        {
+                            // With coinciding upper endpoints, let the lower endpoints decide.
+                            return a.Edge.LowerEndpoint.X <= b.Edge.LowerEndpoint.X ? -1 : 1;
+                        }
+                        else
+                        {
+                            // Else just let the upper endpoints decide.
+                            return a.Edge.UpperEndpoint.X < b.Edge.UpperEndpoint.X ? -1 : 1;
+                        }
                     }
                 }
                 else
@@ -232,13 +249,11 @@ namespace VoronoiDCEL
                     if (0 == side)
                     {
                         // a's lower endpoint is also on b, this should not occur in a planar subdivision!
-                        UnityEngine.Debug.Log("Overlapping edges:");
+                        UnityEngine.Debug.Log("Found overlapping edges!");
                         UnityEngine.Debug.Log(a.Edge.ToString());
                         UnityEngine.Debug.Log(b.Edge.ToString());
                         UnityEngine.Debug.Log(a.SweeplineIntersectionPoint.ToString());
                         UnityEngine.Debug.Log(a_ComparisonType.ToString());
-                        UnityEngine.Debug.Log(side);
-                        throw new Exception("Edges cannot overlap!");
                     }
                 }
                 return side;
@@ -261,12 +276,12 @@ namespace VoronoiDCEL
             }
         }
 
-        protected bool IsEqual(Vertex v, StatusData b)
+        private static bool IsEqual(Vertex v, StatusData b)
         {
             return b.Edge.UpperEndpoint == v || b.Edge.LowerEndpoint == v || v.OnLine(b.Edge);
         }
 
-        protected int CompareTo(Vertex v, StatusData b)
+        private static int CompareTo(Vertex v, StatusData b)
         {
             return v.CompareTo(b.Edge);
         }
