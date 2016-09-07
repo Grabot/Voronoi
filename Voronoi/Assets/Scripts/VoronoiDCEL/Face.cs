@@ -1,4 +1,5 @@
 ﻿using MNMatrix = MathNet.Numerics.LinearAlgebra.Matrix<double>;
+using System.Collections.Generic;
 
 namespace VoronoiDCEL
 {
@@ -6,7 +7,7 @@ namespace VoronoiDCEL
     {
         private HalfEdge<T> m_StartingEdge;
         // arbitrary halfedge as starting point for counter-clockwise traversal.
-        private T m_Data;
+        private List<T> m_Data;
 
         public HalfEdge<T> StartingEdge
         {
@@ -14,20 +15,54 @@ namespace VoronoiDCEL
             set { m_StartingEdge = value; }
         }
 
-        public T Data
+        public T FirstData
         {
-            get { return m_Data; }
-            set { m_Data = value; }
+            get
+            {
+                if (m_Data != null && m_Data.Count > 0)
+                {
+                    return m_Data[0];
+                }
+                return default(T);
+            }
+            set
+            {
+                if (m_Data == null || m_Data.Count == 0)
+                {
+                    m_Data = new List<T>(1);
+                }
+                m_Data[0] = value;
+            }
+        }
+
+        public T[] Data
+        {
+            get
+            {
+                if (m_Data != null && m_Data.Count > 0)
+                {
+                    return m_Data.ToArray();
+                }
+                return null;
+            }
+            set { m_Data = new List<T>(value); }
         }
 
         public Face()
         {
-            m_Data = default(T);
+            m_Data = null;
         }
 
         public Face(T a_Data)
         {
-            m_Data = a_Data;
+            m_Data = new List<T>(1);
+            m_Data.Add(a_Data);
+        }
+
+        public Face(T[] a_Data)
+        {
+            m_Data = new List<T>(a_Data.Length);
+            m_Data.AddRange(a_Data);
         }
 
         public double ComputeSignedArea()
