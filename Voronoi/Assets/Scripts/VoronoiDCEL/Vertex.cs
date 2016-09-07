@@ -4,11 +4,11 @@ using MNMatrix = MathNet.Numerics.LinearAlgebra.Matrix<double>;
 
 namespace VoronoiDCEL
 {
-    public sealed class Vertex : IComparable<Vertex>, IEquatable<Vertex>
+    public sealed class Vertex<T> : IComparable<Vertex<T>>, IEquatable<Vertex<T>>
     {
         private readonly double m_x;
         private readonly double m_y;
-        private readonly List<HalfEdge> m_IncidentEdges;
+        private readonly List<HalfEdge<T>> m_IncidentEdges;
         private static readonly double m_Tolerance = Math.Exp(-9);
         // IncidentEdges must have this vertex as origin.
 
@@ -16,15 +16,15 @@ namespace VoronoiDCEL
         {
             m_x = a_x;
             m_y = a_y;
-            m_IncidentEdges = new List<HalfEdge>();
+            m_IncidentEdges = new List<HalfEdge<T>>();
         }
 
-        public static Vertex Zero
+        public static Vertex<T> Zero
         {
-            get { return new Vertex(0, 0); }
+            get { return new Vertex<T>(0, 0); }
         }
 
-        public List<HalfEdge> IncidentEdges
+        public List<HalfEdge<T>> IncidentEdges
         {
             get { return m_IncidentEdges; }
         }
@@ -35,22 +35,22 @@ namespace VoronoiDCEL
         public double Y
 		{ get { return m_y; } }
 
-        public bool OnLine(Edge a_Edge)
+        public bool OnLine(Edge<T> a_Edge)
         {
             return Math.Abs(Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint)) < m_Tolerance;
         }
 
-        public bool LeftOfLine(Edge a_Edge)
+        public bool LeftOfLine(Edge<T> a_Edge)
         {
             return Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint) > 0;
         }
 
-        public bool RightOfLine(Edge a_Edge)
+        public bool RightOfLine(Edge<T> a_Edge)
         {
             return Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint) < 0;
         }
 
-        public int CompareTo(Edge a_Edge)
+        public int CompareTo(Edge<T> a_Edge)
         {
             double result = Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint);
             if (Math.Abs(result) < m_Tolerance)
@@ -69,10 +69,10 @@ namespace VoronoiDCEL
 
         public override bool Equals(object obj)
         {
-            return Equals(obj as Vertex);
+            return Equals(obj as Vertex<T>);
         }
 
-        public bool Equals(Vertex a_Vertex)
+        public bool Equals(Vertex<T> a_Vertex)
         {
             if (a_Vertex != null)
             {
@@ -84,7 +84,7 @@ namespace VoronoiDCEL
             }
         }
 
-        public int CompareTo(Vertex a_Vertex)
+        public int CompareTo(Vertex<T> a_Vertex)
         {
             if (Math.Abs(m_y - a_Vertex.Y) < m_Tolerance)
             {
@@ -122,7 +122,7 @@ namespace VoronoiDCEL
             }
         }
 
-        public static double Orient2D(Vertex a, Vertex b, Vertex c)
+        public static double Orient2D(Vertex<T> a, Vertex<T> b, Vertex<T> c)
         {
             double[,] orientArray = new double[,]
             {

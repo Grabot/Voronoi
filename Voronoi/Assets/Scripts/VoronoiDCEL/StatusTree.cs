@@ -3,41 +3,41 @@ using System;
 
 namespace VoronoiDCEL
 {
-    public sealed class StatusData : IComparable<StatusData>, IEquatable<StatusData>
+    public sealed class StatusData<T> : IComparable<StatusData<T>>, IEquatable<StatusData<T>>
     {
-        private readonly Edge m_Edge;
-        private readonly Vertex m_SweeplineIntersectionPoint;
-        private readonly Vertex m_PointP;
+        private readonly Edge<T> m_Edge;
+        private readonly Vertex<T> m_SweeplineIntersectionPoint;
+        private readonly Vertex<T> m_PointP;
 
-        public Edge Edge
+        public Edge<T> Edge
         {
             get { return m_Edge; }
         }
 
-        public Vertex SweeplineIntersectionPoint
+        public Vertex<T> SweeplineIntersectionPoint
         {
             get { return m_SweeplineIntersectionPoint; }
         }
 
-        public Vertex PointP
+        public Vertex<T> PointP
         {
             get { return m_PointP; }
         }
 
-        public StatusData(Edge a_Edge)
+        public StatusData(Edge<T> a_Edge)
         {
             m_Edge = a_Edge;
-            m_SweeplineIntersectionPoint = Vertex.Zero;
-            m_PointP = Vertex.Zero;
+            m_SweeplineIntersectionPoint = Vertex<T>.Zero;
+            m_PointP = Vertex<T>.Zero;
         }
 
-        public StatusData(Edge a_Edge, Vertex a_PointP)
+        public StatusData(Edge<T> a_Edge, Vertex<T> a_PointP)
         {
             m_Edge = a_Edge;
             m_PointP = a_PointP;
             double sweeplineHeight = a_PointP.Y;
-            if (!DCEL.IntersectLines(a_Edge.UpperEndpoint, a_Edge.LowerEndpoint, new Vertex(Math.Min(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X) - 1, sweeplineHeight),
-                    new Vertex(Math.Max(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X) + 1, sweeplineHeight), out m_SweeplineIntersectionPoint))
+            if (!DCEL<T>.IntersectLines(a_Edge.UpperEndpoint, a_Edge.LowerEndpoint, new Vertex<T>(Math.Min(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X) - 1, sweeplineHeight),
+                    new Vertex<T>(Math.Max(a_Edge.UpperEndpoint.X, a_Edge.LowerEndpoint.X) + 1, sweeplineHeight), out m_SweeplineIntersectionPoint))
             {
                 m_SweeplineIntersectionPoint = a_Edge.UpperEndpoint;
             }
@@ -45,7 +45,7 @@ namespace VoronoiDCEL
 
         public override bool Equals(object obj)
         {
-            StatusData statusData = obj as StatusData;
+            StatusData<T> statusData = obj as StatusData<T>;
             if (statusData != null)
             {
                 return statusData.m_Edge == m_Edge;
@@ -56,7 +56,7 @@ namespace VoronoiDCEL
             }
         }
 
-        public bool Equals(StatusData a_StatusData)
+        public bool Equals(StatusData<T> a_StatusData)
         {
             if (a_StatusData != null)
             {
@@ -68,7 +68,7 @@ namespace VoronoiDCEL
             }
         }
 
-        public int CompareTo(StatusData a_StatusData)
+        public int CompareTo(StatusData<T> a_StatusData)
         {
             return a_StatusData.m_Edge.UpperEndpoint.CompareTo(m_Edge) * -1;
         }
@@ -79,24 +79,24 @@ namespace VoronoiDCEL
         }
     }
 
-    public sealed class StatusTree : AATree<StatusData>
+    public sealed class StatusTree<T> : AATree<StatusData<T>>
     {
-        public bool Insert(Edge a_Edge, Vertex a_PointP)
+        public bool Insert(Edge<T> a_Edge, Vertex<T> a_PointP)
         {
-            StatusData statusData = new StatusData(a_Edge, a_PointP);
+            StatusData<T> statusData = new StatusData<T>(a_Edge, a_PointP);
             return Insert(statusData);
         }
 
-        public bool Delete(Edge a_Edge, Vertex a_PointP)
+        public bool Delete(Edge<T> a_Edge, Vertex<T> a_PointP)
         {
-            StatusData statusData = new StatusData(a_Edge, a_PointP);
+            StatusData<T> statusData = new StatusData<T>(a_Edge, a_PointP);
             return Delete(statusData);
         }
 
-        public bool FindNextBiggest(Edge a_Edge, Vertex a_PointP, out Edge out_NextBiggest)
+        public bool FindNextBiggest(Edge<T> a_Edge, Vertex<T> a_PointP, out Edge<T> out_NextBiggest)
         {
-            StatusData statusData = new StatusData(a_Edge, a_PointP);
-            StatusData nextBiggest;
+            StatusData<T> statusData = new StatusData<T>(a_Edge, a_PointP);
+            StatusData<T> nextBiggest;
             if (FindNextBiggest(statusData, out nextBiggest))
             {
                 out_NextBiggest = nextBiggest.Edge;
@@ -106,10 +106,10 @@ namespace VoronoiDCEL
             return false;
         }
 
-        public bool FindNextSmallest(Edge a_Edge, Vertex a_PointP, out Edge out_NextSmallest)
+        public bool FindNextSmallest(Edge<T> a_Edge, Vertex<T> a_PointP, out Edge<T> out_NextSmallest)
         {
-            StatusData statusData = new StatusData(a_Edge, a_PointP);
-            StatusData nextSmallest;
+            StatusData<T> statusData = new StatusData<T>(a_Edge, a_PointP);
+            StatusData<T> nextSmallest;
             if (FindNextSmallest(statusData, out nextSmallest))
             {
                 out_NextSmallest = nextSmallest.Edge;
@@ -119,12 +119,12 @@ namespace VoronoiDCEL
             return false;
         }
 
-        public Edge[] FindNodes(Vertex v)
+        public Edge<T>[] FindNodes(Vertex<T> v)
         {
-            List<StatusData> nodes = new List<StatusData>();
+            List<StatusData<T>> nodes = new List<StatusData<T>>();
             FindNodes(v, m_Tree, nodes);
             int nodeCount = nodes.Count;
-            Edge[] edges = new Edge[nodeCount];
+            Edge<T>[] edges = new Edge<T>[nodeCount];
             for (int i = 0; i < nodeCount; ++i)
             {
                 edges[i] = nodes[i].Edge;
@@ -132,7 +132,7 @@ namespace VoronoiDCEL
             return edges;
         }
 
-        private void FindNodes(Vertex v, Node t, List<StatusData> list)
+        private void FindNodes(Vertex<T> v, Node t, List<StatusData<T>> list)
         {
             if (t == m_Bottom)
             {
@@ -154,7 +154,7 @@ namespace VoronoiDCEL
             }
         }
 
-        protected override int CompareTo(StatusData a, StatusData b, COMPARISON_TYPE a_ComparisonType)
+        protected override int CompareTo(StatusData<T> a, StatusData<T> b, COMPARISON_TYPE a_ComparisonType)
         {
             // If the edge we're comparing with is the one we're trying to delete or find, then return 0.
             if (a.Edge.LowerEndpoint.Equals(b.Edge.LowerEndpoint) &&
@@ -260,7 +260,7 @@ namespace VoronoiDCEL
             }
         }
 
-        protected override bool IsEqual(StatusData a, StatusData b, COMPARISON_TYPE a_ComparisonType)
+        protected override bool IsEqual(StatusData<T> a, StatusData<T> b, COMPARISON_TYPE a_ComparisonType)
         {
             if (a_ComparisonType == COMPARISON_TYPE.INSERT)
             {
@@ -276,17 +276,17 @@ namespace VoronoiDCEL
             }
         }
 
-        private static bool IsEqual(Vertex v, StatusData b)
+        private static bool IsEqual(Vertex<T> v, StatusData<T> b)
         {
             return b.Edge.UpperEndpoint == v || b.Edge.LowerEndpoint == v || v.OnLine(b.Edge);
         }
 
-        private static int CompareTo(Vertex v, StatusData b)
+        private static int CompareTo(Vertex<T> v, StatusData<T> b)
         {
             return v.CompareTo(b.Edge);
         }
 
-        public bool FindNeighboursOfPoint(Vertex a_Point, out Edge out_LeftNeighbour, out Edge out_RightNeighbour)
+        public bool FindNeighboursOfPoint(Vertex<T> a_Point, out Edge<T> out_LeftNeighbour, out Edge<T> out_RightNeighbour)
         {
             if (m_Tree == m_Bottom || a_Point == null)
             {
@@ -329,17 +329,17 @@ namespace VoronoiDCEL
             }
         }
 
-        public bool FindLeftMostSegmentInSet(HashSet<Edge> a_Set, out Edge out_Leftmost)
+        public bool FindLeftMostSegmentInSet(HashSet<Edge<T>> a_Set, out Edge<T> out_Leftmost)
         {
             return FindLeftMostSegmentInSet(a_Set, m_Tree, out out_Leftmost);
         }
 
-        public bool FindRightMostSegmentInSet(HashSet<Edge> a_Set, out Edge out_Rightmost)
+        public bool FindRightMostSegmentInSet(HashSet<Edge<T>> a_Set, out Edge<T> out_Rightmost)
         {
             return FindRightMostSegmentInSet(a_Set, m_Tree, out out_Rightmost);
         }
 
-        private bool FindLeftMostSegmentInSet(HashSet<Edge> a_Set, Node t, out Edge out_LeftMost)
+        private bool FindLeftMostSegmentInSet(HashSet<Edge<T>> a_Set, Node t, out Edge<T> out_LeftMost)
         {
             if (t == m_Bottom)
             {
@@ -411,7 +411,7 @@ namespace VoronoiDCEL
             }
         }
 
-        private bool FindRightMostSegmentInSet(HashSet<Edge> a_Set, Node t, out Edge out_RightMost)
+        private bool FindRightMostSegmentInSet(HashSet<Edge<T>> a_Set, Node t, out Edge<T> out_RightMost)
         {
             if (t == m_Bottom)
             {

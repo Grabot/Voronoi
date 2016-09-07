@@ -2,12 +2,12 @@
 {
     using System;
 
-    public sealed class Edge : IComparable<Edge>, IEquatable<Edge>
+    public sealed class Edge<T> : IComparable<Edge<T>>, IEquatable<Edge<T>>
     {
-        private readonly HalfEdge m_Half1;
-        private readonly HalfEdge m_Half2;
-        private Vertex m_UpperEndpoint;
-        private Vertex m_LowerEndpoint;
+        private readonly HalfEdge<T> m_Half1;
+        private readonly HalfEdge<T> m_Half2;
+        private Vertex<T> m_UpperEndpoint;
+        private Vertex<T> m_LowerEndpoint;
         private readonly int m_DCEL_ID;
 
         private enum E_ISHORIZONTAL
@@ -19,12 +19,12 @@
 
         private E_ISHORIZONTAL m_IsHorizontal = E_ISHORIZONTAL.DONTKNOW;
 
-        public HalfEdge Half1
+        public HalfEdge<T> Half1
         {
             get { return m_Half1; }
         }
 
-        public HalfEdge Half2
+        public HalfEdge<T> Half2
         {
             get { return m_Half2; }
         }
@@ -56,7 +56,7 @@
             }
         }
 
-        public Vertex UpperEndpoint
+        public Vertex<T> UpperEndpoint
         {
             get
             { 
@@ -82,7 +82,7 @@
             }
         }
 
-        public Vertex LowerEndpoint
+        public Vertex<T> LowerEndpoint
         {
             get
             { 
@@ -108,7 +108,7 @@
             }
         }
 
-        public Edge(HalfEdge a_Half1, HalfEdge a_Half2, int a_DCEL_ID)
+        public Edge(HalfEdge<T> a_Half1, HalfEdge<T> a_Half2, int a_DCEL_ID)
         {
             m_Half1 = a_Half1;
             m_Half2 = a_Half2;
@@ -130,11 +130,11 @@
 
         public override bool Equals(object obj)
         {
-            Edge edge = obj as Edge;
+            Edge<T> edge = obj as Edge<T>;
             return Equals(edge);
         }
 
-        public bool Equals(Edge a_Edge)
+        public bool Equals(Edge<T> a_Edge)
         {
             if (a_Edge != null)
             {
@@ -147,7 +147,7 @@
             }
         }
 
-        public int CompareTo(Edge a_Edge)
+        public int CompareTo(Edge<T> a_Edge)
         {
             throw new NotImplementedException();
         }

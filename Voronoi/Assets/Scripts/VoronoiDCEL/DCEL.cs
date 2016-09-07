@@ -5,47 +5,47 @@ using MNMatrix = MathNet.Numerics.LinearAlgebra.Matrix<double>;
 
 namespace VoronoiDCEL
 {
-    public sealed class DCEL
+    public sealed class DCEL<T>
     {
         private static int m_NextUniqueID = 0;
 
-        private List<Vertex> m_Vertices;
-        private List<Edge> m_Edges;
-        private readonly List<HalfEdge> m_HalfEdges;
-        private List<Face> m_Faces;
+        private List<Vertex<T>> m_Vertices;
+        private List<Edge<T>> m_Edges;
+        private readonly List<HalfEdge<T>> m_HalfEdges;
+        private List<Face<T>> m_Faces;
         private readonly int m_UniqueID;
 
-        public List<Vertex> Vertices { get { return m_Vertices; } }
+        public List<Vertex<T>> Vertices { get { return m_Vertices; } }
 
-        public List<Edge> Edges { get { return m_Edges; } }
+        public List<Edge<T>> Edges { get { return m_Edges; } }
 
-        public List<HalfEdge> HalfEdges { get { return m_HalfEdges; } }
+        public List<HalfEdge<T>> HalfEdges { get { return m_HalfEdges; } }
 
-        public List<Face> Faces { get { return m_Faces; } }
+        public List<Face<T>> Faces { get { return m_Faces; } }
 
-        public delegate void IntersectionPointAction(Intersection a_Intersection,DCEL a_DCEL);
+        public delegate void IntersectionPointAction(Intersection a_Intersection,DCEL<T> a_DCEL);
 
         public DCEL()
         {
-            m_Vertices = new List<Vertex>();
-            m_Edges = new List<Edge>();
-            m_HalfEdges = new List<HalfEdge>();
-            m_Faces = new List<Face>();
+            m_Vertices = new List<Vertex<T>>();
+            m_Edges = new List<Edge<T>>();
+            m_HalfEdges = new List<HalfEdge<T>>();
+            m_Faces = new List<Face<T>>();
             m_UniqueID = m_NextUniqueID++;
         }
 
-        public DCEL(DCEL A, DCEL B)
+        public DCEL(DCEL<T> A, DCEL<T> B)
         {
-            m_Vertices = new List<Vertex>(A.Vertices.Count + B.Vertices.Count);
+            m_Vertices = new List<Vertex<T>>(A.Vertices.Count + B.Vertices.Count);
             m_Vertices.AddRange(A.Vertices);
             m_Vertices.AddRange(B.Vertices);
-            m_Edges = new List<Edge>(A.Edges.Count + B.Edges.Count);
+            m_Edges = new List<Edge<T>>(A.Edges.Count + B.Edges.Count);
             m_Edges.AddRange(A.Edges);
             m_Edges.AddRange(B.Edges);
-            m_HalfEdges = new List<HalfEdge>(A.HalfEdges.Count + B.HalfEdges.Count);
+            m_HalfEdges = new List<HalfEdge<T>>(A.HalfEdges.Count + B.HalfEdges.Count);
             m_HalfEdges.AddRange(A.HalfEdges);
             m_HalfEdges.AddRange(B.HalfEdges);
-            m_Faces = new List<Face>(A.Faces.Count + B.Faces.Count);
+            m_Faces = new List<Face<T>>(A.Faces.Count + B.Faces.Count);
             m_Faces.AddRange(A.Faces);
             m_Faces.AddRange(B.Faces);
             m_UniqueID = m_NextUniqueID++;
@@ -55,17 +55,17 @@ namespace VoronoiDCEL
         {
             double epsilon = Math.Exp(-9);
 
-            HalfEdge h1 = new HalfEdge();
-            HalfEdge h2 = new HalfEdge();
-            Edge e = new Edge(h1, h2, m_UniqueID);
+            HalfEdge<T> h1 = new HalfEdge<T>();
+            HalfEdge<T> h2 = new HalfEdge<T>();
+            Edge<T> e = new Edge<T>(h1, h2, m_UniqueID);
             h1.ParentEdge = e;
             h2.ParentEdge = e;
 
             h1.Twin = h2;
             h2.Twin = h1;
-            Vertex v1 = null;
-            Vertex v2 = null;
-            foreach (Vertex v in m_Vertices)
+            Vertex<T> v1 = null;
+            Vertex<T> v2 = null;
+            foreach (Vertex<T> v in m_Vertices)
             {
                 if (Math.Abs(v.X - a_x) < epsilon && Math.Abs(v.Y - a_y) < epsilon)
                 {
@@ -77,7 +77,7 @@ namespace VoronoiDCEL
                 }
                 if (v1 != null && v2 != null)
                 {
-                    foreach (HalfEdge h in v1.IncidentEdges)
+                    foreach (HalfEdge<T> h in v1.IncidentEdges)
                     {
                         if (h.Twin.Origin == v2)
                         {
@@ -89,12 +89,12 @@ namespace VoronoiDCEL
             }
             if (v1 == null)
             {
-                v1 = new Vertex(a_x, a_y);
+                v1 = new Vertex<T>(a_x, a_y);
                 m_Vertices.Add(v1);
             }
             if (v2 == null)
             {
-                v2 = new Vertex(b_x, b_y);
+                v2 = new Vertex<T>(b_x, b_y);
                 m_Vertices.Add(v2);
             }
             h1.Origin = v1;
@@ -108,13 +108,13 @@ namespace VoronoiDCEL
 
         public void ConnectHalfEdges()
         {
-            foreach (HalfEdge h in m_HalfEdges)
+            foreach (HalfEdge<T> h in m_HalfEdges)
             {
                 Vector3 edgeDirection = new Vector3((float)(h.Twin.Origin.X - h.Origin.X), (float)(h.Twin.Origin.Y - h.Origin.Y), 0);
                 edgeDirection.Normalize();
                 const float turnSize = 0;
-                HalfEdge mostLeftTurn = null;
-                foreach (HalfEdge h2 in h.Twin.Origin.IncidentEdges)
+                HalfEdge<T> mostLeftTurn = null;
+                foreach (HalfEdge<T> h2 in h.Twin.Origin.IncidentEdges)
                 {
                     if (h2 != h.Twin)
                     {
@@ -141,13 +141,13 @@ namespace VoronoiDCEL
 
         public void CreateFaces()
         {
-            List<HalfEdge> faceEdges = new List<HalfEdge>();
-            foreach (HalfEdge h in m_HalfEdges)
+            List<HalfEdge<T>> faceEdges = new List<HalfEdge<T>>();
+            foreach (HalfEdge<T> h in m_HalfEdges)
             {
                 if (h.IncidentFace == null)
                 {
                     faceEdges.Add(h);
-                    HalfEdge curEdge = h.Next;
+                    HalfEdge<T> curEdge = h.Next;
                     while (curEdge != h)
                     {
                         if (curEdge == null)
@@ -162,9 +162,9 @@ namespace VoronoiDCEL
                     }
                     if (curEdge == h)
                     {
-                        Face f = new Face();
+                        Face<T> f = new Face<T>();
                         f.StartingEdge = h;
-                        foreach (HalfEdge newFaceEdge in faceEdges)
+                        foreach (HalfEdge<T> newFaceEdge in faceEdges)
                         {
                             newFaceEdge.IncidentFace = f;
                         }
@@ -175,14 +175,14 @@ namespace VoronoiDCEL
             }
         }
 
-        public Vertex AddVertexOnEdge(double a_x, double a_y, Edge a_Edge)
+        public Vertex<T> AddVertexOnEdge(double a_x, double a_y, Edge<T> a_Edge)
         {
             m_Edges.Remove(a_Edge);
 
-            Vertex x = new Vertex(a_x, a_y);
+            Vertex<T> x = new Vertex<T>(a_x, a_y);
             m_Vertices.Add(x);
-            HalfEdge h1 = new HalfEdge();
-            HalfEdge h2 = new HalfEdge();
+            HalfEdge<T> h1 = new HalfEdge<T>();
+            HalfEdge<T> h2 = new HalfEdge<T>();
 
             h1.Origin = a_Edge.Half1.Origin;
             h2.Origin = x;
@@ -210,8 +210,8 @@ namespace VoronoiDCEL
             m_HalfEdges.Add(h2);
 
             // Now the second halfedge.
-            HalfEdge h3 = new HalfEdge();
-            HalfEdge h4 = new HalfEdge();
+            HalfEdge<T> h3 = new HalfEdge<T>();
+            HalfEdge<T> h4 = new HalfEdge<T>();
 
             h3.Origin = a_Edge.Half2.Origin;
             h4.Origin = x;
@@ -245,8 +245,8 @@ namespace VoronoiDCEL
             h3.Twin = h2;
 
             // Create edges.
-            Edge e1 = new Edge(h1, h4, m_UniqueID);
-            Edge e2 = new Edge(h2, h3, m_UniqueID);
+            Edge<T> e1 = new Edge<T>(h1, h4, m_UniqueID);
+            Edge<T> e2 = new Edge<T>(h2, h3, m_UniqueID);
             h1.ParentEdge = e1;
             h4.ParentEdge = e1;
             h2.ParentEdge = e2;
@@ -256,15 +256,15 @@ namespace VoronoiDCEL
             return x;
         }
 
-        public void AddVertexInsideFace(double a_x, double a_y, HalfEdge a_h)
+        public void AddVertexInsideFace(double a_x, double a_y, HalfEdge<T> a_h)
         {
             // Precondition: the open line segment (v, u), where u = target(h) = origin(twin(h))
             // and where v = (a_x, a_y) lies completely in f = face(h).
 
-            Vertex v = new Vertex(a_x, a_y);
-            HalfEdge h1 = new HalfEdge();
-            HalfEdge h2 = new HalfEdge();
-            Edge e = new Edge(h1, h2, m_UniqueID);
+            Vertex<T> v = new Vertex<T>(a_x, a_y);
+            HalfEdge<T> h1 = new HalfEdge<T>();
+            HalfEdge<T> h2 = new HalfEdge<T>();
+            Edge<T> e = new Edge<T>(h1, h2, m_UniqueID);
             h1.ParentEdge = e;
             h2.ParentEdge = e;
 
@@ -292,19 +292,19 @@ namespace VoronoiDCEL
             m_Edges.Add(e);
         }
 
-        public void SplitFace(HalfEdge a_h, Vertex a_v)
+        public void SplitFace(HalfEdge<T> a_h, Vertex<T> a_v)
         {
             // Precondition: v is incident to f = face(h) but not adjacent to 
             // u = target(h) = origin(twin(h)). And the open line segment (v, u) lies
             // completely in f.
 
-            Vertex u = a_h.Twin.Origin;
-            Face f = a_h.IncidentFace;
-            Face f1 = new Face();
-            Face f2 = new Face();
-            HalfEdge h1 = new HalfEdge();
-            HalfEdge h2 = new HalfEdge();
-            Edge e = new Edge(h1, h2, m_UniqueID);
+            Vertex<T> u = a_h.Twin.Origin;
+            Face<T> f = a_h.IncidentFace;
+            Face<T> f1 = new Face<T>();
+            Face<T> f2 = new Face<T>();
+            HalfEdge<T> h1 = new HalfEdge<T>();
+            HalfEdge<T> h2 = new HalfEdge<T>();
+            Edge<T> e = new Edge<T>(h1, h2, m_UniqueID);
             h1.ParentEdge = e;
             h2.ParentEdge = e;
 
@@ -323,7 +323,7 @@ namespace VoronoiDCEL
             h1.Previous = a_h;
             a_h.Next = h1;
 
-            HalfEdge i = h2;
+            HalfEdge<T> i = h2;
             while (true)
             {
                 i.IncidentFace = f2;
@@ -358,29 +358,30 @@ namespace VoronoiDCEL
             m_Edges.Add(e);
         }
 
-        public static DCEL MapOverlay(DCEL A, DCEL B)
+        public static DCEL<T> MapOverlay(DCEL<T> A, DCEL<T> B)
         {
-            DCEL overlay = new DCEL(A, B);
+            DCEL<T> overlay = new DCEL<T>(A, B);
             Intersection[] intersections;
             overlay.FindIntersections2(out intersections, HandleMapOverlayEvent);
             // Todo: continue implementing the map overlay algorithm.
             return overlay;
         }
 
-        public static DCEL MapOverlay(DCEL overlay)
+        public static DCEL<T> MapOverlay(DCEL<T> overlay)
         {
             Intersection[] intersections;
             overlay.FindIntersections2(out intersections, HandleMapOverlayEvent);
             // Todo: continue implementing the map overlay algorithm.
+
             return overlay;
         }
 
-        private static void HandleMapOverlayEvent(Intersection a_Intersection, DCEL a_DCEL)
+        private static void HandleMapOverlayEvent(Intersection a_Intersection, DCEL<T> a_DCEL)
         {
-            HashSet<Edge> edges = new HashSet<Edge>(a_Intersection.upperEndpointEdges);
+            HashSet<Edge<T>> edges = new HashSet<Edge<T>>(a_Intersection.upperEndpointEdges);
             edges.UnionWith(a_Intersection.containingEdges);
             edges.UnionWith(a_Intersection.lowerEndpointEdges);
-            HashSet<Edge>.Enumerator enumerator = edges.GetEnumerator();
+            HashSet<Edge<T>>.Enumerator enumerator = edges.GetEnumerator();
             enumerator.MoveNext();
             int firstID = enumerator.Current.DCEL_ID;
             bool bothDCELInvolved = false;
@@ -402,7 +403,7 @@ namespace VoronoiDCEL
                 }
                 else if (a_Intersection.containingEdges.Length == 2)
                 {
-                    Vertex v = a_DCEL.AddVertexOnEdge(a_Intersection.point.X, a_Intersection.point.Y, a_Intersection.containingEdges[0]);
+                    Vertex<T> v = a_DCEL.AddVertexOnEdge(a_Intersection.point.X, a_Intersection.point.Y, a_Intersection.containingEdges[0]);
                     a_DCEL.UpdateMapOverlayDCEL(a_Intersection.containingEdges[1], v);
                     Debug.Log("Handled intersection between two edges");
                 }
@@ -411,23 +412,22 @@ namespace VoronoiDCEL
                     Debug.Log("Unhandled intersection case!");
                 }
             }
-            // Todo.
         }
 
-        private void UpdateMapOverlayDCEL(Edge e, Vertex v) // e is of s1 and v is of s2.
+        private void UpdateMapOverlayDCEL(Edge<T> e, Vertex<T> v) // e is of s1 and v is of s2.
         {
             // Delete e
             m_Edges.Remove(e);
 
             // Create two new half-edge records with v as the origin.
-            HalfEdge h1 = new HalfEdge();
-            HalfEdge h2 = new HalfEdge();
+            HalfEdge<T> h1 = new HalfEdge<T>();
+            HalfEdge<T> h2 = new HalfEdge<T>();
             h1.Origin = v;
             h2.Origin = v;
 
             // The two existing half-edges for e keep the endpoints of e as their origin
-            HalfEdge original1 = e.Half1;
-            HalfEdge original2 = e.Half2;
+            HalfEdge<T> original1 = e.Half1;
+            HalfEdge<T> original2 = e.Half2;
 
             // Pair up the existing half-edges with the new half-edges by setting their Twin pointers.
             h1.Twin = original1;
@@ -436,8 +436,8 @@ namespace VoronoiDCEL
             original2.Twin = h2;
 
             // So e' is represented by one new and one existing half-edge, and the same holds for e''.
-            Edge e1 = new Edge(original1, h1, m_UniqueID);
-            Edge e2 = new Edge(original2, h2, m_UniqueID);
+            Edge<T> e1 = new Edge<T>(original1, h1, m_UniqueID);
+            Edge<T> e2 = new Edge<T>(original2, h2, m_UniqueID);
 
             // The Next() pointers of the two new half-edges each copy the Next() pointer of the old half-edge that is not its twin.
             h1.Next = original2.Next;
@@ -448,8 +448,8 @@ namespace VoronoiDCEL
             original1.Previous = h2;
 
             // We must set the Next() and Prev() pointers of the four half-edges representing e' and e'' and of the four half-edges incident from s2 to v.
-            HalfEdge clockWiseEdge;
-            HalfEdge counterClockwiseEdge;
+            HalfEdge<T> clockWiseEdge;
+            HalfEdge<T> counterClockwiseEdge;
 
             GetNextPrevEdges(h1, v.IncidentEdges, out clockWiseEdge, out counterClockwiseEdge);
             h1.Previous = counterClockwiseEdge.Twin;
@@ -469,14 +469,14 @@ namespace VoronoiDCEL
             m_Edges.Add(e2);
         }
 
-        private static void GetNextPrevEdges(HalfEdge a_HalfEdge, List<HalfEdge> a_IncidentEdges, out HalfEdge out_ClockWiseEdge, out HalfEdge out_CounterClockwiseEdge)
+        private static void GetNextPrevEdges(HalfEdge<T> a_HalfEdge, List<HalfEdge<T>> a_IncidentEdges, out HalfEdge<T> out_ClockWiseEdge, out HalfEdge<T> out_CounterClockwiseEdge)
         {
             Vector3 a = new Vector3((float)a_HalfEdge.Twin.Origin.X - (float)a_HalfEdge.Origin.X, (float)a_HalfEdge.Twin.Origin.Y - (float)a_HalfEdge.Origin.Y, 0);
             a.Normalize();
             List<CyclicEdgeOrderElement> cyclicOrder = new List<CyclicEdgeOrderElement>(a_IncidentEdges.Count + 1);
             CyclicEdgeOrderElement e = new CyclicEdgeOrderElement(0, a_HalfEdge);
             cyclicOrder.Add(e);
-            foreach (HalfEdge h in a_IncidentEdges)
+            foreach (HalfEdge<T> h in a_IncidentEdges)
             {
                 Vector3 b = new Vector3((float)h.Twin.Origin.X - (float)a_HalfEdge.Origin.X, (float)h.Twin.Origin.Y - (float)a_HalfEdge.Origin.Y, 0);
                 b.Normalize();
@@ -513,9 +513,9 @@ namespace VoronoiDCEL
         private sealed class CyclicEdgeOrderElement : IComparable<CyclicEdgeOrderElement>
         {
             public double area;
-            public HalfEdge halfEdge;
+            public HalfEdge<T> halfEdge;
 
-            public CyclicEdgeOrderElement(double a_Area, HalfEdge a_HalfEdge)
+            public CyclicEdgeOrderElement(double a_Area, HalfEdge<T> a_HalfEdge)
             {
                 area = a_Area;
                 halfEdge = a_HalfEdge;
@@ -541,17 +541,17 @@ namespace VoronoiDCEL
 
         public bool FindIntersections(out Intersection[] out_Intersections, IntersectionPointAction a_IntersectionPointAction = null)
         {
-            AATree<Vertex> eventQueue = new AATree<Vertex>();
+            AATree<Vertex<T>> eventQueue = new AATree<Vertex<T>>();
             List<Intersection> intersections = new List<Intersection>();
-            foreach (Edge e in m_Edges)
+            foreach (Edge<T> e in m_Edges)
             {
                 eventQueue.Insert(e.UpperEndpoint);
                 eventQueue.Insert(e.LowerEndpoint);
             }
-            StatusTree status = new StatusTree();
+            StatusTree<T> status = new StatusTree<T>();
             while (eventQueue.Size != 0)
             {
-                Vertex p;
+                Vertex<T> p;
                 if (eventQueue.FindMax(out p))
                 {
                     eventQueue.Delete(p);
@@ -575,21 +575,25 @@ namespace VoronoiDCEL
         public bool FindIntersections2(out Intersection[] out_Intersections, IntersectionPointAction a_IntersectionPointAction = null)
         {
             List<Intersection> intersections = new List<Intersection>();
-            Vertex intersectionPoint;
-            Edge a, b;
-            List<Edge> edges = new List<Edge>(m_Edges);
+            Vertex<T> intersectionPoint;
+            Edge<T> a, b;
+            List<Edge<T>> edges = new List<Edge<T>>(m_Edges);
             for (int i = 0; i < edges.Count; i++)
             {
                 a = edges[i];
                 for (int k = i; k < edges.Count; k++)
                 {
                     b = edges[k];
+                    if (a.DCEL_ID == b.DCEL_ID)
+                    {
+                        continue;
+                    }
                     if (a.UpperEndpoint.Equals(b.UpperEndpoint))
                     {
                         Intersection intersection = new Intersection();
                         intersection.point = a.UpperEndpoint;
-                        intersection.containingEdges = new Edge[0];
-                        intersection.lowerEndpointEdges = new Edge[0];
+                        intersection.containingEdges = new Edge<T>[0];
+                        intersection.lowerEndpointEdges = new Edge<T>[0];
                         intersection.upperEndpointEdges = new [] { a, b };
                         intersections.Add(intersection);
                         if (a_IntersectionPointAction != null)
@@ -601,9 +605,9 @@ namespace VoronoiDCEL
                     {
                         Intersection intersection = new Intersection();
                         intersection.point = a.LowerEndpoint;
-                        intersection.containingEdges = new Edge[0];
+                        intersection.containingEdges = new Edge<T>[0];
                         intersection.lowerEndpointEdges = new [] { a, b };
-                        intersection.upperEndpointEdges = new Edge[0];
+                        intersection.upperEndpointEdges = new Edge<T>[0];
                         intersections.Add(intersection);
                         if (a_IntersectionPointAction != null)
                         {
@@ -614,7 +618,7 @@ namespace VoronoiDCEL
                     {
                         Intersection intersection = new Intersection();
                         intersection.point = a.LowerEndpoint;
-                        intersection.containingEdges = new Edge[0];
+                        intersection.containingEdges = new Edge<T>[0];
                         intersection.lowerEndpointEdges = new [] { a };
                         intersection.upperEndpointEdges = new [] { b };
                         intersections.Add(intersection);
@@ -627,7 +631,7 @@ namespace VoronoiDCEL
                     {
                         Intersection intersection = new Intersection();
                         intersection.point = a.UpperEndpoint;
-                        intersection.containingEdges = new Edge[0];
+                        intersection.containingEdges = new Edge<T>[0];
                         intersection.lowerEndpointEdges = new [] { b };
                         intersection.upperEndpointEdges = new [] { a };
                         intersections.Add(intersection);
@@ -643,7 +647,7 @@ namespace VoronoiDCEL
                             Intersection intersection = new Intersection();
                             intersection.point = a.UpperEndpoint;
                             intersection.containingEdges = new [] { b };
-                            intersection.lowerEndpointEdges = new Edge[0];
+                            intersection.lowerEndpointEdges = new Edge<T>[0];
                             intersection.upperEndpointEdges = new [] { a };
                             intersections.Add(intersection);
                             if (a_IntersectionPointAction != null)
@@ -657,7 +661,7 @@ namespace VoronoiDCEL
                             intersection.point = a.LowerEndpoint;
                             intersection.containingEdges = new [] { b };
                             intersection.lowerEndpointEdges = new [] { a };
-                            intersection.upperEndpointEdges = new Edge[0];
+                            intersection.upperEndpointEdges = new Edge<T>[0];
                             intersections.Add(intersection);
                             if (a_IntersectionPointAction != null)
                             {
@@ -669,7 +673,7 @@ namespace VoronoiDCEL
                             Intersection intersection = new Intersection();
                             intersection.point = b.UpperEndpoint;
                             intersection.containingEdges = new [] { a };
-                            intersection.lowerEndpointEdges = new Edge[0];
+                            intersection.lowerEndpointEdges = new Edge<T>[0];
                             intersection.upperEndpointEdges = new [] { b };
                             intersections.Add(intersection);
                             if (a_IntersectionPointAction != null)
@@ -683,7 +687,7 @@ namespace VoronoiDCEL
                             intersection.point = b.LowerEndpoint;
                             intersection.containingEdges = new [] { a };
                             intersection.lowerEndpointEdges = new [] { b };
-                            intersection.upperEndpointEdges = new Edge[0];
+                            intersection.upperEndpointEdges = new Edge<T>[0];
                             intersections.Add(intersection);
                             if (a_IntersectionPointAction != null)
                             {
@@ -695,8 +699,8 @@ namespace VoronoiDCEL
                             Intersection intersection = new Intersection();
                             intersection.point = intersectionPoint;
                             intersection.containingEdges = new [] { a, b };
-                            intersection.lowerEndpointEdges = new Edge[0];
-                            intersection.upperEndpointEdges = new Edge[0];
+                            intersection.lowerEndpointEdges = new Edge<T>[0];
+                            intersection.upperEndpointEdges = new Edge<T>[0];
                             intersections.Add(intersection);
                             if (a_IntersectionPointAction != null)
                             {
@@ -717,18 +721,18 @@ namespace VoronoiDCEL
 
         public sealed class Intersection
         {
-            public Vertex point;
-            public Edge[] upperEndpointEdges;
-            public Edge[] lowerEndpointEdges;
-            public Edge[] containingEdges;
+            public Vertex<T> point;
+            public Edge<T>[] upperEndpointEdges;
+            public Edge<T>[] lowerEndpointEdges;
+            public Edge<T>[] containingEdges;
         }
 
-        private static void HandleEventPoint(Vertex a_Point, StatusTree a_Status,
-                                             AATree<Vertex> a_EventQueue, List<Intersection> intersections, DCEL a_DCEL, IntersectionPointAction a_IntersectionPointAction = null)
+        private static void HandleEventPoint(Vertex<T> a_Point, StatusTree<T> a_Status,
+                                             AATree<Vertex<T>> a_EventQueue, List<Intersection> intersections, DCEL<T> a_DCEL, IntersectionPointAction a_IntersectionPointAction = null)
         {
-            HashSet<Edge> upperEndpointEdges = new HashSet<Edge>(); // U(p)
-            HashSet<Edge> lowerEndpointEdges = new HashSet<Edge>(); // L(p)
-            foreach (HalfEdge h in a_Point.IncidentEdges)
+            HashSet<Edge<T>> upperEndpointEdges = new HashSet<Edge<T>>(); // U(p)
+            HashSet<Edge<T>> lowerEndpointEdges = new HashSet<Edge<T>>(); // L(p)
+            foreach (HalfEdge<T> h in a_Point.IncidentEdges)
             {
                 if (h.ParentEdge.UpperEndpoint == a_Point)
                 {
@@ -739,21 +743,21 @@ namespace VoronoiDCEL
                     lowerEndpointEdges.Add(h.ParentEdge);
                 }
             }
-            HashSet<Edge> containingEdges = new HashSet<Edge>(a_Status.FindNodes(a_Point));
+            HashSet<Edge<T>> containingEdges = new HashSet<Edge<T>>(a_Status.FindNodes(a_Point));
             containingEdges.ExceptWith(upperEndpointEdges);
             containingEdges.ExceptWith(lowerEndpointEdges);
-            HashSet<Edge> union = new HashSet<Edge>(lowerEndpointEdges);
+            HashSet<Edge<T>> union = new HashSet<Edge<T>>(lowerEndpointEdges);
             union.UnionWith(upperEndpointEdges);
             union.UnionWith(containingEdges);
             if (union.Count > 1)
             {
                 Intersection intersection = new Intersection();
                 intersection.point = a_Point;
-                intersection.upperEndpointEdges = new Edge[upperEndpointEdges.Count];
+                intersection.upperEndpointEdges = new Edge<T>[upperEndpointEdges.Count];
                 upperEndpointEdges.CopyTo(intersection.upperEndpointEdges);
-                intersection.lowerEndpointEdges = new Edge[lowerEndpointEdges.Count];
+                intersection.lowerEndpointEdges = new Edge<T>[lowerEndpointEdges.Count];
                 lowerEndpointEdges.CopyTo(intersection.lowerEndpointEdges);
-                intersection.containingEdges = new Edge[containingEdges.Count];
+                intersection.containingEdges = new Edge<T>[containingEdges.Count];
                 containingEdges.CopyTo(intersection.containingEdges);
                 intersections.Add(intersection);
                 if (a_IntersectionPointAction != null)
@@ -761,18 +765,18 @@ namespace VoronoiDCEL
                     a_IntersectionPointAction(intersection, a_DCEL);
                 }
             }
-            union = new HashSet<Edge>(lowerEndpointEdges);
+            union = new HashSet<Edge<T>>(lowerEndpointEdges);
             union.UnionWith(containingEdges);
-            foreach (Edge e in union)
+            foreach (Edge<T> e in union)
             {
                 if (!a_Status.Delete(e, a_Point))
                 {
                     Debug.Log("Could not delete lower endpoint or containing edge from status!");
                 }
             }
-            union = new HashSet<Edge>(upperEndpointEdges);
+            union = new HashSet<Edge<T>>(upperEndpointEdges);
             union.UnionWith(containingEdges);
-            foreach (Edge e in union)
+            foreach (Edge<T> e in union)
             {
                 if (!a_Status.Insert(e, a_Point))
                 {
@@ -781,8 +785,8 @@ namespace VoronoiDCEL
             }
             if (union.Count == 0)
             {
-                Edge leftNeighbour;
-                Edge rightNeighbour;
+                Edge<T> leftNeighbour;
+                Edge<T> rightNeighbour;
                 if (a_Status.FindNeighboursOfPoint(a_Point, out leftNeighbour, out rightNeighbour))
                 {
                     FindNewEvent(leftNeighbour, rightNeighbour, a_Point, a_EventQueue);
@@ -790,10 +794,10 @@ namespace VoronoiDCEL
             }
             else
             {
-                Edge leftMost;
+                Edge<T> leftMost;
                 if (a_Status.FindLeftMostSegmentInSet(union, out leftMost))
                 {
-                    Edge leftNeighbour;
+                    Edge<T> leftNeighbour;
                     if (a_Status.FindNextSmallest(leftMost, a_Point, out leftNeighbour))
                     {
                         FindNewEvent(leftNeighbour, leftMost, a_Point, a_EventQueue);
@@ -803,10 +807,10 @@ namespace VoronoiDCEL
                 {
                     throw new Exception("Leftmost segment not found in status, but must exist!");
                 }
-                Edge rightMost;
+                Edge<T> rightMost;
                 if (a_Status.FindRightMostSegmentInSet(union, out rightMost))
                 {
-                    Edge rightNeighbour;
+                    Edge<T> rightNeighbour;
                     if (a_Status.FindNextBiggest(rightMost, a_Point, out rightNeighbour))
                     {
                         FindNewEvent(rightMost, rightNeighbour, a_Point, a_EventQueue);
@@ -819,9 +823,9 @@ namespace VoronoiDCEL
             }
         }
 
-        public static void FindNewEvent(Edge a, Edge b, Vertex point, AATree<Vertex> eventQueue)
+        public static void FindNewEvent(Edge<T> a, Edge<T> b, Vertex<T> point, AATree<Vertex<T>> eventQueue)
         {
-            Vertex intersection;
+            Vertex<T> intersection;
             if (IntersectLines(a.UpperEndpoint, a.LowerEndpoint, b.UpperEndpoint, b.LowerEndpoint, out intersection))
             {
                 if (intersection.Y < point.Y || (Math.Abs(intersection.Y - point.Y) < Math.Exp(-9) && intersection.X > point.X))
@@ -831,10 +835,10 @@ namespace VoronoiDCEL
             }
         }
 
-        public static bool IntersectLines(Vertex a, Vertex b, Vertex c, Vertex d, out Vertex o_Intersection)
+        public static bool IntersectLines(Vertex<T> a, Vertex<T> b, Vertex<T> c, Vertex<T> d, out Vertex<T> o_Intersection)
         {
-            double numerator = Vertex.Orient2D(c, d, a);
-            if ((numerator * Vertex.Orient2D(c, d, b) <= 0) && (Vertex.Orient2D(a, b, c) * Vertex.Orient2D(a, b, d) <= 0))
+            double numerator = Vertex<T>.Orient2D(c, d, a);
+            if ((numerator * Vertex<T>.Orient2D(c, d, b) <= 0) && (Vertex<T>.Orient2D(a, b, c) * Vertex<T>.Orient2D(a, b, d) <= 0))
             {
                 double[,] denominatorArray =
                     {
@@ -847,7 +851,7 @@ namespace VoronoiDCEL
 
                 if (Math.Abs(denominator) < Math.Exp(-9))
                 { // ab and cd are parallel or equal
-                    o_Intersection = Vertex.Zero;
+                    o_Intersection = Vertex<T>.Zero;
                     return false;
                 }
                 else
@@ -855,13 +859,13 @@ namespace VoronoiDCEL
                     double alpha = numerator / denominator;
                     double directionX = (b.X - a.X) * alpha;
                     double directionY = (b.Y - a.Y) * alpha;
-                    o_Intersection = new Vertex(a.X + directionX, a.Y + directionY);
+                    o_Intersection = new Vertex<T>(a.X + directionX, a.Y + directionY);
                     return true;
                 }
             }
             else
             {
-                o_Intersection = Vertex.Zero;
+                o_Intersection = Vertex<T>.Zero;
                 return false;
             }
         }
@@ -875,7 +879,7 @@ namespace VoronoiDCEL
                 GL.Vertex3((float)(h.Origin.X), 0, (float)(h.Origin.Y));
                 GL.Vertex3((float)(h.Twin.Origin.X), 0, (float)(h.Twin.Origin.Y));
             }*/
-            foreach (Edge e in m_Edges)
+            foreach (Edge<T> e in m_Edges)
             {
                 GL.Vertex3((float)(e.Half1.Origin.X), 0, (float)(e.Half1.Origin.Y));
                 GL.Vertex3((float)(e.Half2.Origin.X), 0, (float)(e.Half2.Origin.Y));

@@ -1,6 +1,11 @@
 ﻿using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using DCEL = VoronoiDCEL.DCEL<int>;
+using Vertex = VoronoiDCEL.Vertex<int>;
+using Edge = VoronoiDCEL.Edge<int>;
+using StatusTree = VoronoiDCEL.StatusTree<int>;
+using HalfEdge = VoronoiDCEL.HalfEdge<int>;
 
 namespace VoronoiDCEL.Tests
 {

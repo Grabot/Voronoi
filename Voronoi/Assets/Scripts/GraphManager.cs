@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System;
 using Voronoi;
 using MNMatrix = MathNet.Numerics.LinearAlgebra.Matrix<float>;
+using DCEL = VoronoiDCEL.DCEL<int>;
 
 public sealed class GraphManager : MonoBehaviour
 {
@@ -21,8 +22,8 @@ public sealed class GraphManager : MonoBehaviour
     private FishManager m_FishManager;
     private Rect m_MeshRect;
     private List<Vector2> m_ClippingEdges = new List<Vector2>();
-    private VoronoiDCEL.DCEL m_DCEL;
-    private VoronoiDCEL.DCEL.Intersection[] m_DCELIntersections;
+    private DCEL m_DCEL;
+    private DCEL.Intersection[] m_DCELIntersections;
 
     [Flags]
     private enum ERectangleSide
@@ -85,9 +86,9 @@ public sealed class GraphManager : MonoBehaviour
         GL.End();
     }
 
-    private VoronoiDCEL.DCEL GetScreenDCEL()
+    private DCEL GetScreenDCEL()
     {
-        VoronoiDCEL.DCEL screen = new VoronoiDCEL.DCEL();
+        DCEL screen = new DCEL();
         Vector3 bottomLeft = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, 0));
         Vector3 topRight = Camera.main.ViewportToWorldPoint(new Vector3(1, 1, 0));
         Vector3 bottomRight = Camera.main.ViewportToWorldPoint(new Vector3(1, 0, 0));
@@ -105,10 +106,10 @@ public sealed class GraphManager : MonoBehaviour
     {
         m_DCEL = CreateVoronoiDiagram();
         m_DCELIntersections = null;
-        VoronoiDCEL.DCEL screen = GetScreenDCEL();
-        VoronoiDCEL.DCEL overlay = new VoronoiDCEL.DCEL(m_DCEL, screen);
+        DCEL screen = GetScreenDCEL();
+        DCEL overlay = new DCEL(m_DCEL, screen);
         overlay.FindIntersections2(out m_DCELIntersections);
-        m_DCEL = VoronoiDCEL.DCEL.MapOverlay(overlay);
+        m_DCEL = DCEL.MapOverlay(overlay);
         MeshDescription newDescription = TriangulateVoronoi();
         m_GUIManager.SetPlayerAreaOwned(newDescription.playerArea[0], newDescription.playerArea[1]);
         Mesh mesh = m_MeshFilter.mesh;
@@ -466,9 +467,9 @@ public sealed class GraphManager : MonoBehaviour
         return invalidEdges;
     }
 
-    private VoronoiDCEL.DCEL CreateVoronoiDiagram()
+    private DCEL CreateVoronoiDiagram()
     {
-        VoronoiDCEL.DCEL dcel = new VoronoiDCEL.DCEL();
+        DCEL dcel = new DCEL();
         foreach (HalfEdge halfEdge in m_Delaunay.HalfEdges)
         {
             Triangle t1 = halfEdge.Triangle;
@@ -682,7 +683,7 @@ public sealed class GraphManager : MonoBehaviour
                 m_DCEL.Draw();
                 if (m_DCELIntersections != null)
                 {
-                    foreach (VoronoiDCEL.DCEL.Intersection intersection in m_DCELIntersections)
+                    foreach (DCEL.Intersection intersection in m_DCELIntersections)
                     {
                         GL.Begin(GL.QUADS);
                         GL.Color(Color.cyan);

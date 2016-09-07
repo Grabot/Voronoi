@@ -1,48 +1,48 @@
 ﻿namespace VoronoiDCEL
 {
-    public sealed class HalfEdge
+    public sealed class HalfEdge<T>
     {
-        private Vertex m_Origin;
-        private HalfEdge m_Twin;
-        private Face m_IncidentFace;
+        private Vertex<T> m_Origin;
+        private HalfEdge<T> m_Twin;
+        private Face<T> m_IncidentFace;
         // the face to the left.
-        private HalfEdge m_Next;
+        private HalfEdge<T> m_Next;
         // next halfedge on the boundary of IncidentFace.
-        private HalfEdge m_Previous;
+        private HalfEdge<T> m_Previous;
         // previous halfedge on the boundary of IncidentFace
-        private Edge m_ParentEdge;
+        private Edge<T> m_ParentEdge;
 
-        public Vertex Origin
+        public Vertex<T> Origin
         {
             get { return m_Origin; }
             set { m_Origin = value; }
         }
 
-        public HalfEdge Previous
+        public HalfEdge<T> Previous
         {
             get { return m_Previous; }
             set { m_Previous = value; }
         }
 
-        public HalfEdge Next
+        public HalfEdge<T> Next
         {
             get { return m_Next; }
             set { m_Next = value; }
         }
 
-        public HalfEdge Twin
+        public HalfEdge<T> Twin
         {
             get { return m_Twin; }
             set { m_Twin = value; }
         }
 
-        public Face IncidentFace
+        public Face<T> IncidentFace
         {
             get { return m_IncidentFace; }
             set { m_IncidentFace = value; }
         }
 
-        public Edge ParentEdge
+        public Edge<T> ParentEdge
         {
             get { return m_ParentEdge; }
             set { m_ParentEdge = value; }
