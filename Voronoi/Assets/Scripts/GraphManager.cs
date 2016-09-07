@@ -105,9 +105,10 @@ public sealed class GraphManager : MonoBehaviour
     {
         m_DCEL = CreateVoronoiDiagram();
         m_DCELIntersections = null;
-        m_DCEL.FindIntersections(out m_DCELIntersections);
         VoronoiDCEL.DCEL screen = GetScreenDCEL();
-        VoronoiDCEL.DCEL.MapOverlay(m_DCEL, screen);
+        VoronoiDCEL.DCEL overlay = new VoronoiDCEL.DCEL(m_DCEL, screen);
+        overlay.FindIntersections2(out m_DCELIntersections);
+        m_DCEL = VoronoiDCEL.DCEL.MapOverlay(overlay);
         MeshDescription newDescription = TriangulateVoronoi();
         m_GUIManager.SetPlayerAreaOwned(newDescription.playerArea[0], newDescription.playerArea[1]);
         Mesh mesh = m_MeshFilter.mesh;
@@ -696,7 +697,7 @@ public sealed class GraphManager : MonoBehaviour
             }
         }
 
-        DrawMeshRect();
+        //DrawMeshRect();
 
         if (m_InvalidEdgesOn)
         {

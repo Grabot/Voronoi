@@ -23,7 +23,7 @@ namespace VoronoiDCEL
 
         public List<Face> Faces { get { return m_Faces; } }
 
-        public delegate void IntersectionPointAction(Intersection a_Intersection,StatusTree a_Status,Vertex a_Point);
+        public delegate void IntersectionPointAction(Intersection a_Intersection,DCEL a_DCEL);
 
         public DCEL()
         {
@@ -175,77 +175,85 @@ namespace VoronoiDCEL
             }
         }
 
-        public void AddVertexOnEdge(double a_x, double a_y, Edge a_Edge)
+        public Vertex AddVertexOnEdge(double a_x, double a_y, Edge a_Edge)
         {
+            m_Edges.Remove(a_Edge);
+
             Vertex x = new Vertex(a_x, a_y);
+            m_Vertices.Add(x);
             HalfEdge h1 = new HalfEdge();
             HalfEdge h2 = new HalfEdge();
-            Edge e1 = new Edge(h1, h2, m_UniqueID);
-            h1.ParentEdge = e1;
-            h2.ParentEdge = e1;
 
-            x.IncidentEdges.Add(h1);
-            h1.Origin = x;
+            h1.Origin = a_Edge.Half1.Origin;
+            h2.Origin = x;
+            x.IncidentEdges.Add(h2);
 
-            h1.Next = a_Edge.Half1.Next;
-            h1.Previous = h2;
+            h1.Next = h2;
+            h2.Next = a_Edge.Half1.Next;
 
-            h1.IncidentFace = h1.IncidentFace;
+            h2.Previous = h1;
+            h1.Previous = a_Edge.Half1.Previous;
 
-            h2.Origin = a_Edge.UpperEndpoint;
-            h2.Next = h1;
-            h2.Previous = a_Edge.Half1.Previous;
+            a_Edge.Half1.Next.Previous = h2;
+            a_Edge.Half1.Previous.Next = h1;
+
+            h1.IncidentFace = a_Edge.Half1.IncidentFace;
             h2.IncidentFace = a_Edge.Half1.IncidentFace;
 
-            a_Edge.Half1.Previous.Next = h2;
-            a_Edge.Half1.Next.Previous = h1;
-
+            a_Edge.Half1.Origin.IncidentEdges.Remove(a_Edge.Half1);
+            if (a_Edge.Half1.IncidentFace != null && a_Edge.Half1.IncidentFace.StartingEdge == a_Edge.Half1)
+            {
+                a_Edge.Half1.IncidentFace.StartingEdge = h1;
+            }
             m_HalfEdges.Remove(a_Edge.Half1);
+            m_HalfEdges.Add(h1);
+            m_HalfEdges.Add(h2);
 
             // Now the second halfedge.
             HalfEdge h3 = new HalfEdge();
             HalfEdge h4 = new HalfEdge();
-            Edge e2 = new Edge(h3, h4, m_UniqueID);
-            h3.ParentEdge = e2;
-            h4.ParentEdge = e2;
-            HalfEdge twinEdge = a_Edge.Half2;
 
-            h3.Origin = twinEdge.Origin;
-            h3.Next = h4;
-            h3.Previous = twinEdge.Previous;
-            h3.IncidentFace = twinEdge.IncidentFace;
-
+            h3.Origin = a_Edge.Half2.Origin;
             h4.Origin = x;
-            h4.Next = twinEdge.Next;
+            x.IncidentEdges.Add(h4);
+
+            h3.Next = h4;
+            h4.Next = a_Edge.Half2.Next;
+
             h4.Previous = h3;
-            h4.IncidentFace = twinEdge.IncidentFace;
+            h3.Previous = a_Edge.Half2.Previous;
 
-            twinEdge.Previous.Next = h3;
-            twinEdge.Next.Previous = h4;
+            a_Edge.Half2.Next.Previous = h4;
+            a_Edge.Half2.Previous.Next = h3;
 
-            h1.Twin = h3;
-            h3.Twin = h1;
-            h2.Twin = h4;
-            h4.Twin = h2;
+            h3.IncidentFace = a_Edge.Half2.IncidentFace;
+            h4.IncidentFace = a_Edge.Half2.IncidentFace;
 
-            m_HalfEdges.Remove(twinEdge);
-            m_Edges.Remove(a_Edge);
-
-            if (a_Edge.Half1.IncidentFace.StartingEdge == a_Edge.Half1)
+            a_Edge.Half2.Origin.IncidentEdges.Remove(a_Edge.Half2);
+            if (a_Edge.Half2.IncidentFace != null && a_Edge.Half2.IncidentFace.StartingEdge == a_Edge.Half2)
             {
-                a_Edge.Half1.IncidentFace.StartingEdge = h1;
+                a_Edge.Half2.IncidentFace.StartingEdge = h3;
             }
-            if (twinEdge.IncidentFace.StartingEdge == twinEdge)
-            {
-                twinEdge.IncidentFace.StartingEdge = h3;
-            }
-
-            m_HalfEdges.Add(h1);
-            m_HalfEdges.Add(h2);
+            m_HalfEdges.Remove(a_Edge.Half2);
             m_HalfEdges.Add(h3);
             m_HalfEdges.Add(h4);
+
+            // Connect twins.
+            h1.Twin = h4;
+            h4.Twin = h1;
+            h2.Twin = h3;
+            h3.Twin = h2;
+
+            // Create edges.
+            Edge e1 = new Edge(h1, h4, m_UniqueID);
+            Edge e2 = new Edge(h2, h3, m_UniqueID);
+            h1.ParentEdge = e1;
+            h4.ParentEdge = e1;
+            h2.ParentEdge = e2;
+            h3.ParentEdge = e2;
             m_Edges.Add(e1);
             m_Edges.Add(e2);
+            return x;
         }
 
         public void AddVertexInsideFace(double a_x, double a_y, HalfEdge a_h)
@@ -354,12 +362,20 @@ namespace VoronoiDCEL
         {
             DCEL overlay = new DCEL(A, B);
             Intersection[] intersections;
-            overlay.FindIntersections(out intersections, HandleMapOverlayEvent);
+            overlay.FindIntersections2(out intersections, HandleMapOverlayEvent);
             // Todo: continue implementing the map overlay algorithm.
             return overlay;
         }
 
-        private static void HandleMapOverlayEvent(Intersection a_Intersection, StatusTree a_Status, Vertex a_Point)
+        public static DCEL MapOverlay(DCEL overlay)
+        {
+            Intersection[] intersections;
+            overlay.FindIntersections2(out intersections, HandleMapOverlayEvent);
+            // Todo: continue implementing the map overlay algorithm.
+            return overlay;
+        }
+
+        private static void HandleMapOverlayEvent(Intersection a_Intersection, DCEL a_DCEL)
         {
             HashSet<Edge> edges = new HashSet<Edge>(a_Intersection.upperEndpointEdges);
             edges.UnionWith(a_Intersection.containingEdges);
@@ -379,8 +395,148 @@ namespace VoronoiDCEL
             if (bothDCELInvolved)
             {
                 Debug.Log("Found intersection between DCELs.");
+                if (a_Intersection.containingEdges.Length == 1)
+                {
+                    a_DCEL.UpdateMapOverlayDCEL(a_Intersection.containingEdges[0], a_Intersection.point);
+                    Debug.Log("Handled intersection between edge and vertex");
+                }
+                else if (a_Intersection.containingEdges.Length == 2)
+                {
+                    Vertex v = a_DCEL.AddVertexOnEdge(a_Intersection.point.X, a_Intersection.point.Y, a_Intersection.containingEdges[0]);
+                    a_DCEL.UpdateMapOverlayDCEL(a_Intersection.containingEdges[1], v);
+                    Debug.Log("Handled intersection between two edges");
+                }
+                else
+                {
+                    Debug.Log("Unhandled intersection case!");
+                }
             }
             // Todo.
+        }
+
+        private void UpdateMapOverlayDCEL(Edge e, Vertex v) // e is of s1 and v is of s2.
+        {
+            // Delete e
+            m_Edges.Remove(e);
+
+            // Create two new half-edge records with v as the origin.
+            HalfEdge h1 = new HalfEdge();
+            HalfEdge h2 = new HalfEdge();
+            h1.Origin = v;
+            h2.Origin = v;
+
+            // The two existing half-edges for e keep the endpoints of e as their origin
+            HalfEdge original1 = e.Half1;
+            HalfEdge original2 = e.Half2;
+
+            // Pair up the existing half-edges with the new half-edges by setting their Twin pointers.
+            h1.Twin = original1;
+            original1.Twin = h1;
+            h2.Twin = original2;
+            original2.Twin = h2;
+
+            // So e' is represented by one new and one existing half-edge, and the same holds for e''.
+            Edge e1 = new Edge(original1, h1, m_UniqueID);
+            Edge e2 = new Edge(original2, h2, m_UniqueID);
+
+            // The Next() pointers of the two new half-edges each copy the Next() pointer of the old half-edge that is not its twin.
+            h1.Next = original2.Next;
+            h2.Next = original1.Next;
+
+            // The half-edges to which these pointers point must also update their Prev() pointer and set it to the new half-edges.
+            original2.Previous = h1;
+            original1.Previous = h2;
+
+            // We must set the Next() and Prev() pointers of the four half-edges representing e' and e'' and of the four half-edges incident from s2 to v.
+            HalfEdge clockWiseEdge;
+            HalfEdge counterClockwiseEdge;
+
+            GetNextPrevEdges(h1, v.IncidentEdges, out clockWiseEdge, out counterClockwiseEdge);
+            h1.Previous = counterClockwiseEdge.Twin;
+            counterClockwiseEdge.Twin.Next = h1;
+            original1.Next = clockWiseEdge;
+            clockWiseEdge.Previous = original1;
+
+            GetNextPrevEdges(h2, v.IncidentEdges, out clockWiseEdge, out counterClockwiseEdge);
+            h2.Previous = counterClockwiseEdge.Twin;
+            counterClockwiseEdge.Twin.Next = h2;
+            original2.Next = clockWiseEdge;
+            clockWiseEdge.Previous = original2;
+
+            m_HalfEdges.Add(h1);
+            m_HalfEdges.Add(h2);
+            m_Edges.Add(e1);
+            m_Edges.Add(e2);
+        }
+
+        private static void GetNextPrevEdges(HalfEdge a_HalfEdge, List<HalfEdge> a_IncidentEdges, out HalfEdge out_ClockWiseEdge, out HalfEdge out_CounterClockwiseEdge)
+        {
+            Vector3 a = new Vector3((float)a_HalfEdge.Twin.Origin.X - (float)a_HalfEdge.Origin.X, (float)a_HalfEdge.Twin.Origin.Y - (float)a_HalfEdge.Origin.Y, 0);
+            a.Normalize();
+            List<CyclicEdgeOrderElement> cyclicOrder = new List<CyclicEdgeOrderElement>(a_IncidentEdges.Count + 1);
+            CyclicEdgeOrderElement e = new CyclicEdgeOrderElement(0, a_HalfEdge);
+            cyclicOrder.Add(e);
+            foreach (HalfEdge h in a_IncidentEdges)
+            {
+                Vector3 b = new Vector3((float)h.Twin.Origin.X - (float)a_HalfEdge.Origin.X, (float)h.Twin.Origin.Y - (float)a_HalfEdge.Origin.Y, 0);
+                b.Normalize();
+                float signedArea = Vector3.Cross(a, b).z;
+                cyclicOrder.Add(new CyclicEdgeOrderElement(signedArea, h));
+            }
+            if (cyclicOrder.Count < 3)
+            {
+                throw new Exception("Could not find next and prev edges: too few edges");
+            }
+            cyclicOrder.Sort();
+            int index = cyclicOrder.FindIndex(elem => elem == e);
+            if (index == -1)
+            {
+                throw new Exception("Could not find reference halfedge in cyclic order of incident edges");
+            }
+            else if (index == 0)
+            {
+                out_ClockWiseEdge = cyclicOrder[1].halfEdge;
+                out_CounterClockwiseEdge = cyclicOrder[cyclicOrder.Count - 1].halfEdge;
+            }
+            else if (index == cyclicOrder.Count - 1)
+            {
+                out_ClockWiseEdge = cyclicOrder[0].halfEdge;
+                out_CounterClockwiseEdge = cyclicOrder[cyclicOrder.Count - 2].halfEdge; 
+            }
+            else
+            {
+                out_ClockWiseEdge = cyclicOrder[index + 1].halfEdge;
+                out_CounterClockwiseEdge = cyclicOrder[index - 1].halfEdge;
+            }
+        }
+
+        private sealed class CyclicEdgeOrderElement : IComparable<CyclicEdgeOrderElement>
+        {
+            public double area;
+            public HalfEdge halfEdge;
+
+            public CyclicEdgeOrderElement(double a_Area, HalfEdge a_HalfEdge)
+            {
+                area = a_Area;
+                halfEdge = a_HalfEdge;
+            }
+
+            public int CompareTo(CyclicEdgeOrderElement other)
+            {
+                double diff = area - other.area;
+                if (diff < 0)
+                {
+                    return -1;
+                }
+                else if (diff > 0)
+                {
+                    return 1;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
         }
 
         public bool FindIntersections(out Intersection[] out_Intersections, IntersectionPointAction a_IntersectionPointAction = null)
@@ -399,11 +555,155 @@ namespace VoronoiDCEL
                 if (eventQueue.FindMax(out p))
                 {
                     eventQueue.Delete(p);
-                    HandleEventPoint(p, status, eventQueue, intersections, a_IntersectionPointAction);
+                    HandleEventPoint(p, status, eventQueue, intersections, this, a_IntersectionPointAction);
                 }
                 else
                 {
                     throw new Exception("Couldn't find max node in non-empty tree!");
+                }
+            }
+            if (intersections.Count > 0)
+            {
+                out_Intersections = intersections.ToArray();
+                return true;
+            }
+            out_Intersections = null;
+            return false;
+        }
+
+        // The "quick and dirty" O(n^2) intersection method.
+        public bool FindIntersections2(out Intersection[] out_Intersections, IntersectionPointAction a_IntersectionPointAction = null)
+        {
+            List<Intersection> intersections = new List<Intersection>();
+            Vertex intersectionPoint;
+            Edge a, b;
+            List<Edge> edges = new List<Edge>(m_Edges);
+            for (int i = 0; i < edges.Count; i++)
+            {
+                a = edges[i];
+                for (int k = i; k < edges.Count; k++)
+                {
+                    b = edges[k];
+                    if (a.UpperEndpoint.Equals(b.UpperEndpoint))
+                    {
+                        Intersection intersection = new Intersection();
+                        intersection.point = a.UpperEndpoint;
+                        intersection.containingEdges = new Edge[0];
+                        intersection.lowerEndpointEdges = new Edge[0];
+                        intersection.upperEndpointEdges = new [] { a, b };
+                        intersections.Add(intersection);
+                        if (a_IntersectionPointAction != null)
+                        {
+                            a_IntersectionPointAction(intersection, this);
+                        }
+                    }
+                    else if (a.LowerEndpoint.Equals(b.LowerEndpoint))
+                    {
+                        Intersection intersection = new Intersection();
+                        intersection.point = a.LowerEndpoint;
+                        intersection.containingEdges = new Edge[0];
+                        intersection.lowerEndpointEdges = new [] { a, b };
+                        intersection.upperEndpointEdges = new Edge[0];
+                        intersections.Add(intersection);
+                        if (a_IntersectionPointAction != null)
+                        {
+                            a_IntersectionPointAction(intersection, this);
+                        }
+                    }
+                    else if (a.LowerEndpoint.Equals(b.UpperEndpoint))
+                    {
+                        Intersection intersection = new Intersection();
+                        intersection.point = a.LowerEndpoint;
+                        intersection.containingEdges = new Edge[0];
+                        intersection.lowerEndpointEdges = new [] { a };
+                        intersection.upperEndpointEdges = new [] { b };
+                        intersections.Add(intersection);
+                        if (a_IntersectionPointAction != null)
+                        {
+                            a_IntersectionPointAction(intersection, this);
+                        }
+                    }
+                    else if (a.UpperEndpoint.Equals(b.LowerEndpoint))
+                    {
+                        Intersection intersection = new Intersection();
+                        intersection.point = a.UpperEndpoint;
+                        intersection.containingEdges = new Edge[0];
+                        intersection.lowerEndpointEdges = new [] { b };
+                        intersection.upperEndpointEdges = new [] { a };
+                        intersections.Add(intersection);
+                        if (a_IntersectionPointAction != null)
+                        {
+                            a_IntersectionPointAction(intersection, this);
+                        }
+                    }
+                    else if (IntersectLines(a.Half1.Origin, a.Half2.Origin, b.Half1.Origin, b.Half2.Origin, out intersectionPoint))
+                    {
+                        if (a.UpperEndpoint.Equals(intersectionPoint))
+                        {
+                            Intersection intersection = new Intersection();
+                            intersection.point = a.UpperEndpoint;
+                            intersection.containingEdges = new [] { b };
+                            intersection.lowerEndpointEdges = new Edge[0];
+                            intersection.upperEndpointEdges = new [] { a };
+                            intersections.Add(intersection);
+                            if (a_IntersectionPointAction != null)
+                            {
+                                a_IntersectionPointAction(intersection, this);
+                            }
+                        }
+                        else if (a.LowerEndpoint.Equals(intersectionPoint))
+                        {
+                            Intersection intersection = new Intersection();
+                            intersection.point = a.LowerEndpoint;
+                            intersection.containingEdges = new [] { b };
+                            intersection.lowerEndpointEdges = new [] { a };
+                            intersection.upperEndpointEdges = new Edge[0];
+                            intersections.Add(intersection);
+                            if (a_IntersectionPointAction != null)
+                            {
+                                a_IntersectionPointAction(intersection, this);
+                            }
+                        }
+                        else if (b.UpperEndpoint.Equals(intersectionPoint))
+                        {
+                            Intersection intersection = new Intersection();
+                            intersection.point = b.UpperEndpoint;
+                            intersection.containingEdges = new [] { a };
+                            intersection.lowerEndpointEdges = new Edge[0];
+                            intersection.upperEndpointEdges = new [] { b };
+                            intersections.Add(intersection);
+                            if (a_IntersectionPointAction != null)
+                            {
+                                a_IntersectionPointAction(intersection, this);
+                            }
+                        }
+                        else if (b.LowerEndpoint.Equals(intersectionPoint))
+                        {
+                            Intersection intersection = new Intersection();
+                            intersection.point = b.LowerEndpoint;
+                            intersection.containingEdges = new [] { a };
+                            intersection.lowerEndpointEdges = new [] { b };
+                            intersection.upperEndpointEdges = new Edge[0];
+                            intersections.Add(intersection);
+                            if (a_IntersectionPointAction != null)
+                            {
+                                a_IntersectionPointAction(intersection, this);
+                            }
+                        }
+                        else
+                        {
+                            Intersection intersection = new Intersection();
+                            intersection.point = intersectionPoint;
+                            intersection.containingEdges = new [] { a, b };
+                            intersection.lowerEndpointEdges = new Edge[0];
+                            intersection.upperEndpointEdges = new Edge[0];
+                            intersections.Add(intersection);
+                            if (a_IntersectionPointAction != null)
+                            {
+                                a_IntersectionPointAction(intersection, this);
+                            }
+                        }
+                    }
                 }
             }
             if (intersections.Count > 0)
@@ -424,7 +724,7 @@ namespace VoronoiDCEL
         }
 
         private static void HandleEventPoint(Vertex a_Point, StatusTree a_Status,
-                                             AATree<Vertex> a_EventQueue, List<Intersection> intersections, IntersectionPointAction a_IntersectionPointAction = null)
+                                             AATree<Vertex> a_EventQueue, List<Intersection> intersections, DCEL a_DCEL, IntersectionPointAction a_IntersectionPointAction = null)
         {
             HashSet<Edge> upperEndpointEdges = new HashSet<Edge>(); // U(p)
             HashSet<Edge> lowerEndpointEdges = new HashSet<Edge>(); // L(p)
@@ -458,7 +758,7 @@ namespace VoronoiDCEL
                 intersections.Add(intersection);
                 if (a_IntersectionPointAction != null)
                 {
-                    a_IntersectionPointAction(intersection, a_Status, a_Point);
+                    a_IntersectionPointAction(intersection, a_DCEL);
                 }
             }
             union = new HashSet<Edge>(lowerEndpointEdges);
@@ -570,10 +870,15 @@ namespace VoronoiDCEL
         {
             GL.Begin(GL.LINES);
             GL.Color(Color.red);
-            foreach (HalfEdge h in m_HalfEdges)
+            /*foreach (HalfEdge h in m_HalfEdges)
             {
                 GL.Vertex3((float)(h.Origin.X), 0, (float)(h.Origin.Y));
                 GL.Vertex3((float)(h.Twin.Origin.X), 0, (float)(h.Twin.Origin.Y));
+            }*/
+            foreach (Edge e in m_Edges)
+            {
+                GL.Vertex3((float)(e.Half1.Origin.X), 0, (float)(e.Half1.Origin.Y));
+                GL.Vertex3((float)(e.Half2.Origin.X), 0, (float)(e.Half2.Origin.Y));
             }
             GL.End();
         }
