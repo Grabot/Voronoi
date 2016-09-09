@@ -51,6 +51,12 @@ namespace VoronoiDCEL
             m_UniqueID = m_NextUniqueID++;
         }
 
+        public void Initialize()
+        {
+            ConnectHalfEdges(m_HalfEdges);
+            m_Faces = CreateFaces(m_HalfEdges);
+        }
+
         public void AddEdge(double a_x, double a_y, double b_x, double b_y)
         {
             double epsilon = Math.Exp(-9);
@@ -106,9 +112,9 @@ namespace VoronoiDCEL
             m_Edges.Add(e);
         }
 
-        public void ConnectHalfEdges()
+        private static void ConnectHalfEdges(List<HalfEdge<T>> a_HalfEdges)
         {
-            foreach (HalfEdge<T> h in m_HalfEdges)
+            foreach (HalfEdge<T> h in a_HalfEdges)
             {
                 Vector3 edgeDirection = new Vector3((float)(h.Twin.Origin.X - h.Origin.X), (float)(h.Twin.Origin.Y - h.Origin.Y), 0);
                 edgeDirection.Normalize();
@@ -139,25 +145,19 @@ namespace VoronoiDCEL
             }
         }
 
-        public void CreateFaces()
+        private static List<Face<T>> CreateFaces(List<HalfEdge<T>> a_HalfEdges)
         {
+            List<Face<T>> faces = new List<Face<T>>();
             List<HalfEdge<T>> faceEdges = new List<HalfEdge<T>>();
-            foreach (HalfEdge<T> h in m_HalfEdges)
+            foreach (HalfEdge<T> h in a_HalfEdges)
             {
                 if (h.IncidentFace == null)
                 {
                     faceEdges.Add(h);
                     HalfEdge<T> curEdge = h.Next;
-                    while (curEdge != h)
+                    while (curEdge != h && curEdge != null)
                     {
-                        if (curEdge == null)
-                        {
-                            break;
-                        }
-                        else
-                        {
-                            faceEdges.Add(curEdge);
-                        }
+                        faceEdges.Add(curEdge);
                         curEdge = curEdge.Next;
                     }
                     if (curEdge == h)
@@ -168,11 +168,12 @@ namespace VoronoiDCEL
                         {
                             newFaceEdge.IncidentFace = f;
                         }
-                        m_Faces.Add(f);
+                        faces.Add(f);
                     }
                     faceEdges.Clear();
                 }
             }
+            return faces;
         }
 
         public Vertex<T> AddVertexOnEdge(double a_x, double a_y, Edge<T> a_Edge)
@@ -361,10 +362,7 @@ namespace VoronoiDCEL
         public static DCEL<T> MapOverlay(DCEL<T> A, DCEL<T> B)
         {
             DCEL<T> overlay = new DCEL<T>(A, B);
-            Intersection[] intersections;
-            overlay.FindIntersections2(out intersections, HandleMapOverlayEvent);
-            // Todo: continue implementing the map overlay algorithm.
-            return overlay;
+            return MapOverlay(overlay);
         }
 
         public static DCEL<T> MapOverlay(DCEL<T> overlay)
@@ -372,7 +370,7 @@ namespace VoronoiDCEL
             Intersection[] intersections;
             overlay.FindIntersections2(out intersections, HandleMapOverlayEvent);
             // Todo: continue implementing the map overlay algorithm.
-
+            List<Face<T>> overlayFaces = CreateFaces(overlay.HalfEdges);
             return overlay;
         }
 

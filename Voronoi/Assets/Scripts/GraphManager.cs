@@ -97,8 +97,7 @@ public sealed class GraphManager : MonoBehaviour
         screen.AddEdge(topLeft.x, topLeft.z, topRight.x, topRight.z);
         screen.AddEdge(topRight.x, topRight.z, bottomRight.x, bottomRight.z);
         screen.AddEdge(bottomRight.x, bottomRight.z, bottomLeft.x, bottomLeft.z);
-        screen.ConnectHalfEdges();
-        screen.CreateFaces();
+        screen.Initialize();
         return screen;
     }
 
@@ -482,8 +481,7 @@ public sealed class GraphManager : MonoBehaviour
                 dcel.AddEdge(v1.X, v1.Y, v2.X, v2.Y);
             }
         }
-        dcel.ConnectHalfEdges();
-        dcel.CreateFaces();
+        dcel.Initialize();
         return dcel;
     }
 
