@@ -370,7 +370,7 @@ namespace VoronoiDCEL
             Intersection[] intersections;
             overlay.FindIntersections2(out intersections, HandleMapOverlayEvent);
             // Todo: continue implementing the map overlay algorithm.
-            List<Face<T>> overlayFaces = CreateFaces(overlay.HalfEdges);
+            //List<Face<T>> overlayFaces = CreateFaces(overlay.HalfEdges);
             return overlay;
         }
 
