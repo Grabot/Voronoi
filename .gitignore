@@ -82,3 +82,7 @@ Voronoi.app
 Voronoi/VoronoiWebGL/
 
 *.swp
+
+Voronoi/Voronoi_iOS
+
+*.unitypackage

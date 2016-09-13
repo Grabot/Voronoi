@@ -4,6 +4,7 @@ using System;
 using Voronoi;
 using MNMatrix = MathNet.Numerics.LinearAlgebra.Matrix<float>;
 using DCEL = VoronoiDCEL.DCEL<int>;
+using UnityEngine.EventSystems;
 
 public sealed class GraphManager : MonoBehaviour
 {
@@ -19,7 +20,6 @@ public sealed class GraphManager : MonoBehaviour
     private bool player1Turn = true;
     private Transform m_MyTransform;
     public GUIManager m_GUIManager;
-    private FishManager m_FishManager;
     private Rect m_MeshRect;
     private List<Vector2> m_ClippingEdges = new List<Vector2>();
     private DCEL m_DCEL;
@@ -58,9 +58,11 @@ public sealed class GraphManager : MonoBehaviour
     void Awake()
     {
         m_MyTransform = this.gameObject.transform;
-        m_FishManager = new FishManager();
         GameObject rendererObject = GameObject.Find("VoronoiMesh");
-        m_MeshFilter = rendererObject.GetComponent<MeshFilter>();
+        m_MeshFilter = rendererObject.AddComponent<MeshFilter>();
+        m_MeshFilter.mesh = new Mesh();
+        m_MeshFilter.mesh.subMeshCount = 2;
+        m_MeshFilter.mesh.MarkDynamic();
         float z = (m_MeshFilter.transform.position - Camera.main.transform.position).magnitude;
         Vector3 bottomLeft = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, z));
         Vector3 topRight = Camera.main.ViewportToWorldPoint(new Vector3(1, 1, z));
@@ -132,7 +134,6 @@ public sealed class GraphManager : MonoBehaviour
         }
 
         mesh.uv = newUVs;
-        mesh.Optimize();
     }
 
     private void DrawCircles()
@@ -759,45 +760,49 @@ public sealed class GraphManager : MonoBehaviour
             m_InvalidEdgesOn = !m_InvalidEdgesOn;
         }
 
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
         {
-            Vector3 pos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            pos.y = 0;
-            Vertex me = new Vertex(pos.x, pos.z, player1Turn ? Vertex.EOwnership.PLAYER1 : Vertex.EOwnership.PLAYER2);
-            if (m_Delaunay.AddVertex(me))
+            AddVoronoiPoint(Input.mousePosition);
+        }
+    }
+
+    public void AddVoronoiPoint(Vector3 a_ScreenPosition)
+    {
+        Vector3 pos = Camera.main.ScreenToWorldPoint(a_ScreenPosition);
+        pos.y = 0;
+        Vertex me = new Vertex(pos.x, pos.z, player1Turn ? Vertex.EOwnership.PLAYER1 : Vertex.EOwnership.PLAYER2);
+        if (m_Delaunay.AddVertex(me))
+        {
+            GameObject onClickObject = null;
+            if (player1Turn)
             {
-                GameObject onClickObject = null;
-                if (player1Turn)
-                {
-                    onClickObject = GameObject.Instantiate(m_Player1Prefab, pos, Quaternion.identity) as GameObject;
-                }
-                else
-                {
-                    onClickObject = GameObject.Instantiate(m_Player2Prefab, pos, Quaternion.identity) as GameObject;
-                }
+                onClickObject = GameObject.Instantiate(m_Player1Prefab, pos, Quaternion.identity);
+            }
+            else
+            {
+                onClickObject = GameObject.Instantiate(m_Player2Prefab, pos, Quaternion.identity);
+            }
 
-                if (onClickObject == null)
-                {
-                    Debug.LogError("Couldn't instantiate m_PlayerPrefab!");
-                }
-                else
-                {
-                    onClickObject.name = "onClickObject_" + me.Ownership.ToString();
-                    onClickObject.transform.parent = m_MyTransform;
-                    m_FishManager.AddFish(onClickObject.transform, player1Turn ? 1 : 2, m_WithLookAtOnPlacement);
-                }
+            if (onClickObject == null)
+            {
+                Debug.LogError("Couldn't instantiate m_PlayerPrefab!");
+            }
+            else
+            {
+                onClickObject.name = "onClickObject_" + me.Ownership;
+                onClickObject.transform.parent = m_MyTransform;
+            }
 
-                UpdateVoronoiMesh();
+            UpdateVoronoiMesh();
 
-                player1Turn = !player1Turn;
-                if (player1Turn)
-                {
-                    m_GUIManager.OnBlueTurnStart();
-                }
-                else
-                {
-                    m_GUIManager.OnRedTurnStart();
-                }
+            player1Turn = !player1Turn;
+            if (player1Turn)
+            {
+                m_GUIManager.OnBlueTurnStart();
+            }
+            else
+            {
+                m_GUIManager.OnRedTurnStart();
             }
         }
     }
