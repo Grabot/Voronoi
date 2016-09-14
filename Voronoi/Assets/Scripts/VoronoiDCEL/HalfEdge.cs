@@ -1,4 +1,6 @@
-﻿namespace VoronoiDCEL
+﻿using System.Text;
+
+namespace VoronoiDCEL
 {
     public sealed class HalfEdge<T>
     {
@@ -46,6 +48,18 @@
         {
             get { return m_ParentEdge; }
             set { m_ParentEdge = value; }
+        }
+
+        public override string ToString()
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.Append("Origin: " + m_Origin);
+            builder.Append(" Target: " + m_Twin.Origin);
+            builder.Append(" HasIncidentFace: " + (m_IncidentFace != null));
+            builder.Append(" HasNext: " + (m_Next != null));
+            builder.Append(" HasPrevious: " + (m_Previous != null));
+            builder.Append(" HasParentEdge: " + (m_ParentEdge != null));
+            return builder.ToString();
         }
     }
 }

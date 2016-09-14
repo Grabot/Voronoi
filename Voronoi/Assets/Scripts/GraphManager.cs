@@ -32,9 +32,8 @@ public sealed class GraphManager : MonoBehaviour
         LEFT = 1,
         TOP = 2,
         RIGHT = 4,
-        BOTTOM = 8}
-
-    ;
+        BOTTOM = 8
+    }
 
     private class MeshDescription
     {

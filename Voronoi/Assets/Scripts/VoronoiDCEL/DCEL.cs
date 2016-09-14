@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Collections.Generic;
 using UnityEngine;
 using MNMatrix = MathNet.Numerics.LinearAlgebra.Matrix<double>;
@@ -7,10 +8,66 @@ namespace VoronoiDCEL
 {
     public sealed class DCEL<T>
     {
+        private sealed class CyclicEdgeOrderElement : IComparable<CyclicEdgeOrderElement>
+        {
+            public double area;
+            public HalfEdge<T> halfEdge;
+
+            public CyclicEdgeOrderElement(double a_Area, HalfEdge<T> a_HalfEdge)
+            {
+                area = a_Area;
+                halfEdge = a_HalfEdge;
+            }
+
+            public int CompareTo(CyclicEdgeOrderElement other)
+            {
+                double diff = area - other.area;
+                if (diff < 0)
+                {
+                    return -1;
+                }
+                else if (diff > 0)
+                {
+                    return 1;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+        }
+
+        public sealed class InvalidDCELException : Exception
+        {
+            public InvalidDCELException(string message)
+                : base(message)
+            {
+            }
+
+            public InvalidDCELException(string message, Exception inner)
+                : base(message, inner)
+            {
+            }
+
+            public override string ToString()
+            {
+                StringBuilder builder = new StringBuilder();
+                builder.AppendLine("Message: " + Message);
+                builder.AppendLine("Starting edge: " + this.Data["startedge"]);
+                builder.AppendLine("Current Face Size: " + this.Data["curfacesize"]);
+                builder.AppendLine("Total Nr Halfedges: " + this.Data["numhalfedges"]);
+                foreach (object obj in (this.Data["halfedges"] as List<HalfEdge<T>>))
+                {
+                    builder.AppendLine("Halfedge: " + obj);
+                }
+                return builder.ToString();
+            }
+        }
+
         private static int m_NextUniqueID = 0;
 
         private List<Vertex<T>> m_Vertices;
-        private List<Edge<T>> m_Edges;
+        private readonly List<Edge<T>> m_Edges;
         private readonly List<HalfEdge<T>> m_HalfEdges;
         private List<Face<T>> m_Faces;
         private readonly int m_UniqueID;
@@ -145,32 +202,67 @@ namespace VoronoiDCEL
             }
         }
 
-        private static List<Face<T>> CreateFaces(List<HalfEdge<T>> a_HalfEdges)
+        private static List<Face<T>> CreateFaces(List<HalfEdge<T>> a_HalfEdges, bool a_Strict = true)
         {
+            HashSet<HalfEdge<T>> remainingEdges = new HashSet<HalfEdge<T>>(a_HalfEdges);
             List<Face<T>> faces = new List<Face<T>>();
             List<HalfEdge<T>> faceEdges = new List<HalfEdge<T>>();
-            foreach (HalfEdge<T> h in a_HalfEdges)
+            int numHalfEdges = a_HalfEdges.Count;
+            while (remainingEdges.Count > 2)
             {
-                if (h.IncidentFace == null)
+                HashSet<HalfEdge<T>>.Enumerator en = remainingEdges.GetEnumerator();
+                en.MoveNext();
+                HalfEdge<T> h = en.Current;
+                en.Dispose();
+                if (h.IncidentFace == null || !a_Strict)
                 {
-                    faceEdges.Add(h);
-                    HalfEdge<T> curEdge = h.Next;
-                    while (curEdge != h && curEdge != null)
+                    if (h.Next != null && h.Previous != null)
                     {
-                        faceEdges.Add(curEdge);
-                        curEdge = curEdge.Next;
-                    }
-                    if (curEdge == h)
-                    {
-                        Face<T> f = new Face<T>();
-                        f.StartingEdge = h;
-                        foreach (HalfEdge<T> newFaceEdge in faceEdges)
+                        faceEdges.Add(h);
+                        HalfEdge<T> curEdge = h.Next;
+                        while (curEdge != h && curEdge != null)
                         {
-                            newFaceEdge.IncidentFace = f;
+                            if ((curEdge.IncidentFace == null || !a_Strict) && faceEdges.Count <= numHalfEdges)
+                            {
+                                faceEdges.Add(curEdge);
+                                curEdge = curEdge.Next;
+                            }
+                            else
+                            {
+                                InvalidDCELException e = new InvalidDCELException("Invalid face detected!");
+                                e.Data.Add("halfedges", faceEdges);
+                                e.Data.Add("startedge", h);
+                                e.Data.Add("curfacesize", faceEdges.Count);
+                                e.Data.Add("numhalfedges", numHalfEdges);
+                                throw e;
+                            }
                         }
-                        faces.Add(f);
+                        if (curEdge == h)
+                        {
+                            Face<T> f = new Face<T>();
+                            f.StartingEdge = h;
+                            foreach (HalfEdge<T> newFaceEdge in faceEdges)
+                            {
+                                newFaceEdge.IncidentFace = f;
+                            }
+                            faces.Add(f);
+                        }
+                        remainingEdges.ExceptWith(faceEdges);
+                        faceEdges.Clear();
                     }
-                    faceEdges.Clear();
+                    else
+                    {
+                        remainingEdges.Remove(h);
+                    }
+                }
+                else
+                {
+                    InvalidDCELException e = new InvalidDCELException("Invalid face detected!");
+                    e.Data.Add("halfedges", faceEdges);
+                    e.Data.Add("startedge", h);
+                    e.Data.Add("curfacesize", faceEdges.Count);
+                    e.Data.Add("numhalfedges", numHalfEdges);
+                    throw e;
                 }
             }
             return faces;
@@ -359,6 +451,56 @@ namespace VoronoiDCEL
             m_Edges.Add(e);
         }
 
+        private void DeleteVertex(Vertex<T> v)
+        {
+            // First step, delete the vertex and all incident halfedges of the vertex.
+            List<Vertex<T>> verticesToFix = new List<Vertex<T>>();
+            foreach (HalfEdge<T> h in v.IncidentEdges)
+            {
+                verticesToFix.Add(h.Twin.Origin);
+                m_HalfEdges.Remove(h);
+                m_HalfEdges.Remove(h.Twin);
+                m_Edges.Remove(h.ParentEdge);
+                if (h.IncidentFace.StartingEdge == h)
+                {
+                    h.IncidentFace.StartingEdge = h.Next;
+                }
+                h.IncidentFace = null;
+                if (h.Twin.IncidentFace.StartingEdge == h.Twin)
+                {
+                    h.Twin.IncidentFace.StartingEdge = h.Twin.Next;
+                }
+                h.Twin.IncidentFace = null;
+                h.Previous.Next = null;
+                h.Next.Previous = null;
+                h.Twin.Previous.Next = null;
+                h.Twin.Next.Previous = null;
+                h.Next = null;
+                h.Previous = null;
+                h.Twin.Next = null;
+                h.Twin.Previous = null;
+                h.Twin.Origin.IncidentEdges.Remove(h.Twin);
+                h.Twin.Origin = null;
+                h.ParentEdge = null;
+                h.Twin.ParentEdge = null;
+                h.Origin = null;
+                h.Twin.Twin = null;
+                h.Twin = null;
+            }
+
+            v.IncidentEdges.Clear();
+            m_Vertices.Remove(v);
+
+            // Second step, fix the vertices who had halfedges removed.
+            foreach (Vertex<T> vFix in verticesToFix)
+            {
+                if (vFix.IncidentEdges.Count == 0)
+                {
+                    m_Vertices.Remove(vFix);
+                }
+            }
+        }
+
         public static DCEL<T> MapOverlay(DCEL<T> A, DCEL<T> B)
         {
             DCEL<T> overlay = new DCEL<T>(A, B);
@@ -370,7 +512,16 @@ namespace VoronoiDCEL
             Intersection[] intersections;
             overlay.FindIntersections2(out intersections, HandleMapOverlayEvent);
             // Todo: continue implementing the map overlay algorithm.
-            //List<Face<T>> overlayFaces = CreateFaces(overlay.HalfEdges);
+            try
+            {
+                List<Face<T>> overlayFaces = CreateFaces(overlay.HalfEdges, false);
+                overlay.Faces.Clear();
+                overlay.Faces.AddRange(overlayFaces);
+            }
+            catch (InvalidDCELException ex)
+            {
+                Debug.Log(ex);
+            }
             return overlay;
         }
 
@@ -391,6 +542,7 @@ namespace VoronoiDCEL
                     break;
                 }
             }
+            enumerator.Dispose();
             if (bothDCELInvolved)
             {
                 Debug.Log("Found intersection between DCELs.");
@@ -505,35 +657,6 @@ namespace VoronoiDCEL
             {
                 out_ClockWiseEdge = cyclicOrder[index + 1].halfEdge;
                 out_CounterClockwiseEdge = cyclicOrder[index - 1].halfEdge;
-            }
-        }
-
-        private sealed class CyclicEdgeOrderElement : IComparable<CyclicEdgeOrderElement>
-        {
-            public double area;
-            public HalfEdge<T> halfEdge;
-
-            public CyclicEdgeOrderElement(double a_Area, HalfEdge<T> a_HalfEdge)
-            {
-                area = a_Area;
-                halfEdge = a_HalfEdge;
-            }
-
-            public int CompareTo(CyclicEdgeOrderElement other)
-            {
-                double diff = area - other.area;
-                if (diff < 0)
-                {
-                    return -1;
-                }
-                else if (diff > 0)
-                {
-                    return 1;
-                }
-                else
-                {
-                    return 0;
-                }
             }
         }
 
