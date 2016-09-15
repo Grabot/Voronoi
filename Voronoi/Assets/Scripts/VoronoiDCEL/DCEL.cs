@@ -53,12 +53,24 @@ namespace VoronoiDCEL
             {
                 StringBuilder builder = new StringBuilder();
                 builder.AppendLine("Message: " + Message);
-                builder.AppendLine("Starting edge: " + this.Data["startedge"]);
-                builder.AppendLine("Current Face Size: " + this.Data["curfacesize"]);
-                builder.AppendLine("Total Nr Halfedges: " + this.Data["numhalfedges"]);
-                foreach (object obj in (this.Data["halfedges"] as List<HalfEdge<T>>))
+                if (this.Data.Contains("startedge"))
                 {
-                    builder.AppendLine("Halfedge: " + obj);
+                    builder.AppendLine("Starting edge: " + this.Data["startedge"]);
+                }
+                if (this.Data.Contains("curfacesize"))
+                {
+                    builder.AppendLine("Current Face Size: " + this.Data["curfacesize"]);
+                }
+                if (this.Data.Contains("numhalfedges"))
+                {
+                    builder.AppendLine("Total Nr Halfedges: " + this.Data["numhalfedges"]);
+                }
+                if (this.Data.Contains("halfedges"))
+                {
+                    foreach (object obj in (this.Data["halfedges"] as List<HalfEdge<T>>))
+                    {
+                        builder.AppendLine("Halfedge: " + obj);
+                    }
                 }
                 return builder.ToString();
             }
@@ -184,7 +196,7 @@ namespace VoronoiDCEL
                         Vector3 nextEdgeDirection = new Vector3((float)(h2.Twin.Origin.X - h2.Origin.X), (float)(h2.Twin.Origin.Y - h2.Origin.Y), 0);
                         nextEdgeDirection.Normalize();
                         float turn = Vector3.Cross(edgeDirection, nextEdgeDirection).z;
-                        if (turn <= 0)
+                        if (turn >= 0)
                         {
                             float size = Mathf.Abs(Vector3.Dot(edgeDirection, nextEdgeDirection) - 1);
                             if (size >= turnSize)
@@ -202,12 +214,12 @@ namespace VoronoiDCEL
             }
         }
 
-        private static List<Face<T>> CreateFaces(List<HalfEdge<T>> a_HalfEdges, bool a_Strict = true)
+        private static List<Face<T>> CreateFaces(IEnumerable<HalfEdge<T>> a_HalfEdges, bool a_Strict = true)
         {
             HashSet<HalfEdge<T>> remainingEdges = new HashSet<HalfEdge<T>>(a_HalfEdges);
             List<Face<T>> faces = new List<Face<T>>();
             List<HalfEdge<T>> faceEdges = new List<HalfEdge<T>>();
-            int numHalfEdges = a_HalfEdges.Count;
+            int numHalfEdges = remainingEdges.Count;
             while (remainingEdges.Count > 2)
             {
                 HashSet<HalfEdge<T>>.Enumerator en = remainingEdges.GetEnumerator();
@@ -451,35 +463,58 @@ namespace VoronoiDCEL
             m_Edges.Add(e);
         }
 
-        private void DeleteVertex(Vertex<T> v)
+        public void DeleteVertex(Vertex<T> v)
         {
             // First step, delete the vertex and all incident halfedges of the vertex.
-            List<Vertex<T>> verticesToFix = new List<Vertex<T>>();
+            HashSet<Face<T>> facesToRemove = new HashSet<Face<T>>();
             foreach (HalfEdge<T> h in v.IncidentEdges)
             {
-                verticesToFix.Add(h.Twin.Origin);
                 m_HalfEdges.Remove(h);
                 m_HalfEdges.Remove(h.Twin);
                 m_Edges.Remove(h.ParentEdge);
-                if (h.IncidentFace.StartingEdge == h)
+                if (h.IncidentFace != null)
                 {
-                    h.IncidentFace.StartingEdge = h.Next;
+                    facesToRemove.Add(h.IncidentFace);
+                    if (h.IncidentFace.StartingEdge == h)
+                    {
+                        h.IncidentFace.StartingEdge = h.Next;
+                    }
+                    h.IncidentFace = null;
                 }
-                h.IncidentFace = null;
-                if (h.Twin.IncidentFace.StartingEdge == h.Twin)
+                if (h.Twin.IncidentFace != null)
                 {
-                    h.Twin.IncidentFace.StartingEdge = h.Twin.Next;
+                    facesToRemove.Add(h.Twin.IncidentFace);
+                    if (h.Twin.IncidentFace.StartingEdge == h.Twin)
+                    {
+                        h.Twin.IncidentFace.StartingEdge = h.Twin.Next;
+                    }
+                    h.Twin.IncidentFace = null;
                 }
-                h.Twin.IncidentFace = null;
-                h.Previous.Next = null;
-                h.Next.Previous = null;
-                h.Twin.Previous.Next = null;
-                h.Twin.Next.Previous = null;
+                if (h.Twin.Previous != null && h.Next != null && h.Twin.Previous.Twin != h.Next)
+                {
+                    h.Twin.Previous.Next = h.Next;
+                }
+                if (h.Next != null && h.Twin.Previous != null && h.Next.Twin != h.Twin.Previous)
+                {
+                    h.Next.Previous = h.Twin.Previous;
+                }
+                if (h.Previous != null)
+                {
+                    h.Previous.Next = null;
+                }
+                if (h.Twin.Next != null)
+                {
+                    h.Twin.Next.Previous = null;
+                }
                 h.Next = null;
                 h.Previous = null;
                 h.Twin.Next = null;
                 h.Twin.Previous = null;
                 h.Twin.Origin.IncidentEdges.Remove(h.Twin);
+                if (h.Twin.Origin.IncidentEdges.Count == 0)
+                {
+                    m_Vertices.Remove(h.Twin.Origin);
+                }
                 h.Twin.Origin = null;
                 h.ParentEdge = null;
                 h.Twin.ParentEdge = null;
@@ -491,14 +526,30 @@ namespace VoronoiDCEL
             v.IncidentEdges.Clear();
             m_Vertices.Remove(v);
 
-            // Second step, fix the vertices who had halfedges removed.
-            foreach (Vertex<T> vFix in verticesToFix)
+            // Step two, remove the faces that we broke up and recreate faces if possible.
+            HashSet<HalfEdge<T>> faceHalfEdges = new HashSet<HalfEdge<T>>();
+            foreach (Face<T> f in facesToRemove)
             {
-                if (vFix.IncidentEdges.Count == 0)
+                m_Faces.Remove(f);
+                f.StartingEdge.IncidentFace = null;
+                faceHalfEdges.Add(f.StartingEdge);
+                HalfEdge<T> start = f.StartingEdge.Next;
+                while (start != null && start != f.StartingEdge)
                 {
-                    m_Vertices.Remove(vFix);
+                    start.IncidentFace = null;
+                    faceHalfEdges.Add(start);
+                    start = start.Next;
                 }
+                start = f.StartingEdge.Previous;
+                while (start != null && start != f.StartingEdge)
+                {
+                    start.IncidentFace = null;
+                    faceHalfEdges.Add(start);
+                    start = start.Previous;
+                }
+                f.StartingEdge = null;
             }
+            m_Faces.AddRange(CreateFaces(faceHalfEdges));
         }
 
         public static DCEL<T> MapOverlay(DCEL<T> A, DCEL<T> B)
