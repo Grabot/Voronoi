@@ -24,6 +24,7 @@ public sealed class GraphManager : MonoBehaviour
     private List<Vector2> m_ClippingEdges = new List<Vector2>();
     private DCEL m_DCEL;
     private DCEL.Intersection[] m_DCELIntersections;
+    HashSet<VoronoiDCEL.Vertex<int>> m_VerticesToDelete;
 
     [Flags]
     private enum ERectangleSide
@@ -99,6 +100,14 @@ public sealed class GraphManager : MonoBehaviour
         screen.AddEdge(topRight.x, topRight.z, bottomRight.x, bottomRight.z);
         screen.AddEdge(bottomRight.x, bottomRight.z, bottomLeft.x, bottomLeft.z);
         screen.Initialize();
+        if (screen.Faces.Count != 1 || screen.HalfEdges.Count != 8 || screen.Edges.Count != 4 || screen.Vertices.Count != 4)
+        {
+            throw new Exception("Invalid screen DCEL!");
+        }
+        if (screen.Faces[0].StartingEdge != screen.Faces[0].StartingEdge.Next.Next.Next.Next)
+        {
+            throw new Exception("Screen DCEL is not a valid rectangular face!");
+        }
         return screen;
     }
 
@@ -110,6 +119,43 @@ public sealed class GraphManager : MonoBehaviour
         DCEL overlay = new DCEL(m_DCEL, screen);
         overlay.FindIntersections2(out m_DCELIntersections);
         m_DCEL = DCEL.MapOverlay(overlay);
+        screen = GetScreenDCEL();
+
+        HashSet<VoronoiDCEL.Vertex<int>> verticesToDelete = new HashSet<VoronoiDCEL.Vertex<int>>(m_DCEL.Vertices);
+        HashSet<VoronoiDCEL.Vertex<int>> verticesInsideDCEL = new HashSet<VoronoiDCEL.Vertex<int>>(m_DCEL.Vertices);
+        HashSet<VoronoiDCEL.Vertex<int>> verticesOutsideDCEL = new HashSet<VoronoiDCEL.Vertex<int>>();
+        VoronoiDCEL.HalfEdge<int> start;
+        VoronoiDCEL.HalfEdge<int> edge;
+        foreach (VoronoiDCEL.Face<int> f in screen.Faces)
+        {
+            start = f.StartingEdge;
+            edge = start;
+            while (true)
+            {
+                foreach (VoronoiDCEL.Vertex<int> v in verticesInsideDCEL)
+                {
+                    if (!v.LeftOrOnLine(edge))
+                    {
+                        verticesOutsideDCEL.Add(v);
+                    }
+                }
+                verticesInsideDCEL.ExceptWith(verticesOutsideDCEL);
+                verticesOutsideDCEL.Clear();
+                edge = edge.Next;
+                if (edge == start || edge == null)
+                {
+                    break;
+                }
+            }
+        }
+        verticesToDelete.ExceptWith(verticesInsideDCEL);
+        m_VerticesToDelete = verticesToDelete;
+
+        foreach (VoronoiDCEL.Vertex<int> v in verticesToDelete)
+        {
+            m_DCEL.DeleteVertex(v);
+        }
+
         MeshDescription newDescription = TriangulateVoronoi();
         m_GUIManager.SetPlayerAreaOwned(newDescription.playerArea[0], newDescription.playerArea[1]);
         Mesh mesh = m_MeshFilter.mesh;
@@ -678,19 +724,19 @@ public sealed class GraphManager : MonoBehaviour
             //DrawVoronoi();
             if (m_DCEL != null)
             {
-                m_DCEL.Draw();
+                m_DCEL.Draw(Color.red);
                 if (m_DCELIntersections != null)
                 {
                     foreach (DCEL.Intersection intersection in m_DCELIntersections)
                     {
-                        GL.Begin(GL.QUADS);
-                        GL.Color(Color.cyan);
-                        const float size = 0.1f;
-                        GL.Vertex(new Vector3((float)intersection.point.X - size, 0, (float)intersection.point.Y - size));
-                        GL.Vertex(new Vector3((float)intersection.point.X - size, 0, (float)intersection.point.Y + size));
-                        GL.Vertex(new Vector3((float)intersection.point.X + size, 0, (float)intersection.point.Y + size));
-                        GL.Vertex(new Vector3((float)intersection.point.X + size, 0, (float)intersection.point.Y - size));
-                        GL.End();
+                        intersection.point.Draw(Color.cyan);
+                    }
+                }
+                if (m_VerticesToDelete != null)
+                {
+                    foreach (VoronoiDCEL.Vertex<int> v in m_VerticesToDelete)
+                    {
+                        v.Draw(Color.yellow);
                     }
                 }
             }

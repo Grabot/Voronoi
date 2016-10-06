@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using MNMatrix = MathNet.Numerics.LinearAlgebra.Matrix<double>;
+using UnityEngine;
 
 namespace VoronoiDCEL
 {
@@ -45,9 +46,24 @@ namespace VoronoiDCEL
             return Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint) > 0;
         }
 
+        public bool LeftOfLine(HalfEdge<T> a_HalfEdge)
+        {
+            return Orient2D(this, a_HalfEdge.Origin, a_HalfEdge.Twin.Origin) > 0;
+        }
+
+        public bool LeftOrOnLine(HalfEdge<T> a_HalfEdge)
+        {
+            return Orient2D(this, a_HalfEdge.Origin, a_HalfEdge.Twin.Origin) >= 0;
+        }
+
         public bool RightOfLine(Edge<T> a_Edge)
         {
             return Orient2D(this, a_Edge.LowerEndpoint, a_Edge.UpperEndpoint) < 0;
+        }
+
+        public bool RightOfLine(HalfEdge<T> a_HalfEdge)
+        {
+            return Orient2D(this, a_HalfEdge.Origin, a_HalfEdge.Twin.Origin) < 0;
         }
 
         public int CompareTo(Edge<T> a_Edge)
@@ -145,6 +161,20 @@ namespace VoronoiDCEL
             builder.Append("Nr incident edges: ");
             builder.Append(m_IncidentEdges.Count);
             return builder.ToString();
+        }
+
+        public void Draw(Color a_Color)
+        {
+            GL.Begin(GL.QUADS);
+            GL.Color(a_Color);
+            const float size = 0.1f;
+            float x = (float)m_x;
+            float y = (float)m_y;
+            GL.Vertex(new Vector3(x - size, 0, y - size));
+            GL.Vertex(new Vector3(x - size, 0, y + size));
+            GL.Vertex(new Vector3(x + size, 0, y + size));
+            GL.Vertex(new Vector3(x + size, 0, y - size));
+            GL.End();
         }
     }
 }

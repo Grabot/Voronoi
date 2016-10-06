@@ -130,6 +130,11 @@ namespace VoronoiDCEL
         {
             double epsilon = Math.Exp(-9);
 
+            if (Math.Abs(a_x - b_x) < epsilon && Math.Abs(a_y - b_y) < epsilon)
+            {
+                return;
+            }
+
             HalfEdge<T> h1 = new HalfEdge<T>();
             HalfEdge<T> h2 = new HalfEdge<T>();
             Edge<T> e = new Edge<T>(h1, h2, m_UniqueID);
@@ -142,11 +147,11 @@ namespace VoronoiDCEL
             Vertex<T> v2 = null;
             foreach (Vertex<T> v in m_Vertices)
             {
-                if (Math.Abs(v.X - a_x) < epsilon && Math.Abs(v.Y - a_y) < epsilon)
+                if (v1 == null && Math.Abs(v.X - a_x) < epsilon && Math.Abs(v.Y - a_y) < epsilon)
                 {
                     v1 = v;
                 }
-                else if (Math.Abs(v.X - b_x) < epsilon && Math.Abs(v.Y - b_y) < epsilon)
+                else if (v2 == null && Math.Abs(v.X - b_x) < epsilon && Math.Abs(v.Y - b_y) < epsilon)
                 {
                     v2 = v;
                 }
@@ -183,12 +188,15 @@ namespace VoronoiDCEL
 
         private static void ConnectHalfEdges(List<HalfEdge<T>> a_HalfEdges)
         {
+            Vector3 edgeDirection;
+            float turnSize;
+            HalfEdge<T> mostLeftTurn = null;
             foreach (HalfEdge<T> h in a_HalfEdges)
             {
-                Vector3 edgeDirection = new Vector3((float)(h.Twin.Origin.X - h.Origin.X), (float)(h.Twin.Origin.Y - h.Origin.Y), 0);
+                edgeDirection = new Vector3((float)(h.Twin.Origin.X - h.Origin.X), (float)(h.Twin.Origin.Y - h.Origin.Y), 0);
                 edgeDirection.Normalize();
-                const float turnSize = 0;
-                HalfEdge<T> mostLeftTurn = null;
+                turnSize = float.MaxValue;
+                mostLeftTurn = null;
                 foreach (HalfEdge<T> h2 in h.Twin.Origin.IncidentEdges)
                 {
                     if (h2 != h.Twin)
@@ -196,13 +204,10 @@ namespace VoronoiDCEL
                         Vector3 nextEdgeDirection = new Vector3((float)(h2.Twin.Origin.X - h2.Origin.X), (float)(h2.Twin.Origin.Y - h2.Origin.Y), 0);
                         nextEdgeDirection.Normalize();
                         float turn = Vector3.Cross(edgeDirection, nextEdgeDirection).z;
-                        if (turn >= 0)
+                        if (turn >= 0 && turn < turnSize)
                         {
-                            float size = Mathf.Abs(Vector3.Dot(edgeDirection, nextEdgeDirection) - 1);
-                            if (size >= turnSize)
-                            {
-                                mostLeftTurn = h2;
-                            }
+                            turnSize = turn;
+                            mostLeftTurn = h2;
                         }
                     }
                 }
@@ -1042,10 +1047,10 @@ namespace VoronoiDCEL
             }
         }
 
-        public void Draw()
+        public void Draw(Color a_Color)
         {
             GL.Begin(GL.LINES);
-            GL.Color(Color.red);
+            GL.Color(a_Color);
             /*foreach (HalfEdge h in m_HalfEdges)
             {
                 GL.Vertex3((float)(h.Origin.X), 0, (float)(h.Origin.Y));
