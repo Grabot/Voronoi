@@ -285,6 +285,71 @@ namespace VoronoiDCEL
             return faces;
         }
 
+        public bool ValidateDCEL()
+        {
+            foreach (Edge<T> edge in m_Edges)
+            {
+                if (edge.Half1 == null || edge.Half2 == null || edge.Half1 == edge.Half2)
+                {
+                    return false;
+                }
+            }
+            foreach (HalfEdge<T> halfEdge in m_HalfEdges)
+            {
+                if (halfEdge.IncidentFace != null && (halfEdge.Next == null || halfEdge.Previous == null || halfEdge.Previous == halfEdge.Next || halfEdge.Previous == halfEdge || halfEdge.Next == halfEdge))
+                {
+                    return false;
+                }
+                if (halfEdge.IncidentFace == null && (halfEdge.Next != null || halfEdge.Previous != null))
+                {
+                    return false;
+                }
+                if (halfEdge.ParentEdge == null || halfEdge.Twin == null || halfEdge.Twin == halfEdge)
+                {
+                    return false;
+                }
+                if (halfEdge.Origin == null || halfEdge.Origin == halfEdge.Twin.Origin || (Math.Abs(halfEdge.Origin.X - halfEdge.Twin.Origin.X) <= float.Epsilon && Math.Abs(halfEdge.Origin.Y - halfEdge.Twin.Origin.Y) <= float.Epsilon))
+                {
+                    return false;
+                }
+                if (!halfEdge.Origin.IncidentEdges.Contains(halfEdge) || (halfEdge.Previous != null && !halfEdge.Origin.IncidentEdges.Contains(halfEdge.Previous.Twin)))
+                {
+                    return false;
+                }
+                if ((halfEdge.Next != null && halfEdge.Previous == null) || (halfEdge.Previous != null && halfEdge.Next == null))
+                {
+                    return false;
+                }
+                if ((halfEdge.Next != null && !m_HalfEdges.Contains(halfEdge.Next)) || (halfEdge.Previous != null && !m_HalfEdges.Contains(halfEdge.Previous)))
+                {
+                    return false;
+                }
+                if (!m_HalfEdges.Contains(halfEdge.Twin))
+                {
+                    return false;
+                }
+            }
+            foreach (Face<T> face in m_Faces)
+            {
+                if (face.StartingEdge == null)
+                {
+                    return false;
+                }
+                HalfEdge<T> forwardRun = face.StartingEdge.Next;
+                HalfEdge<T> backwardsRun = face.StartingEdge.Previous;
+                while (forwardRun != null && forwardRun != face.StartingEdge && backwardsRun != null && backwardsRun != face.StartingEdge)
+                {
+                    forwardRun = forwardRun.Next;
+                    backwardsRun = backwardsRun.Previous;
+                }
+                if (forwardRun == null || forwardRun != face.StartingEdge || backwardsRun == null || backwardsRun != face.StartingEdge)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         public Vertex<T> AddVertexOnEdge(double a_x, double a_y, Edge<T> a_Edge)
         {
             m_Edges.Remove(a_Edge);
@@ -479,19 +544,35 @@ namespace VoronoiDCEL
                 m_Edges.Remove(h.ParentEdge);
                 if (h.IncidentFace != null)
                 {
+                    if (h.IncidentFace.StartingEdge == null)
+                    {
+                        throw new Exception("Invalid face encountered!");
+                    }
                     facesToRemove.Add(h.IncidentFace);
                     if (h.IncidentFace.StartingEdge == h)
                     {
                         h.IncidentFace.StartingEdge = h.Next;
+                        if (h.IncidentFace.StartingEdge == null)
+                        {
+                            throw new Exception("Invalid face encountered!");
+                        }
                     }
                     h.IncidentFace = null;
                 }
                 if (h.Twin.IncidentFace != null)
                 {
+                    if (h.Twin.IncidentFace.StartingEdge == null)
+                    {
+                        throw new Exception("Invalid face encountered!");
+                    }
                     facesToRemove.Add(h.Twin.IncidentFace);
                     if (h.Twin.IncidentFace.StartingEdge == h.Twin)
                     {
                         h.Twin.IncidentFace.StartingEdge = h.Twin.Next;
+                        if (h.Twin.IncidentFace.StartingEdge == null)
+                        {
+                            throw new Exception("Invalid face encountered!");
+                        }
                     }
                     h.Twin.IncidentFace = null;
                 }

@@ -151,9 +151,17 @@ public sealed class GraphManager : MonoBehaviour
         verticesToDelete.ExceptWith(verticesInsideDCEL);
         m_VerticesToDelete = verticesToDelete;
 
+        if (!m_DCEL.ValidateDCEL())
+        {
+            throw new Exception("DCEL is invalid!");
+        }
         foreach (VoronoiDCEL.Vertex<int> v in verticesToDelete)
         {
             m_DCEL.DeleteVertex(v);
+            if (!m_DCEL.ValidateDCEL())
+            {
+                throw new Exception("DCEL is invalid!");
+            }
         }
 
         MeshDescription newDescription = TriangulateVoronoi();

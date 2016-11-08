@@ -23,6 +23,7 @@ sysinfo.txt
 # OSX
 # =========================
 
+*.icloud
 .DS_Store
 .AppleDouble
 .LSOverride
